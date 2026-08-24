@@ -25,6 +25,15 @@ GymFlow adalah aplikasi manajemen operasional gym berbasis Laravel, Inertia, Rea
 - Foto member tervalidasi dan disimpan pada private storage dengan endpoint terotorisasi.
 - Audit log untuk pembuatan, perubahan profil, dan perubahan status member.
 
+### Phase 3 - Membership Plans
+
+- CRUD paket membership tenant-scoped dengan durasi hari, minggu, bulan, atau tahun.
+- Harga disimpan sebagai decimal presisi dan ditampilkan sesuai currency gym aktif.
+- Daftar paket dengan pencarian, filter aktif/nonaktif, dan pagination server-side.
+- Aktivasi, deaktivasi, dan penghapusan paket dengan dialog konfirmasi.
+- Policy backend untuk Owner dan Front Desk; Trainer tidak mendapat akses pengelolaan paket.
+- Audit log untuk pembuatan, perubahan, perubahan status, dan penghapusan paket.
+
 ## Architecture
 
 ```text
@@ -53,6 +62,10 @@ Menyimpan event penting per gym, actor, polymorphic subject, properti tambahan, 
 
 Menyimpan profil member per gym. Unique key `(gym_id, member_number)` menjaga nomor member tetap unik di dalam tenant, sementara `gyms.next_member_sequence` dikunci saat alokasi nomor untuk mencegah duplikasi pada request bersamaan.
 
+### membership_plans
+
+Menyimpan katalog paket per gym dengan unique key `(gym_id, name)`, durasi terstruktur, harga `decimal(14,2)`, deskripsi, dan status aktif. Index `(gym_id, is_active, created_at)` mendukung daftar operasional tenant.
+
 ## Business Rules
 
 - Hanya user dengan membership gym aktif yang dapat membuka dashboard.
@@ -64,6 +77,9 @@ Menyimpan profil member per gym. Unique key `(gym_id, member_number)` menjaga no
 - Nomor member dihasilkan backend dari sequence gym dan tidak menerima `gym_id` atau nomor dari frontend.
 - Member tidak dihapus permanen dari workflow operasional; gunakan status aktif/nonaktif.
 - Semua lookup detail, edit, status, dan foto dilakukan melalui relasi member milik `GymContext` aktif.
+- Nama paket membership unik di dalam satu gym, tetapi dapat digunakan kembali oleh gym lain.
+- Harga paket tidak dikonversi ke float; backend mempertahankan nilai decimal sebagai string.
+- Semua lookup, perubahan status, dan penghapusan paket dilakukan melalui relasi paket milik `GymContext` aktif.
 
 ## Test Accounts
 
@@ -113,9 +129,10 @@ npm run build
 - Selector untuk user multi-gym belum tersedia; middleware memakai gym aktif pertama atau gym session yang valid.
 - Statistik dashboard terhubung ke data operasional pada Phase 7.
 - Riwayat paket, pembayaran, dan check-in pada detail member tersedia setelah Phase 4-6.
+- Paket yang sudah dipakai membership baru akan dilindungi dari penghapusan saat relasi membership dibuat pada Phase 4.
 - Pengelolaan staff dan pengaturan profil gym masuk phase lanjutan.
 - SaaS billing, subscription platform, dan Super Admin belum diimplementasikan.
 
-## Remaining For Phase 3
+## Remaining For Phase 4
 
-Phase 3 mencakup CRUD paket membership, durasi, harga, status aktif/nonaktif, dan tenant isolation.
+Phase 4 mencakup assignment paket ke member, tanggal mulai/akhir, status aktif, expiry, riwayat membership, dan renewal.

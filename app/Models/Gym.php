@@ -72,6 +72,12 @@ class Gym extends Model
         return $this->hasMany(Member::class);
     }
 
+    /** @return HasMany<MembershipPlan, $this> */
+    public function membershipPlans(): HasMany
+    {
+        return $this->hasMany(MembershipPlan::class);
+    }
+
     /**
      * @return array<string, string>
      */

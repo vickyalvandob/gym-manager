@@ -6,9 +6,11 @@ use App\Enums\GymRole;
 use App\Enums\GymStatus;
 use App\Enums\GymUserStatus;
 use App\Enums\MemberGender;
+use App\Enums\MembershipDurationUnit;
 use App\Enums\MemberStatus;
 use App\Models\Gym;
 use App\Models\Member;
+use App\Models\MembershipPlan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -88,5 +90,23 @@ class DemoGymSeeder extends Seeder
         $gym->forceFill([
             'next_member_sequence' => max($gym->next_member_sequence, count($members) + 1),
         ])->save();
+
+        $membershipPlans = [
+            ['name' => 'Daily Pass', 'duration' => 1, 'duration_unit' => MembershipDurationUnit::Day, 'price' => '50000.00', 'description' => 'Akses gym selama satu hari.', 'is_active' => true],
+            ['name' => 'Monthly', 'duration' => 1, 'duration_unit' => MembershipDurationUnit::Month, 'price' => '250000.00', 'description' => 'Paket membership bulanan.', 'is_active' => true],
+            ['name' => '3 Months', 'duration' => 3, 'duration_unit' => MembershipDurationUnit::Month, 'price' => '650000.00', 'description' => 'Paket tiga bulan dengan harga lebih hemat.', 'is_active' => true],
+            ['name' => '6 Months', 'duration' => 6, 'duration_unit' => MembershipDurationUnit::Month, 'price' => '1200000.00', 'description' => 'Paket membership enam bulan.', 'is_active' => true],
+            ['name' => '12 Months', 'duration' => 12, 'duration_unit' => MembershipDurationUnit::Month, 'price' => '2200000.00', 'description' => 'Paket membership tahunan.', 'is_active' => false],
+        ];
+
+        foreach ($membershipPlans as $membershipPlanData) {
+            MembershipPlan::query()->updateOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'name' => $membershipPlanData['name'],
+                ],
+                $membershipPlanData,
+            );
+        }
     }
 }

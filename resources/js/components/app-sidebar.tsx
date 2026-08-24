@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, UsersRound } from 'lucide-react';
+import { LayoutDashboard, Tickets, UsersRound } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as membersIndex } from '@/routes/members';
+import { index as membershipPlansIndex } from '@/routes/membership-plans';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -30,6 +31,11 @@ export function AppSidebar() {
                       title: 'Member',
                       href: membersIndex(),
                       icon: UsersRound,
+                  },
+                  {
+                      title: 'Paket Membership',
+                      href: membershipPlansIndex(),
+                      icon: Tickets,
                   },
               ]
             : []),
