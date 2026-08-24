@@ -2,7 +2,9 @@
 
 GymFlow adalah aplikasi manajemen operasional gym berbasis Laravel, Inertia, React, TypeScript, dan Tailwind CSS. Arsitektur tenant menggunakan satu database dengan shared schema dan isolasi data berdasarkan gym aktif.
 
-## Phase 1 Completed
+## Completed Phases
+
+### Phase 1 - Tenant Foundation
 
 - Authentication melalui Laravel Fortify.
 - Registrasi atomik untuk User, Gym, role Owner, dan audit log awal.
@@ -13,6 +15,15 @@ GymFlow adalah aplikasi manajemen operasional gym berbasis Laravel, Inertia, Rea
 - Shared Inertia props untuk gym aktif, role, dan izin UI.
 - Seeder development untuk akun Owner, Front Desk, dan Trainer.
 - Proteksi production untuk perintah database destruktif dan demo seeder.
+
+### Phase 2 - Member Management
+
+- Profil member tenant-scoped dengan nomor otomatis `MBR-000001` per gym.
+- Daftar member dengan pencarian nomor/nama/telepon, filter status, dan pagination server-side.
+- Tambah, detail, edit, aktivasi, dan deaktivasi tanpa hard delete.
+- Policy backend untuk Owner dan Front Desk; Trainer tidak mendapat akses pengelolaan member.
+- Foto member tervalidasi dan disimpan pada private storage dengan endpoint terotorisasi.
+- Audit log untuk pembuatan, perubahan profil, dan perubahan status member.
 
 ## Architecture
 
@@ -36,7 +47,11 @@ Pivot User-Gym dengan unique key `(gym_id, user_id)`, role, status, timestamp, d
 
 ### activity_logs
 
-Menyimpan event penting per gym, actor, polymorphic subject, properti tambahan, dan alamat IP. Phase 1 mencatat `user.created` saat registrasi.
+Menyimpan event penting per gym, actor, polymorphic subject, properti tambahan, dan alamat IP. Event aktif mencakup `user.created`, `member.created`, `member.updated`, dan `member.status_changed`.
+
+### members
+
+Menyimpan profil member per gym. Unique key `(gym_id, member_number)` menjaga nomor member tetap unik di dalam tenant, sementara `gyms.next_member_sequence` dikunci saat alokasi nomor untuk mencegah duplikasi pada request bersamaan.
 
 ## Business Rules
 
@@ -46,6 +61,9 @@ Menyimpan event penting per gym, actor, polymorphic subject, properti tambahan, 
 - Owner dapat mengubah gym dan mengelola user; Front Desk hanya mendapat akses operasional; Trainer mendapat workspace terbatas.
 - Public registration membuat user dan satu gym baru dalam satu database transaction.
 - Demo credential hanya dibuat pada environment `local` dan `testing`.
+- Nomor member dihasilkan backend dari sequence gym dan tidak menerima `gym_id` atau nomor dari frontend.
+- Member tidak dihapus permanen dari workflow operasional; gunakan status aktif/nonaktif.
+- Semua lookup detail, edit, status, dan foto dilakukan melalui relasi member milik `GymContext` aktif.
 
 ## Test Accounts
 
@@ -93,10 +111,11 @@ npm run build
 ## Known Limitations
 
 - Selector untuk user multi-gym belum tersedia; middleware memakai gym aktif pertama atau gym session yang valid.
-- Dashboard Phase 1 menampilkan empty state karena tabel member, membership, payment, dan check-in belum dibuat.
+- Statistik dashboard terhubung ke data operasional pada Phase 7.
+- Riwayat paket, pembayaran, dan check-in pada detail member tersedia setelah Phase 4-6.
 - Pengelolaan staff dan pengaturan profil gym masuk phase lanjutan.
 - SaaS billing, subscription platform, dan Super Admin belum diimplementasikan.
 
-## Remaining For Phase 2
+## Remaining For Phase 3
 
-Phase 2 mencakup schema member, nomor member unik per gym, CRUD, pencarian, filter, pagination, aktivasi/deaktivasi, detail member, authorization, dan regression test tenant isolation.
+Phase 3 mencakup CRUD paket membership, durasi, harga, status aktif/nonaktif, dan tenant isolation.

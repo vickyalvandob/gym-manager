@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $timezone
  * @property string $currency
  * @property int $membership_expiry_warning_days
+ * @property int $next_member_sequence
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -29,6 +30,7 @@ use Illuminate\Support\Carbon;
     'timezone',
     'currency',
     'membership_expiry_warning_days',
+    'next_member_sequence',
 ])]
 class Gym extends Model
 {
@@ -41,6 +43,7 @@ class Gym extends Model
         'timezone' => 'Asia/Jakarta',
         'currency' => 'IDR',
         'membership_expiry_warning_days' => 7,
+        'next_member_sequence' => 1,
     ];
 
     /**
@@ -62,6 +65,14 @@ class Gym extends Model
     }
 
     /**
+     * @return HasMany<Member, $this>
+     */
+    public function members(): HasMany
+    {
+        return $this->hasMany(Member::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -69,6 +80,7 @@ class Gym extends Model
         return [
             'status' => GymStatus::class,
             'membership_expiry_warning_days' => 'integer',
+            'next_member_sequence' => 'integer',
         ];
     }
 }

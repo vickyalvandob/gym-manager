@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { LayoutDashboard } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { LayoutDashboard, UsersRound } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,17 +13,28 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as membersIndex } from '@/routes/members';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutDashboard,
-    },
-];
-
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutDashboard,
+        },
+        ...(auth.permissions.operate_front_desk
+            ? [
+                  {
+                      title: 'Member',
+                      href: membersIndex(),
+                      icon: UsersRound,
+                  },
+              ]
+            : []),
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader className="border-b border-sidebar-border/70 p-3">
