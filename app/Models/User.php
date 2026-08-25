@@ -51,6 +51,12 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class);
     }
 
+    /** @return HasMany<Payment, $this> */
+    public function receivedPayments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'received_by_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *

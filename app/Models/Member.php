@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -59,6 +60,18 @@ class Member extends Model
     public function gym(): BelongsTo
     {
         return $this->belongsTo(Gym::class);
+    }
+
+    /** @return HasMany<MemberMembership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(MemberMembership::class);
+    }
+
+    /** @return HasMany<Payment, $this> */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     /**

@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $currency
  * @property int $membership_expiry_warning_days
  * @property int $next_member_sequence
+ * @property int $next_invoice_sequence
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -31,6 +32,7 @@ use Illuminate\Support\Carbon;
     'currency',
     'membership_expiry_warning_days',
     'next_member_sequence',
+    'next_invoice_sequence',
 ])]
 class Gym extends Model
 {
@@ -44,6 +46,7 @@ class Gym extends Model
         'currency' => 'IDR',
         'membership_expiry_warning_days' => 7,
         'next_member_sequence' => 1,
+        'next_invoice_sequence' => 1,
     ];
 
     /**
@@ -78,6 +81,18 @@ class Gym extends Model
         return $this->hasMany(MembershipPlan::class);
     }
 
+    /** @return HasMany<MemberMembership, $this> */
+    public function memberMemberships(): HasMany
+    {
+        return $this->hasMany(MemberMembership::class);
+    }
+
+    /** @return HasMany<Payment, $this> */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     /**
      * @return array<string, string>
      */
@@ -87,6 +102,7 @@ class Gym extends Model
             'status' => GymStatus::class,
             'membership_expiry_warning_days' => 'integer',
             'next_member_sequence' => 'integer',
+            'next_invoice_sequence' => 'integer',
         ];
     }
 }

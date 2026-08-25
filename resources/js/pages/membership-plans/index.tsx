@@ -279,6 +279,9 @@ export default function MembershipPlansIndex({
                                                             membershipPlanName={
                                                                 membershipPlan.name
                                                             }
+                                                            canDelete={
+                                                                membershipPlan.can_delete
+                                                            }
                                                             buttonVariant="ghost"
                                                         />
                                                     </div>

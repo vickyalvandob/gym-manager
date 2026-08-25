@@ -8,9 +8,13 @@ use App\Enums\GymUserStatus;
 use App\Enums\MemberGender;
 use App\Enums\MembershipDurationUnit;
 use App\Enums\MemberStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Models\Gym;
 use App\Models\Member;
+use App\Models\MemberMembership;
 use App\Models\MembershipPlan;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -108,5 +112,138 @@ class DemoGymSeeder extends Seeder
                 $membershipPlanData,
             );
         }
+
+        $monthlyPlan = $gym->membershipPlans()->where('name', 'Monthly')->firstOrFail();
+        $threeMonthPlan = $gym->membershipPlans()->where('name', '3 Months')->firstOrFail();
+        $aditya = $gym->members()->where('member_number', 'MBR-000001')->firstOrFail();
+        $nadia = $gym->members()->where('member_number', 'MBR-000002')->firstOrFail();
+        $rizky = $gym->members()->where('member_number', 'MBR-000003')->firstOrFail();
+        $salsabila = $gym->members()->where('member_number', 'MBR-000004')->firstOrFail();
+        $today = today($gym->timezone);
+
+        $adityaPreviousStart = $today->copy()->subMonthNoOverflow();
+        $adityaPrevious = MemberMembership::query()->updateOrCreate(
+            [
+                'gym_id' => $gym->getKey(),
+                'member_id' => $aditya->getKey(),
+                'renewed_from_id' => null,
+            ],
+            [
+                'membership_plan_id' => $monthlyPlan->getKey(),
+                'plan_name' => $monthlyPlan->name,
+                'duration' => $monthlyPlan->duration,
+                'duration_unit' => $monthlyPlan->duration_unit,
+                'price' => $monthlyPlan->price,
+                'start_date' => $adityaPreviousStart,
+                'end_date' => $adityaPreviousStart->copy()->addMonthNoOverflow()->subDay(),
+            ],
+        );
+        $adityaRenewalStart = $adityaPrevious->end_date->copy()->addDay();
+
+        $adityaRenewal = MemberMembership::query()->updateOrCreate(
+            [
+                'gym_id' => $gym->getKey(),
+                'member_id' => $aditya->getKey(),
+                'renewed_from_id' => $adityaPrevious->getKey(),
+            ],
+            [
+                'membership_plan_id' => $monthlyPlan->getKey(),
+                'plan_name' => $monthlyPlan->name,
+                'duration' => $monthlyPlan->duration,
+                'duration_unit' => $monthlyPlan->duration_unit,
+                'price' => $monthlyPlan->price,
+                'start_date' => $adityaRenewalStart,
+                'end_date' => $adityaRenewalStart->copy()->addMonthNoOverflow()->subDay(),
+            ],
+        );
+
+        $nadiaStart = $today->copy()->subMonthNoOverflow()->addDays(3);
+        $nadiaMembership = MemberMembership::query()->updateOrCreate(
+            [
+                'gym_id' => $gym->getKey(),
+                'member_id' => $nadia->getKey(),
+                'renewed_from_id' => null,
+            ],
+            [
+                'membership_plan_id' => $monthlyPlan->getKey(),
+                'plan_name' => $monthlyPlan->name,
+                'duration' => $monthlyPlan->duration,
+                'duration_unit' => $monthlyPlan->duration_unit,
+                'price' => $monthlyPlan->price,
+                'start_date' => $nadiaStart,
+                'end_date' => $nadiaStart->copy()->addMonthNoOverflow()->subDay(),
+            ],
+        );
+
+        $rizkyStart = $today->copy()->subMonthsNoOverflow(4);
+        $rizkyMembership = MemberMembership::query()->updateOrCreate(
+            [
+                'gym_id' => $gym->getKey(),
+                'member_id' => $rizky->getKey(),
+                'renewed_from_id' => null,
+            ],
+            [
+                'membership_plan_id' => $threeMonthPlan->getKey(),
+                'plan_name' => $threeMonthPlan->name,
+                'duration' => $threeMonthPlan->duration,
+                'duration_unit' => $threeMonthPlan->duration_unit,
+                'price' => $threeMonthPlan->price,
+                'start_date' => $rizkyStart,
+                'end_date' => $rizkyStart->copy()->addMonthsNoOverflow(3)->subDay(),
+            ],
+        );
+
+        $salsabilaStart = $today->copy()->addWeek();
+        $salsabilaMembership = MemberMembership::query()->updateOrCreate(
+            [
+                'gym_id' => $gym->getKey(),
+                'member_id' => $salsabila->getKey(),
+                'renewed_from_id' => null,
+            ],
+            [
+                'membership_plan_id' => $monthlyPlan->getKey(),
+                'plan_name' => $monthlyPlan->name,
+                'duration' => $monthlyPlan->duration,
+                'duration_unit' => $monthlyPlan->duration_unit,
+                'price' => $monthlyPlan->price,
+                'start_date' => $salsabilaStart,
+                'end_date' => $salsabilaStart->copy()->addMonthNoOverflow()->subDay(),
+            ],
+        );
+
+        $owner = User::query()->where('email', 'owner@gym.test')->firstOrFail();
+        $invoiceMonth = $today->format('Ym');
+        $paymentExamples = [
+            [$adityaPrevious, PaymentStatus::Paid, PaymentMethod::Cash, $today->copy()->subWeeks(3), 'Pembayaran periode sebelumnya.'],
+            [$adityaRenewal, PaymentStatus::Pending, null, null, null],
+            [$nadiaMembership, PaymentStatus::Paid, PaymentMethod::BankTransfer, $today->copy()->subWeeks(2), 'Transfer terverifikasi.'],
+            [$rizkyMembership, PaymentStatus::Paid, PaymentMethod::DebitCard, $today->copy()->subMonths(3), null],
+            [$salsabilaMembership, PaymentStatus::Pending, null, null, null],
+        ];
+
+        foreach ($paymentExamples as $index => [$membership, $status, $method, $paidAt, $notes]) {
+            Payment::query()->updateOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'member_membership_id' => $membership->getKey(),
+                ],
+                [
+                    'member_id' => $membership->member_id,
+                    'invoice_number' => sprintf('INV-%s-%06d', $invoiceMonth, $index + 1),
+                    'amount' => $membership->price,
+                    'status' => $status,
+                    'method' => $method,
+                    'paid_at' => $paidAt,
+                    'notes' => $notes,
+                    'received_by_id' => $status === PaymentStatus::Paid
+                        ? $owner->getKey()
+                        : null,
+                ],
+            );
+        }
+
+        $gym->forceFill([
+            'next_invoice_sequence' => max($gym->next_invoice_sequence, count($paymentExamples) + 1),
+        ])->save();
     }
 }

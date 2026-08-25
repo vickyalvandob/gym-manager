@@ -16,10 +16,12 @@ import {
 export function MembershipPlanDeleteDialog({
     membershipPlanId,
     membershipPlanName,
+    canDelete = true,
     buttonVariant = 'outline',
 }: {
     membershipPlanId: number;
     membershipPlanName: string;
+    canDelete?: boolean;
     buttonVariant?: 'outline' | 'ghost';
 }) {
     return (
@@ -29,7 +31,12 @@ export function MembershipPlanDeleteDialog({
                     type="button"
                     variant={buttonVariant}
                     size="sm"
-                    title="Hapus paket"
+                    disabled={!canDelete}
+                    title={
+                        canDelete
+                            ? 'Hapus paket'
+                            : 'Paket sudah digunakan dan tidak dapat dihapus'
+                    }
                 >
                     <Trash2 />
                     <span
@@ -51,22 +58,31 @@ export function MembershipPlanDeleteDialog({
                 <Form
                     {...MembershipPlanController.destroy.form(membershipPlanId)}
                 >
-                    {({ processing }) => (
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type="button" variant="outline">
-                                    Batal
+                    {({ errors, processing }) => (
+                        <div className="grid gap-4">
+                            {errors.membership_plan && (
+                                <p className="text-sm text-destructive">
+                                    {errors.membership_plan}
+                                </p>
+                            )}
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button type="button" variant="outline">
+                                        Batal
+                                    </Button>
+                                </DialogClose>
+                                <Button
+                                    type="submit"
+                                    variant="destructive"
+                                    disabled={processing}
+                                >
+                                    <Trash2 />
+                                    {processing
+                                        ? 'Menghapus...'
+                                        : 'Hapus paket'}
                                 </Button>
-                            </DialogClose>
-                            <Button
-                                type="submit"
-                                variant="destructive"
-                                disabled={processing}
-                            >
-                                <Trash2 />
-                                {processing ? 'Menghapus...' : 'Hapus paket'}
-                            </Button>
-                        </DialogFooter>
+                            </DialogFooter>
+                        </div>
                     )}
                 </Form>
             </DialogContent>

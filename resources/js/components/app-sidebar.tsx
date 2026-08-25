@@ -1,5 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Tickets, UsersRound } from 'lucide-react';
+import {
+    CircleDollarSign,
+    LayoutDashboard,
+    Tickets,
+    UsersRound,
+} from 'lucide-react';
+import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -36,6 +42,11 @@ export function AppSidebar() {
                       title: 'Paket Membership',
                       href: membershipPlansIndex(),
                       icon: Tickets,
+                  },
+                  {
+                      title: 'Pembayaran',
+                      href: PaymentController.index(),
+                      icon: CircleDollarSign,
                   },
               ]
             : []),

@@ -1,7 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     CalendarDays,
+    ChevronLeft,
+    ChevronRight,
     Mail,
     MapPin,
     Pencil,
@@ -12,26 +14,48 @@ import {
 import type { ReactNode } from 'react';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
 import { MemberAvatar } from '@/components/members/member-avatar';
+import { MemberMembershipDialog } from '@/components/members/member-membership-dialog';
+import { MemberMembershipStatusBadge } from '@/components/members/member-membership-status-badge';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { MemberStatusDialog } from '@/components/members/member-status-dialog';
+import { CreateMembershipPaymentButton } from '@/components/payments/create-membership-payment-button';
+import { PaymentStatusBadge } from '@/components/payments/payment-status-badge';
+import { RecordPaymentDialog } from '@/components/payments/record-payment-dialog';
 import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate } from '@/lib/formatters';
 import { index } from '@/routes/members';
-import type { MemberDetail } from '@/types';
+import type {
+    MemberDetail,
+    MemberMembership,
+    MembershipDefaults,
+    MembershipPlanOption,
+    PaginatedMemberMemberships,
+    SelectOption,
+} from '@/types';
 
-function formatDate(value: string | null) {
-    if (!value) {
-        return '-';
-    }
+type ShowMemberProps = {
+    member: MemberDetail;
+    activeMembership: MemberMembership | null;
+    upcomingMembership: MemberMembership | null;
+    memberships: PaginatedMemberMemberships;
+    membershipPlans: MembershipPlanOption[];
+    paymentMethodOptions: SelectOption[];
+    membershipDefaults: MembershipDefaults;
+};
 
-    return new Intl.DateTimeFormat('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'Asia/Jakarta',
-    }).format(new Date(value));
-}
+export default function ShowMember({
+    member,
+    activeMembership,
+    upcomingMembership,
+    memberships,
+    membershipPlans,
+    paymentMethodOptions,
+    membershipDefaults,
+}: ShowMemberProps) {
+    const { auth } = usePage().props;
+    const currency = auth.currentGym?.currency ?? 'IDR';
+    const hasMembershipHistory = memberships.total > 0;
 
-export default function ShowMember({ member }: { member: MemberDetail }) {
     return (
         <>
             <Head title={member.name} />
@@ -72,7 +96,37 @@ export default function ShowMember({ member }: { member: MemberDetail }) {
                             </p>
                         </div>
                     </div>
-                    <div className="flex gap-2 pl-14 sm:pl-0">
+                    <div className="flex flex-wrap gap-2 pl-14 sm:pl-0">
+                        {hasMembershipHistory ? (
+                            <MemberMembershipDialog
+                                memberId={member.id}
+                                memberName={member.name}
+                                currency={currency}
+                                membershipPlans={membershipPlans}
+                                defaultPlanId={
+                                    membershipDefaults.renewal_plan_id
+                                }
+                                defaultStartDate={
+                                    membershipDefaults.renewal_start_date
+                                }
+                                mode="renew"
+                                renewalSourceId={
+                                    membershipDefaults.renewal_source_id
+                                }
+                            />
+                        ) : (
+                            <MemberMembershipDialog
+                                memberId={member.id}
+                                memberName={member.name}
+                                currency={currency}
+                                membershipPlans={membershipPlans}
+                                defaultPlanId={membershipPlans[0]?.id ?? null}
+                                defaultStartDate={
+                                    membershipDefaults.assign_start_date
+                                }
+                                mode="assign"
+                            />
+                        )}
                         <MemberStatusDialog
                             memberId={member.id}
                             memberName={member.name}
@@ -87,7 +141,7 @@ export default function ShowMember({ member }: { member: MemberDetail }) {
                     </div>
                 </header>
 
-                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem]">
                     <main className="min-w-0 divide-y border-y">
                         <section className="py-6">
                             <h2 className="text-base font-semibold">Profil</h2>
@@ -137,18 +191,81 @@ export default function ShowMember({ member }: { member: MemberDetail }) {
                                 {member.notes ?? 'Tidak ada catatan.'}
                             </p>
                         </section>
+
+                        <MembershipHistory
+                            memberships={memberships}
+                            currency={currency}
+                            methodOptions={paymentMethodOptions}
+                        />
                     </main>
 
                     <aside className="space-y-7">
                         <section>
-                            <h2 className="text-base font-semibold">
-                                Keanggotaan
-                            </h2>
-                            <div className="mt-4 border-y py-4">
-                                <p className="text-sm font-medium">
-                                    Belum ada paket aktif
-                                </p>
+                            <div className="flex items-center justify-between gap-3">
+                                <h2 className="text-base font-semibold">
+                                    Keanggotaan
+                                </h2>
+                                {activeMembership && (
+                                    <MemberMembershipStatusBadge
+                                        status={activeMembership.status}
+                                        label={activeMembership.status_label}
+                                        isExpiringSoon={
+                                            activeMembership.is_expiring_soon
+                                        }
+                                    />
+                                )}
                             </div>
+
+                            {activeMembership ? (
+                                <MembershipSummary
+                                    membership={activeMembership}
+                                    currency={currency}
+                                    methodOptions={paymentMethodOptions}
+                                />
+                            ) : (
+                                <div className="mt-4 border-y py-4">
+                                    <p className="text-sm font-medium">
+                                        Tidak ada paket aktif
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                        {hasMembershipHistory
+                                            ? 'Membership terakhir sudah kedaluwarsa.'
+                                            : 'Tetapkan paket untuk memulai membership.'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {upcomingMembership && (
+                                <div className="mt-4 border-t pt-4">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-xs font-medium text-muted-foreground">
+                                            Periode berikutnya
+                                        </p>
+                                        <MemberMembershipStatusBadge
+                                            status={upcomingMembership.status}
+                                            label={
+                                                upcomingMembership.status_label
+                                            }
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-sm font-medium">
+                                        {upcomingMembership.plan_name}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Mulai{' '}
+                                        {formatDate(
+                                            upcomingMembership.start_date,
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+
+                            {membershipPlans.length === 0 && (
+                                <p className="mt-3 text-xs leading-5 text-amber-700 dark:text-amber-300">
+                                    Aktifkan minimal satu paket membership untuk
+                                    assignment atau renewal.
+                                </p>
+                            )}
                         </section>
 
                         <section>
@@ -178,6 +295,315 @@ export default function ShowMember({ member }: { member: MemberDetail }) {
                 </div>
             </div>
         </>
+    );
+}
+
+function MembershipSummary({
+    membership,
+    currency,
+    methodOptions,
+}: {
+    membership: MemberMembership;
+    currency: string;
+    methodOptions: SelectOption[];
+}) {
+    return (
+        <dl className="mt-4 divide-y border-y text-sm">
+            <div className="py-3">
+                <dt className="text-muted-foreground">Paket</dt>
+                <dd className="mt-1 font-medium">{membership.plan_name}</dd>
+            </div>
+            <div className="grid grid-cols-2 gap-3 py-3">
+                <div>
+                    <dt className="text-muted-foreground">Mulai</dt>
+                    <dd className="mt-1 font-medium">
+                        {formatDate(membership.start_date)}
+                    </dd>
+                </div>
+                <div>
+                    <dt className="text-muted-foreground">Berakhir</dt>
+                    <dd className="mt-1 font-medium">
+                        {formatDate(membership.end_date)}
+                    </dd>
+                </div>
+            </div>
+            <div className="py-3">
+                <dt className="text-muted-foreground">Nilai paket</dt>
+                <dd className="mt-1 font-medium tabular-nums">
+                    {formatCurrency(membership.price, currency)}
+                </dd>
+                {membership.is_expiring_soon && (
+                    <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">
+                        {membership.days_remaining === 0
+                            ? 'Berakhir hari ini'
+                            : `Berakhir dalam ${membership.days_remaining} hari`}
+                    </p>
+                )}
+            </div>
+            <div className="py-3">
+                <dt className="text-muted-foreground">Pembayaran</dt>
+                <dd className="mt-2">
+                    <MembershipPaymentInfo
+                        membership={membership}
+                        currency={currency}
+                        methodOptions={methodOptions}
+                    />
+                </dd>
+            </div>
+        </dl>
+    );
+}
+
+function MembershipHistory({
+    memberships,
+    currency,
+    methodOptions,
+}: {
+    memberships: PaginatedMemberMemberships;
+    currency: string;
+    methodOptions: SelectOption[];
+}) {
+    return (
+        <section className="py-6">
+            <div>
+                <h2 className="text-base font-semibold">Riwayat membership</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                    {memberships.total} periode tersimpan
+                </p>
+            </div>
+
+            {memberships.data.length === 0 ? (
+                <p className="mt-5 text-sm text-muted-foreground">
+                    Belum ada riwayat membership.
+                </p>
+            ) : (
+                <>
+                    <div className="mt-5 hidden overflow-hidden rounded-lg border md:block">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b bg-muted/50 text-xs text-muted-foreground">
+                                <tr>
+                                    <th className="px-4 py-3 font-medium">
+                                        Paket
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
+                                        Periode
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        Nilai paket
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
+                                        Pembayaran
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {memberships.data.map((membership) => (
+                                    <tr key={membership.id}>
+                                        <td className="px-4 py-3">
+                                            <p className="font-medium">
+                                                {membership.plan_name}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                                {membership.duration_label}
+                                                {membership.renewed_from_id
+                                                    ? ' · Renewal'
+                                                    : ''}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs">
+                                            <p>
+                                                {formatDate(
+                                                    membership.start_date,
+                                                )}
+                                            </p>
+                                            <p className="mt-0.5 text-muted-foreground">
+                                                s.d.{' '}
+                                                {formatDate(
+                                                    membership.end_date,
+                                                )}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <MemberMembershipStatusBadge
+                                                status={membership.status}
+                                                label={membership.status_label}
+                                                isExpiringSoon={
+                                                    membership.is_expiring_soon
+                                                }
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-medium tabular-nums">
+                                            {formatCurrency(
+                                                membership.price,
+                                                currency,
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <MembershipPaymentInfo
+                                                membership={membership}
+                                                currency={currency}
+                                                methodOptions={methodOptions}
+                                                compact
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="mt-5 divide-y border-y md:hidden">
+                        {memberships.data.map((membership) => (
+                            <article key={membership.id} className="py-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="font-medium">
+                                            {membership.plan_name}
+                                        </p>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {formatDate(membership.start_date)}{' '}
+                                            · {formatDate(membership.end_date)}
+                                        </p>
+                                    </div>
+                                    <MemberMembershipStatusBadge
+                                        status={membership.status}
+                                        label={membership.status_label}
+                                        isExpiringSoon={
+                                            membership.is_expiring_soon
+                                        }
+                                    />
+                                </div>
+                                <p className="mt-3 text-sm font-medium tabular-nums">
+                                    {formatCurrency(membership.price, currency)}
+                                </p>
+                                <div className="mt-3">
+                                    <MembershipPaymentInfo
+                                        membership={membership}
+                                        currency={currency}
+                                        methodOptions={methodOptions}
+                                    />
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {memberships.last_page > 1 && (
+                <nav
+                    className="mt-4 flex items-center justify-between gap-3"
+                    aria-label="Pagination riwayat membership"
+                >
+                    <p className="hidden text-xs text-muted-foreground sm:block">
+                        {memberships.from}-{memberships.to} dari{' '}
+                        {memberships.total}
+                    </p>
+                    <div className="flex w-full justify-between gap-2 sm:w-auto">
+                        <MembershipPaginationButton
+                            url={memberships.links[0]?.url ?? null}
+                            label="Sebelumnya"
+                            icon={<ChevronLeft />}
+                        />
+                        <MembershipPaginationButton
+                            url={memberships.links.at(-1)?.url ?? null}
+                            label="Berikutnya"
+                            icon={<ChevronRight />}
+                            iconAfter
+                        />
+                    </div>
+                </nav>
+            )}
+        </section>
+    );
+}
+
+function MembershipPaymentInfo({
+    membership,
+    currency,
+    methodOptions,
+    compact = false,
+}: {
+    membership: MemberMembership;
+    currency: string;
+    methodOptions: SelectOption[];
+    compact?: boolean;
+}) {
+    const payment = membership.payment;
+
+    if (!payment) {
+        return (
+            <CreateMembershipPaymentButton
+                membershipId={membership.id}
+                compact={compact}
+            />
+        );
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0">
+                <p className="truncate font-mono text-xs font-medium">
+                    {payment.invoice_number}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <PaymentStatusBadge
+                        status={payment.status}
+                        label={payment.status_label}
+                    />
+                    {payment.method_label && (
+                        <span className="text-xs text-muted-foreground">
+                            {payment.method_label}
+                        </span>
+                    )}
+                </div>
+            </div>
+            {payment.status === 'pending' && (
+                <RecordPaymentDialog
+                    payment={payment}
+                    currency={currency}
+                    methodOptions={methodOptions}
+                    compact={compact}
+                />
+            )}
+        </div>
+    );
+}
+
+function MembershipPaginationButton({
+    url,
+    label,
+    icon,
+    iconAfter = false,
+}: {
+    url: string | null;
+    label: string;
+    icon: ReactNode;
+    iconAfter?: boolean;
+}) {
+    return (
+        <Button
+            variant="outline"
+            size="sm"
+            disabled={!url}
+            asChild={Boolean(url)}
+        >
+            {url ? (
+                <Link href={url} preserveScroll>
+                    {!iconAfter && icon}
+                    {label}
+                    {iconAfter && icon}
+                </Link>
+            ) : (
+                <span>
+                    {!iconAfter && icon}
+                    {label}
+                    {iconAfter && icon}
+                </span>
+            )}
+        </Button>
     );
 }
 

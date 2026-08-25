@@ -1,6 +1,6 @@
-import type { PaginationLink } from './member';
+import type { MembershipDurationUnit, PaginationLink } from './member';
 
-export type MembershipDurationUnit = 'day' | 'week' | 'month' | 'year';
+export type { MembershipDurationUnit } from './member';
 
 export type MembershipPlan = {
     id: number;
@@ -13,6 +13,8 @@ export type MembershipPlan = {
     description: string | null;
     is_active: boolean;
     status_label: string;
+    memberships_count: number;
+    can_delete: boolean;
     created_at: string | null;
     updated_at: string | null;
 };

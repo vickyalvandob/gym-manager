@@ -71,6 +71,7 @@ export default function ShowMembershipPlan({
                         <MembershipPlanDeleteDialog
                             membershipPlanId={membershipPlan.id}
                             membershipPlanName={membershipPlan.name}
+                            canDelete={membershipPlan.can_delete}
                         />
                     </div>
                 </header>
@@ -126,6 +127,15 @@ export default function ShowMembershipPlan({
                             Riwayat data
                         </h2>
                         <dl className="mt-4 divide-y border-y text-sm">
+                            <div className="py-3">
+                                <dt className="text-muted-foreground">
+                                    Riwayat membership
+                                </dt>
+                                <dd className="mt-1 font-medium">
+                                    {membershipPlan.memberships_count}{' '}
+                                    penggunaan
+                                </dd>
+                            </div>
                             <div className="py-3">
                                 <dt className="text-muted-foreground">
                                     Dibuat

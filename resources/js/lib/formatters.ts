@@ -21,3 +21,21 @@ export function formatDate(value: string | null): string {
         timeZone: 'Asia/Jakarta',
     }).format(new Date(value));
 }
+
+export function formatDateTime(
+    value: string | null,
+    timeZone = 'Asia/Jakarta',
+): string {
+    if (!value) {
+        return '-';
+    }
+
+    return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone,
+    }).format(new Date(value));
+}

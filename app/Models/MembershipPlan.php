@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -21,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property int|null $member_memberships_count
  */
 #[Fillable([
     'gym_id',
@@ -46,6 +48,12 @@ class MembershipPlan extends Model
     public function gym(): BelongsTo
     {
         return $this->belongsTo(Gym::class);
+    }
+
+    /** @return HasMany<MemberMembership, $this> */
+    public function memberMemberships(): HasMany
+    {
+        return $this->hasMany(MemberMembership::class);
     }
 
     /** @return array<string, string> */

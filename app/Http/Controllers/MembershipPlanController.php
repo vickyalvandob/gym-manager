@@ -37,6 +37,7 @@ class MembershipPlanController extends Controller
                 'membership_plans.is_active',
                 'membership_plans.created_at',
             ])
+            ->withCount('memberMemberships')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', "%{$search}%")
@@ -141,6 +142,7 @@ class MembershipPlanController extends Controller
     private function findMembershipPlan(int $membershipPlan): MembershipPlan
     {
         return $this->gymContext->gym()->membershipPlans()
+            ->withCount('memberMemberships')
             ->whereKey($membershipPlan)
             ->firstOrFail();
     }
@@ -159,6 +161,8 @@ class MembershipPlanController extends Controller
             'description' => $membershipPlan->description,
             'is_active' => $membershipPlan->is_active,
             'status_label' => $membershipPlan->is_active ? 'Aktif' : 'Nonaktif',
+            'memberships_count' => $membershipPlan->member_memberships_count ?? 0,
+            'can_delete' => ($membershipPlan->member_memberships_count ?? 0) === 0,
             'created_at' => $membershipPlan->created_at?->toIso8601String(),
             'updated_at' => $membershipPlan->updated_at?->toIso8601String(),
         ];

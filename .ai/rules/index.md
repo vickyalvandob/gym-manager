@@ -4,6 +4,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| app/{Actions,Models,Http,Policies}/** | .ai/rules/actions-models-http-policies.md |
+| app/{Actions,Models,Http}/** | .ai/rules/actions-models-http.md |
 | app/Actions/Members/** | .ai/rules/members.md |
 | app/{Models,Http,Actions,Policies,Support}/** | .ai/rules/models-http-actions-policies-support.md |
 | database/seeders/** | .ai/rules/seeders.md |

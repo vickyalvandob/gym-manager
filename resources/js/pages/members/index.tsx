@@ -13,10 +13,12 @@ import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
 import { MemberAvatar } from '@/components/members/member-avatar';
+import { MemberMembershipStatusBadge } from '@/components/members/member-membership-status-badge';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { MemberStatusDialog } from '@/components/members/member-status-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatDate } from '@/lib/formatters';
 import type { PaginatedMembers, SelectOption } from '@/types';
 
 type Filters = {
@@ -176,6 +178,9 @@ export default function MembersIndex({
                                         <th className="px-4 py-3 font-medium">
                                             Status
                                         </th>
+                                        <th className="px-4 py-3 font-medium">
+                                            Membership
+                                        </th>
                                         <th className="px-4 py-3 text-right font-medium">
                                             Aksi
                                         </th>
@@ -224,6 +229,46 @@ export default function MembersIndex({
                                                     status={member.status}
                                                     label={member.status_label}
                                                 />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {member.membership ? (
+                                                    <div className="grid justify-items-start gap-1.5">
+                                                        <MemberMembershipStatusBadge
+                                                            status={
+                                                                member
+                                                                    .membership
+                                                                    .status
+                                                            }
+                                                            label={
+                                                                member
+                                                                    .membership
+                                                                    .status_label
+                                                            }
+                                                            isExpiringSoon={
+                                                                member
+                                                                    .membership
+                                                                    .is_expiring_soon
+                                                            }
+                                                        />
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {
+                                                                member
+                                                                    .membership
+                                                                    .plan_name
+                                                            }{' '}
+                                                            · s.d.{' '}
+                                                            {formatDate(
+                                                                member
+                                                                    .membership
+                                                                    .end_date,
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Belum ada paket aktif
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-1">
@@ -307,6 +352,46 @@ export default function MembersIndex({
                                             <p className="mt-3 text-sm">
                                                 {member.phone}
                                             </p>
+                                            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                {member.membership ? (
+                                                    <>
+                                                        <MemberMembershipStatusBadge
+                                                            status={
+                                                                member
+                                                                    .membership
+                                                                    .status
+                                                            }
+                                                            label={
+                                                                member
+                                                                    .membership
+                                                                    .status_label
+                                                            }
+                                                            isExpiringSoon={
+                                                                member
+                                                                    .membership
+                                                                    .is_expiring_soon
+                                                            }
+                                                        />
+                                                        <span>
+                                                            {
+                                                                member
+                                                                    .membership
+                                                                    .plan_name
+                                                            }{' '}
+                                                            · s.d.{' '}
+                                                            {formatDate(
+                                                                member
+                                                                    .membership
+                                                                    .end_date,
+                                                            )}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <span>
+                                                        Belum ada paket aktif
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="mt-3 flex gap-1">
                                                 <Button
                                                     variant="outline"
