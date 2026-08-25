@@ -9,7 +9,10 @@ export function formatCurrency(value: string, currency: string): string {
     }).format(Number(value));
 }
 
-export function formatDate(value: string | null): string {
+export function formatDate(
+    value: string | null,
+    timeZone = 'Asia/Jakarta',
+): string {
     if (!value) {
         return '-';
     }
@@ -18,7 +21,7 @@ export function formatDate(value: string | null): string {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
-        timeZone: 'Asia/Jakarta',
+        timeZone,
     }).format(new Date(value));
 }
 

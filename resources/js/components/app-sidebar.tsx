@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    ChartNoAxesCombined,
     CircleDollarSign,
     LayoutDashboard,
     LogIn,
@@ -23,6 +24,7 @@ import {
 import { dashboard } from '@/routes';
 import { index as membersIndex } from '@/routes/members';
 import { index as membershipPlansIndex } from '@/routes/membership-plans';
+import { index as reportsIndex } from '@/routes/reports';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -54,6 +56,15 @@ export function AppSidebar() {
                       title: 'Check-in',
                       href: CheckInController.index(),
                       icon: LogIn,
+                  },
+              ]
+            : []),
+        ...(auth.permissions.view_reports
+            ? [
+                  {
+                      title: 'Laporan',
+                      href: reportsIndex(),
+                      icon: ChartNoAxesCombined,
                   },
               ]
             : []),

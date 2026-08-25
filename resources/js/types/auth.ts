@@ -23,7 +23,8 @@ export type GymPermission =
     | 'manage_gym'
     | 'manage_users'
     | 'operate_front_desk'
-    | 'access_trainer_workspace';
+    | 'access_trainer_workspace'
+    | 'view_reports';
 
 export type Gym = {
     id: number;

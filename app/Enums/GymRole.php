@@ -22,7 +22,8 @@ enum GymRole: string
      *     manage_gym: bool,
      *     manage_users: bool,
      *     operate_front_desk: bool,
-     *     access_trainer_workspace: bool
+     *     access_trainer_workspace: bool,
+     *     view_reports: bool
      * }
      */
     public function permissions(): array
@@ -32,6 +33,7 @@ enum GymRole: string
             'manage_users' => $this === self::Owner,
             'operate_front_desk' => in_array($this, [self::Owner, self::Admin], true),
             'access_trainer_workspace' => true,
+            'view_reports' => $this === self::Owner,
         ];
     }
 }

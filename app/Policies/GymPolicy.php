@@ -36,6 +36,11 @@ class GymPolicy
         return in_array($this->roleFor($user, $gym), [GymRole::Owner, GymRole::Admin], true);
     }
 
+    public function viewReports(User $user, Gym $gym): bool
+    {
+        return $this->roleFor($user, $gym) === GymRole::Owner;
+    }
+
     private function roleFor(User $user, Gym $gym): ?GymRole
     {
         $role = $user->gyms()

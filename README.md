@@ -57,6 +57,15 @@ GymFlow adalah aplikasi manajemen operasional gym berbasis Laravel, Inertia, Rea
 - Detail member menyediakan aksi check-in dan riwayat kunjungan.
 - Setiap check-in menyimpan membership yang divalidasi, petugas, waktu, dan audit event `checkin.created`.
 
+### Phase 7 - Dashboard & Reports
+
+- Dashboard memakai snapshot ter-defer untuk member aktif, membership berakhir/segera berakhir, member baru, check-in, dan revenue.
+- Revenue dashboard dan laporan hanya menghitung invoice lunas berdasarkan `paid_at`; invoice pending tidak dianggap pendapatan.
+- Aktivitas terbaru menampilkan enam check-in dan invoice terakhir tanpa mengambil seluruh riwayat.
+- Laporan Owner mencakup revenue, status member, status membership, serta volume dan member teratas berdasarkan check-in.
+- Filter laporan menyediakan Hari Ini, Kemarin, Minggu Ini, Bulan Ini, Bulan Lalu, dan rentang kustom maksimal 366 hari.
+- Seluruh batas hari dikonversi dari timezone gym ke UTC dan semua agregat tetap di-scope oleh gym aktif.
+
 ## Architecture
 
 ```text
@@ -91,11 +100,11 @@ Menyimpan katalog paket per gym dengan unique key `(gym_id, name)`, durasi terst
 
 ### member_memberships
 
-Menyimpan snapshot paket dan periode historis per member. Index periode mendukung validasi membership aktif dan constraint mencegah tanggal mulai ganda untuk member yang sama.
+Menyimpan snapshot paket dan periode historis per member. Index periode mendukung validasi membership aktif, expiry dashboard/report, dan constraint mencegah tanggal mulai ganda untuk member yang sama.
 
 ### payments
 
-Menyimpan satu invoice penuh per membership, status pembayaran, metode, penerima, dan waktu pembayaran. Nomor invoice unik di dalam gym.
+Menyimpan satu invoice penuh per membership, status pembayaran, metode, penerima, dan waktu pembayaran. Nomor invoice unik di dalam gym; index `(gym_id, status, paid_at)` mendukung agregat revenue tanpa memindai invoice tenant lain.
 
 ### check_ins
 
@@ -120,6 +129,11 @@ Menyimpan gym, member, membership yang tervalidasi, waktu check-in UTC, dan petu
 - Check-in ditolak jika member nonaktif atau tidak memiliki membership aktif pada tanggal gym lokal.
 - Request check-in berulang dalam lima menit ditolak di dalam transaction setelah member row dikunci; check-in berikutnya pada hari yang sama tetap diperbolehkan.
 - Riwayat check-in selalu diambil melalui relasi gym aktif dan tidak menerima `gym_id` dari frontend.
+- Dashboard hanya menampilkan revenue kepada Owner; Front Desk tetap menerima metrik operasional, sedangkan Trainer tidak menerima daftar transaksi atau aktivitas beridentitas.
+- Halaman laporan hanya dapat dibuka Owner melalui policy backend; permission frontend hanya mengatur visibilitas menu.
+- Revenue memakai waktu pembayaran `paid_at`, bukan waktu invoice dibuat, dan hanya mencakup status `paid`.
+- Status membership laporan dihitung pada tanggal akhir periode terpilih tanpa mengubah record historis.
+- Rentang laporan kustom tidak boleh melewati hari ini dan dibatasi maksimal 366 hari.
 
 ## Test Accounts
 
@@ -167,10 +181,10 @@ npm run build
 ## Known Limitations
 
 - Selector untuk user multi-gym belum tersedia; middleware memakai gym aktif pertama atau gym session yang valid.
-- Statistik dashboard terhubung ke data operasional pada Phase 7.
-- Pengelolaan staff dan pengaturan profil gym masuk phase lanjutan.
+- Trend chart revenue/member belum ditambahkan karena bersifat opsional; Phase 7 memprioritaskan agregat operasional dan daftar tindak lanjut.
+- Pengelolaan trainer, staff, dan pengaturan profil gym masuk phase lanjutan.
 - SaaS billing, subscription platform, dan Super Admin belum diimplementasikan.
 
-## Remaining For Phase 7
+## Remaining For Phase 8
 
-Phase 7 mencakup statistik dashboard, revenue, metrik member, membership yang akan kedaluwarsa, metrik check-in, dan report filters.
+Phase 8 mencakup trainer CRUD, assignment trainer-member, dan dashboard trainer dasar.

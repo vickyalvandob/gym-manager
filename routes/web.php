@@ -3,12 +3,14 @@
 use App\Http\Controllers\AssignMemberMembershipController;
 use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\CreateMembershipPaymentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MarkPaymentPaidController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MembershipPlanController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RenewMemberMembershipController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UpdateMembershipPlanStatusController;
 use App\Http\Controllers\UpdateMemberStatusController;
 use Illuminate\Support\Facades\Route;
@@ -16,7 +18,8 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/login')->name('home');
 
 Route::middleware(['auth', 'verified', 'gym'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('reports', ReportController::class)->name('reports.index');
 
     Route::get('members/{member}/photo', MemberPhotoController::class)
         ->whereNumber('member')
