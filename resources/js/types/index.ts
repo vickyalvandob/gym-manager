@@ -1,4 +1,5 @@
 export type * from './auth';
+export type * from './check-in';
 export type * from './member';
 export type * from './membership-plan';
 export type * from './navigation';

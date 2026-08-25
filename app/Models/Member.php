@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -72,6 +73,21 @@ class Member extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /** @return HasMany<CheckIn, $this> */
+    public function checkIns(): HasMany
+    {
+        return $this->hasMany(CheckIn::class);
+    }
+
+    /** @return HasOne<CheckIn, $this> */
+    public function latestCheckIn(): HasOne
+    {
+        return $this->hasOne(CheckIn::class)->ofMany([
+            'checked_in_at' => 'max',
+            'id' => 'max',
+        ]);
     }
 
     /**

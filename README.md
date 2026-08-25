@@ -34,6 +34,29 @@ GymFlow adalah aplikasi manajemen operasional gym berbasis Laravel, Inertia, Rea
 - Policy backend untuk Owner dan Front Desk; Trainer tidak mendapat akses pengelolaan paket.
 - Audit log untuk pembuatan, perubahan, perubahan status, dan penghapusan paket.
 
+### Phase 4 - Membership Management
+
+- Assignment dan renewal membership dengan periode yang dihitung dari snapshot paket.
+- Periode membership tidak saling tumpang tindih dan riwayat lama tidak ditimpa.
+- Status upcoming, aktif, atau kedaluwarsa dihitung dari tanggal gym aktif.
+- Detail member menampilkan membership aktif, periode berikutnya, dan riwayat terpaginasikan.
+
+### Phase 5 - Payments
+
+- Satu invoice immutable untuk setiap periode membership dengan nilai dari snapshot harga.
+- Nomor invoice berurutan per gym dan dialokasikan di dalam transaction dengan row lock.
+- Pencatatan pembayaran penuh untuk cash, transfer, kartu, atau e-wallet.
+- Riwayat pembayaran tenant-scoped dengan filter server-side, ringkasan, dan audit log.
+
+### Phase 6 - Check-in
+
+- Pencarian cepat berdasarkan nama, nomor member, atau telepon dengan validasi membership.
+- Check-in hanya untuk member aktif yang memiliki membership aktif pada tanggal gym lokal.
+- Proteksi check-in tidak sengaja selama lima menit, tanpa membatasi satu kunjungan per hari.
+- Recent check-ins diperbarui berkala dan riwayat lengkap menggunakan filter serta pagination server-side.
+- Detail member menyediakan aksi check-in dan riwayat kunjungan.
+- Setiap check-in menyimpan membership yang divalidasi, petugas, waktu, dan audit event `checkin.created`.
+
 ## Architecture
 
 ```text
@@ -66,6 +89,18 @@ Menyimpan profil member per gym. Unique key `(gym_id, member_number)` menjaga no
 
 Menyimpan katalog paket per gym dengan unique key `(gym_id, name)`, durasi terstruktur, harga `decimal(14,2)`, deskripsi, dan status aktif. Index `(gym_id, is_active, created_at)` mendukung daftar operasional tenant.
 
+### member_memberships
+
+Menyimpan snapshot paket dan periode historis per member. Index periode mendukung validasi membership aktif dan constraint mencegah tanggal mulai ganda untuk member yang sama.
+
+### payments
+
+Menyimpan satu invoice penuh per membership, status pembayaran, metode, penerima, dan waktu pembayaran. Nomor invoice unik di dalam gym.
+
+### check_ins
+
+Menyimpan gym, member, membership yang tervalidasi, waktu check-in UTC, dan petugas. Index `(gym_id, checked_in_at)` mendukung recent/history, sedangkan `(gym_id, member_id, checked_in_at)` mendukung proteksi duplikat.
+
 ## Business Rules
 
 - Hanya user dengan membership gym aktif yang dapat membuka dashboard.
@@ -80,6 +115,11 @@ Menyimpan katalog paket per gym dengan unique key `(gym_id, name)`, durasi terst
 - Nama paket membership unik di dalam satu gym, tetapi dapat digunakan kembali oleh gym lain.
 - Harga paket tidak dikonversi ke float; backend mempertahankan nilai decimal sebagai string.
 - Semua lookup, perubahan status, dan penghapusan paket dilakukan melalui relasi paket milik `GymContext` aktif.
+- Periode membership bersifat immutable, tidak overlap, dan statusnya dihitung menggunakan tanggal gym lokal.
+- Satu membership hanya memiliki satu invoice dengan nilai yang berasal dari snapshot paket.
+- Check-in ditolak jika member nonaktif atau tidak memiliki membership aktif pada tanggal gym lokal.
+- Request check-in berulang dalam lima menit ditolak di dalam transaction setelah member row dikunci; check-in berikutnya pada hari yang sama tetap diperbolehkan.
+- Riwayat check-in selalu diambil melalui relasi gym aktif dan tidak menerima `gym_id` dari frontend.
 
 ## Test Accounts
 
@@ -128,11 +168,9 @@ npm run build
 
 - Selector untuk user multi-gym belum tersedia; middleware memakai gym aktif pertama atau gym session yang valid.
 - Statistik dashboard terhubung ke data operasional pada Phase 7.
-- Riwayat paket, pembayaran, dan check-in pada detail member tersedia setelah Phase 4-6.
-- Paket yang sudah dipakai membership baru akan dilindungi dari penghapusan saat relasi membership dibuat pada Phase 4.
 - Pengelolaan staff dan pengaturan profil gym masuk phase lanjutan.
 - SaaS billing, subscription platform, dan Super Admin belum diimplementasikan.
 
-## Remaining For Phase 4
+## Remaining For Phase 7
 
-Phase 4 mencakup assignment paket ke member, tanggal mulai/akhir, status aktif, expiry, riwayat membership, dan renewal.
+Phase 7 mencakup statistik dashboard, revenue, metrik member, membership yang akan kedaluwarsa, metrik check-in, dan report filters.

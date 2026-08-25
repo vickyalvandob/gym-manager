@@ -2,9 +2,11 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     CircleDollarSign,
     LayoutDashboard,
+    LogIn,
     Tickets,
     UsersRound,
 } from 'lucide-react';
+import CheckInController from '@/actions/App/Http/Controllers/CheckInController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -47,6 +49,11 @@ export function AppSidebar() {
                       title: 'Pembayaran',
                       href: PaymentController.index(),
                       icon: CircleDollarSign,
+                  },
+                  {
+                      title: 'Check-in',
+                      href: CheckInController.index(),
+                      icon: LogIn,
                   },
               ]
             : []),

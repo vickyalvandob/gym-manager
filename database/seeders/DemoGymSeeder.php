@@ -10,6 +10,7 @@ use App\Enums\MembershipDurationUnit;
 use App\Enums\MemberStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Models\CheckIn;
 use App\Models\Gym;
 use App\Models\Member;
 use App\Models\MemberMembership;
@@ -245,5 +246,25 @@ class DemoGymSeeder extends Seeder
         $gym->forceFill([
             'next_invoice_sequence' => max($gym->next_invoice_sequence, count($paymentExamples) + 1),
         ])->save();
+
+        $checkInExamples = [
+            [$aditya, $adityaRenewal, now($gym->timezone)->subHour()->startOfHour()],
+            [$nadia, $nadiaMembership, now($gym->timezone)->subHours(2)->startOfHour()],
+            [$aditya, $adityaPrevious, now($gym->timezone)->subDay()->startOfDay()->addHours(17)],
+        ];
+
+        foreach ($checkInExamples as [$member, $membership, $checkedInAt]) {
+            CheckIn::query()->firstOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'member_id' => $member->getKey(),
+                    'checked_in_at' => $checkedInAt->copy()->utc(),
+                ],
+                [
+                    'member_membership_id' => $membership->getKey(),
+                    'created_by' => $owner->getKey(),
+                ],
+            );
+        }
     }
 }

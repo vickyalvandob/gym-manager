@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AssignMemberMembershipController;
+use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\CreateMembershipPaymentController;
 use App\Http\Controllers\MarkPaymentPaidController;
 use App\Http\Controllers\MemberController;
@@ -47,6 +48,12 @@ Route::middleware(['auth', 'verified', 'gym'])->group(function () {
         ->name('payments.paid');
     Route::get('payments', [PaymentController::class, 'index'])
         ->name('payments.index');
+
+    Route::get('check-ins', [CheckInController::class, 'index'])
+        ->name('check-ins.index');
+    Route::post('members/{member}/check-ins', [CheckInController::class, 'store'])
+        ->whereNumber('member')
+        ->name('members.check-ins.store');
 
     Route::patch('membership-plans/{membership_plan}/status', UpdateMembershipPlanStatusController::class)
         ->whereNumber('membership_plan')

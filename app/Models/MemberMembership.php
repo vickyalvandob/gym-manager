@@ -83,6 +83,12 @@ class MemberMembership extends Model
         return $this->hasOne(Payment::class);
     }
 
+    /** @return HasMany<CheckIn, $this> */
+    public function checkIns(): HasMany
+    {
+        return $this->hasMany(CheckIn::class);
+    }
+
     public function statusOn(CarbonInterface $date): MemberMembershipStatus
     {
         $currentDate = $date->toDateString();

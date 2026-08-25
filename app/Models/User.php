@@ -57,6 +57,12 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class, 'received_by_id');
     }
 
+    /** @return HasMany<CheckIn, $this> */
+    public function createdCheckIns(): HasMany
+    {
+        return $this->hasMany(CheckIn::class, 'created_by');
+    }
+
     /**
      * Get the attributes that should be cast.
      *

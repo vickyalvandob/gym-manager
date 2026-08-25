@@ -4,6 +4,7 @@ import {
     CalendarDays,
     ChevronLeft,
     ChevronRight,
+    Clock3,
     Mail,
     MapPin,
     Pencil,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
+import { CheckInButton } from '@/components/check-ins/check-in-button';
 import { MemberAvatar } from '@/components/members/member-avatar';
 import { MemberMembershipDialog } from '@/components/members/member-membership-dialog';
 import { MemberMembershipStatusBadge } from '@/components/members/member-membership-status-badge';
@@ -22,14 +24,16 @@ import { CreateMembershipPaymentButton } from '@/components/payments/create-memb
 import { PaymentStatusBadge } from '@/components/payments/payment-status-badge';
 import { RecordPaymentDialog } from '@/components/payments/record-payment-dialog';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, formatDate } from '@/lib/formatters';
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { index } from '@/routes/members';
 import type {
+    CheckInEligibility,
     MemberDetail,
     MemberMembership,
     MembershipDefaults,
     MembershipPlanOption,
     PaginatedMemberMemberships,
+    PaginatedCheckIns,
     SelectOption,
 } from '@/types';
 
@@ -38,6 +42,8 @@ type ShowMemberProps = {
     activeMembership: MemberMembership | null;
     upcomingMembership: MemberMembership | null;
     memberships: PaginatedMemberMemberships;
+    checkIns: PaginatedCheckIns;
+    checkInEligibility: CheckInEligibility;
     membershipPlans: MembershipPlanOption[];
     paymentMethodOptions: SelectOption[];
     membershipDefaults: MembershipDefaults;
@@ -48,6 +54,8 @@ export default function ShowMember({
     activeMembership,
     upcomingMembership,
     memberships,
+    checkIns,
+    checkInEligibility,
     membershipPlans,
     paymentMethodOptions,
     membershipDefaults,
@@ -97,6 +105,11 @@ export default function ShowMember({
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2 pl-14 sm:pl-0">
+                        <CheckInButton
+                            memberId={member.id}
+                            disabled={!checkInEligibility.can_check_in}
+                            disabledReason={checkInEligibility.reason}
+                        />
                         {hasMembershipHistory ? (
                             <MemberMembershipDialog
                                 memberId={member.id}
@@ -197,6 +210,12 @@ export default function ShowMember({
                             currency={currency}
                             methodOptions={paymentMethodOptions}
                         />
+                        <CheckInHistory
+                            checkIns={checkIns}
+                            timezone={
+                                auth.currentGym?.timezone ?? 'Asia/Jakarta'
+                            }
+                        />
                     </main>
 
                     <aside className="space-y-7">
@@ -266,6 +285,13 @@ export default function ShowMember({
                                     assignment atau renewal.
                                 </p>
                             )}
+
+                            {!checkInEligibility.can_check_in &&
+                                checkInEligibility.reason && (
+                                    <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                                        {checkInEligibility.reason}
+                                    </p>
+                                )}
                         </section>
 
                         <section>
@@ -509,6 +535,125 @@ function MembershipHistory({
                         />
                         <MembershipPaginationButton
                             url={memberships.links.at(-1)?.url ?? null}
+                            label="Berikutnya"
+                            icon={<ChevronRight />}
+                            iconAfter
+                        />
+                    </div>
+                </nav>
+            )}
+        </section>
+    );
+}
+
+function CheckInHistory({
+    checkIns,
+    timezone,
+}: {
+    checkIns: PaginatedCheckIns;
+    timezone: string;
+}) {
+    return (
+        <section className="py-6">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h2 className="text-base font-semibold">
+                        Riwayat check-in
+                    </h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        {checkIns.total} kunjungan tersimpan
+                    </p>
+                </div>
+                <Clock3 className="size-5 text-muted-foreground" />
+            </div>
+
+            {checkIns.data.length === 0 ? (
+                <p className="mt-5 text-sm text-muted-foreground">
+                    Belum ada riwayat check-in.
+                </p>
+            ) : (
+                <>
+                    <div className="mt-5 hidden overflow-hidden rounded-lg border sm:block">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b bg-muted/50 text-xs text-muted-foreground">
+                                <tr>
+                                    <th className="px-4 py-3 font-medium">
+                                        Waktu
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
+                                        Membership
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
+                                        Petugas
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {checkIns.data.map((checkIn) => (
+                                    <tr key={checkIn.id}>
+                                        <td className="px-4 py-3 text-xs tabular-nums">
+                                            {formatDateTime(
+                                                checkIn.checked_in_at,
+                                                timezone,
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <p className="font-medium">
+                                                {checkIn.membership.plan_name}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                                Berlaku s.d.{' '}
+                                                {formatDate(
+                                                    checkIn.membership.end_date,
+                                                )}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                                            {checkIn.created_by?.name ??
+                                                'Akun dihapus'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="mt-5 divide-y border-y sm:hidden">
+                        {checkIns.data.map((checkIn) => (
+                            <article key={checkIn.id} className="py-4">
+                                <p className="text-sm font-medium">
+                                    {checkIn.membership.plan_name}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {formatDateTime(
+                                        checkIn.checked_in_at,
+                                        timezone,
+                                    )}{' '}
+                                    ·{' '}
+                                    {checkIn.created_by?.name ?? 'Akun dihapus'}
+                                </p>
+                            </article>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {checkIns.last_page > 1 && (
+                <nav
+                    className="mt-4 flex items-center justify-between gap-3"
+                    aria-label="Pagination riwayat check-in member"
+                >
+                    <p className="hidden text-xs text-muted-foreground sm:block">
+                        {checkIns.from}-{checkIns.to} dari {checkIns.total}
+                    </p>
+                    <div className="flex w-full justify-between gap-2 sm:w-auto">
+                        <MembershipPaginationButton
+                            url={checkIns.links[0]?.url ?? null}
+                            label="Sebelumnya"
+                            icon={<ChevronLeft />}
+                        />
+                        <MembershipPaginationButton
+                            url={checkIns.links.at(-1)?.url ?? null}
                             label="Berikutnya"
                             icon={<ChevronRight />}
                             iconAfter

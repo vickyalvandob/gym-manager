@@ -93,6 +93,12 @@ class Gym extends Model
         return $this->hasMany(Payment::class);
     }
 
+    /** @return HasMany<CheckIn, $this> */
+    public function checkIns(): HasMany
+    {
+        return $this->hasMany(CheckIn::class);
+    }
+
     /**
      * @return array<string, string>
      */

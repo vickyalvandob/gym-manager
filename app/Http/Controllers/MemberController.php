@@ -10,10 +10,13 @@ use App\Enums\PaymentMethod;
 use App\Http\Requests\IndexMemberRequest;
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
+use App\Models\CheckIn;
 use App\Models\Member;
 use App\Models\MemberMembership;
 use App\Models\MembershipPlan;
 use App\Models\Payment;
+use App\Support\CheckInData;
+use App\Support\CheckInEligibility;
 use App\Support\GymContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +28,11 @@ use Inertia\Response;
 
 class MemberController extends Controller
 {
-    public function __construct(private readonly GymContext $gymContext) {}
+    public function __construct(
+        private readonly GymContext $gymContext,
+        private readonly CheckInData $checkInData,
+        private readonly CheckInEligibility $checkInEligibility,
+    ) {}
 
     public function index(IndexMemberRequest $request): Response
     {
@@ -117,6 +124,7 @@ class MemberController extends Controller
     {
         $memberModel = $this->findMember($member);
         Gate::authorize('view', $memberModel);
+        $now = CarbonImmutable::now('UTC');
         $today = $this->today();
         $activePlans = $this->activeMembershipPlans();
         $activeMembership = $memberModel->memberships()
@@ -150,6 +158,30 @@ class MemberController extends Controller
                 $membership,
                 $today,
             ));
+        $latestCheckIn = $memberModel->checkIns()
+            ->where('gym_id', $this->gymContext->gymId())
+            ->latest('checked_in_at')
+            ->latest('id')
+            ->first();
+        $checkIns = $memberModel->checkIns()
+            ->select([
+                'check_ins.id',
+                'check_ins.member_id',
+                'check_ins.member_membership_id',
+                'check_ins.checked_in_at',
+                'check_ins.created_by',
+            ])
+            ->with([
+                'member:id,member_number,name,phone,photo',
+                'memberMembership:id,plan_name,end_date',
+                'createdBy:id,name',
+            ])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->latest('checked_in_at')
+            ->latest('id')
+            ->paginate(10, ['*'], 'check_in_page')
+            ->withQueryString()
+            ->through(fn (CheckIn $checkIn): array => $this->checkInData->make($checkIn));
 
         return Inertia::render('members/show', [
             'member' => $this->detailMemberData($memberModel, $today),
@@ -160,6 +192,13 @@ class MemberController extends Controller
                 ? $this->membershipData($upcomingMembership, $today)
                 : null,
             'memberships' => $memberships,
+            'checkIns' => $checkIns,
+            'checkInEligibility' => $this->checkInEligibility->evaluate(
+                $memberModel,
+                $activeMembership instanceof MemberMembership ? $activeMembership : null,
+                $latestCheckIn instanceof CheckIn ? $latestCheckIn : null,
+                $now,
+            ),
             'membershipPlans' => $activePlans,
             'paymentMethodOptions' => $this->paymentMethodOptions(),
             'membershipDefaults' => [
