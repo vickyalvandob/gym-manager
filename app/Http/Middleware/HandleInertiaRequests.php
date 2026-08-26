@@ -68,6 +68,7 @@ class HandleInertiaRequests extends Middleware
                 'timezone' => $currentGym->timezone,
                 'currency' => $currentGym->currency,
                 'membership_expiry_warning_days' => $currentGym->membership_expiry_warning_days,
+                'count_pt_no_show_as_used_session' => $currentGym->count_pt_no_show_as_used_session,
             ],
             'role' => $role?->value,
             'roleLabel' => $role?->label(),

@@ -24,6 +24,7 @@ export default function PaymentsIndex({
     summary,
     statusOptions,
     methodOptions,
+    typeOptions,
 }: PaymentIndexProps) {
     const { auth } = usePage().props;
     const currency = auth.currentGym?.currency ?? 'IDR';
@@ -31,6 +32,7 @@ export default function PaymentsIndex({
     const [search, setSearch] = useState(filters.search);
     const [status, setStatus] = useState(filters.status);
     const [method, setMethod] = useState(filters.method);
+    const [type, setType] = useState(filters.type);
     const [dateFrom, setDateFrom] = useState(filters.date_from);
     const [dateTo, setDateTo] = useState(filters.date_to);
     const [perPage, setPerPage] = useState(String(filters.per_page));
@@ -38,6 +40,7 @@ export default function PaymentsIndex({
         filters.search !== '' ||
         filters.status !== '' ||
         filters.method !== '' ||
+        filters.type !== '' ||
         filters.date_from !== '' ||
         filters.date_to !== '';
 
@@ -49,6 +52,7 @@ export default function PaymentsIndex({
                 search,
                 status,
                 method,
+                type,
                 date_from: dateFrom,
                 date_to: dateTo,
                 per_page: perPage,
@@ -61,6 +65,7 @@ export default function PaymentsIndex({
         setSearch('');
         setStatus('');
         setMethod('');
+        setType('');
         setDateFrom('');
         setDateTo('');
         setPerPage('15');
@@ -83,7 +88,7 @@ export default function PaymentsIndex({
                         Pembayaran
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Riwayat invoice dan penerimaan membership.
+                        Riwayat penerimaan membership dan Personal Training.
                     </p>
                 </header>
 
@@ -105,20 +110,23 @@ export default function PaymentsIndex({
                         detail={`${summary.pending_count} invoice pending`}
                     />
                     <SummaryItem
-                        label="Invoice lunas"
-                        value={String(summary.paid_count)}
-                        detail="Sesuai filter aktif"
+                        label="Pendapatan membership"
+                        value={formatCurrency(
+                            summary.membership_revenue,
+                            currency,
+                        )}
+                        detail="Invoice membership lunas"
                     />
                     <SummaryItem
-                        label="Invoice pending"
-                        value={String(summary.pending_count)}
-                        detail="Perlu ditindaklanjuti"
+                        label="Pendapatan PT"
+                        value={formatCurrency(summary.pt_revenue, currency)}
+                        detail="Invoice Personal Training lunas"
                     />
                 </section>
 
                 <form
                     onSubmit={submitFilters}
-                    className="grid gap-3 border-y py-4 md:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_10rem_11rem_10rem_10rem_8rem_auto]"
+                    className="grid gap-3 border-y py-4 md:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_10rem_11rem_11rem_10rem_10rem_8rem_auto]"
                     aria-label="Filter pembayaran"
                 >
                     <div className="relative">
@@ -152,6 +160,19 @@ export default function PaymentsIndex({
                     >
                         <option value="">Semua metode</option>
                         {methodOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        value={type}
+                        onChange={(event) => setType(event.target.value)}
+                        className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                        aria-label="Filter jenis pembayaran"
+                    >
+                        <option value="">Semua jenis</option>
+                        {typeOptions.map((option) => (
                             <option key={option.value} value={option.value}>
                                 {option.label}
                             </option>
@@ -217,8 +238,8 @@ export default function PaymentsIndex({
                                 : 'Belum ada invoice pembayaran'}
                         </p>
                         <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
-                            Invoice baru dibuat otomatis ketika membership
-                            ditetapkan atau diperpanjang.
+                            Invoice dibuat otomatis saat membership atau paket
+                            PT diaktifkan.
                         </p>
                     </div>
                 ) : (
@@ -290,7 +311,7 @@ export default function PaymentsIndex({
                                                 Paket
                                             </p>
                                             <p className="mt-1 font-medium">
-                                                {payment.membership.plan_name}
+                                                {sourceName(payment)}
                                             </p>
                                         </div>
                                         <div className="text-right">
@@ -428,10 +449,9 @@ function PaymentTableRow({
                 </p>
             </td>
             <td className="px-4 py-3">
-                <p className="font-medium">{payment.membership.plan_name}</p>
+                <p className="font-medium">{sourceName(payment)}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDate(payment.membership.start_date)} ·{' '}
-                    {formatDate(payment.membership.end_date)}
+                    {payment.type_label} · {sourcePeriod(payment)}
                 </p>
             </td>
             <td className="px-4 py-3 text-right font-semibold tabular-nums">
@@ -465,6 +485,26 @@ function PaymentTableRow({
             </td>
         </tr>
     );
+}
+
+function sourceName(payment: PaymentListItem): string {
+    return (
+        payment.membership?.plan_name ??
+        payment.personal_training?.package_name ??
+        '-'
+    );
+}
+
+function sourcePeriod(payment: PaymentListItem): string {
+    if (payment.membership) {
+        return `${formatDate(payment.membership.start_date)} · ${formatDate(payment.membership.end_date)}`;
+    }
+
+    if (payment.personal_training) {
+        return `${payment.personal_training.total_sessions} sesi · ${payment.personal_training.trainer_name}`;
+    }
+
+    return '-';
 }
 
 function PaginationButton({

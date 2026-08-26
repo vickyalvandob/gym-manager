@@ -3,6 +3,7 @@ import {
     CalendarClock,
     ChartNoAxesCombined,
     CircleDollarSign,
+    Dumbbell,
     RefreshCw,
     UserRoundCheck,
     Users,
@@ -218,6 +219,25 @@ function ReportContent({
                     />
                 </div>
 
+                <div className="mt-4 grid overflow-hidden rounded-lg border sm:grid-cols-2">
+                    <SummaryItem
+                        label="Revenue membership"
+                        value={formatCurrency(
+                            report.revenue.membership_total,
+                            currency,
+                        )}
+                        detail="Membership lunas"
+                    />
+                    <SummaryItem
+                        label="Revenue Personal Training"
+                        value={formatCurrency(
+                            report.revenue.pt_total,
+                            currency,
+                        )}
+                        detail="Paket PT lunas"
+                    />
+                </div>
+
                 <div className="mt-4">
                     <p className="text-xs font-medium text-muted-foreground">
                         Metode pembayaran
@@ -245,6 +265,107 @@ function ReportContent({
                                 </div>
                             ))}
                         </div>
+                    )}
+                </div>
+            </section>
+
+            <section
+                className="border-t pt-8"
+                aria-labelledby="pt-report-heading"
+            >
+                <SectionHeading
+                    id="pt-report-heading"
+                    icon={Dumbbell}
+                    title="Personal Training"
+                    description="Penjualan paket, realisasi sesi, dan beban trainer."
+                />
+                <div className="mt-4 grid overflow-hidden rounded-lg border sm:grid-cols-2 lg:grid-cols-3">
+                    <SummaryItem
+                        label="Klien aktif"
+                        value={String(report.personal_training.active_clients)}
+                        detail="Paket aktif per tanggal acuan"
+                    />
+                    <SummaryItem
+                        label="Paket terjual"
+                        value={String(report.personal_training.packages_sold)}
+                        detail="Dibeli pada periode laporan"
+                    />
+                    <SummaryItem
+                        label="Revenue PT"
+                        value={formatCurrency(
+                            report.personal_training.revenue,
+                            currency,
+                        )}
+                        detail="Pembayaran PT lunas"
+                    />
+                    <SummaryItem
+                        label="Sesi selesai"
+                        value={String(
+                            report.personal_training.completed_sessions,
+                        )}
+                        detail="Selesai pada periode laporan"
+                    />
+                    <SummaryItem
+                        label="Sesi mendatang"
+                        value={String(
+                            report.personal_training.upcoming_sessions,
+                        )}
+                        detail="Masih terjadwal"
+                    />
+                    <SummaryItem
+                        label="No-show"
+                        value={String(report.personal_training.no_shows)}
+                        detail="Tercatat pada periode laporan"
+                    />
+                </div>
+                <div className="mt-5 overflow-hidden rounded-lg border">
+                    <table className="w-full text-left text-sm">
+                        <thead className="border-b bg-muted/50 text-xs text-muted-foreground">
+                            <tr>
+                                <th className="px-4 py-3 font-medium">
+                                    Trainer
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Klien aktif
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Selesai
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Mendatang
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                            {report.personal_training.trainers.map(
+                                (trainer) => (
+                                    <tr key={trainer.id}>
+                                        <td className="px-4 py-3">
+                                            <p className="font-medium">
+                                                {trainer.name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {trainer.trainer_code ?? '-'}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {trainer.active_clients}
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {trainer.completed_sessions}
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {trainer.upcoming_sessions}
+                                        </td>
+                                    </tr>
+                                ),
+                            )}
+                        </tbody>
+                    </table>
+                    {report.personal_training.trainers.length === 0 && (
+                        <p className="p-5 text-sm text-muted-foreground">
+                            Belum ada trainer aktif.
+                        </p>
                     )}
                 </div>
             </section>

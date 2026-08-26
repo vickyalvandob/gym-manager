@@ -27,6 +27,8 @@ export type ReportData = {
         total: string;
         payment_count: number;
         average: string;
+        membership_total: string;
+        pt_total: string;
         method_breakdown: Array<{
             method: string | null;
             label: string;
@@ -57,6 +59,22 @@ export type ReportData = {
                 name: string;
             };
             visit_count: number;
+        }>;
+    };
+    personal_training: {
+        active_clients: number;
+        packages_sold: number;
+        revenue: string;
+        completed_sessions: number;
+        upcoming_sessions: number;
+        no_shows: number;
+        trainers: Array<{
+            id: number;
+            trainer_code: string | null;
+            name: string;
+            active_clients: number;
+            completed_sessions: number;
+            upcoming_sessions: number;
         }>;
     };
 };

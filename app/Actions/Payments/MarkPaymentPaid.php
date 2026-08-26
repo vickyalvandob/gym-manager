@@ -48,6 +48,8 @@ class MarkPaymentPaid
                 'invoice_number' => $lockedPayment->invoice_number,
                 'member_id' => $lockedPayment->member_id,
                 'member_membership_id' => $lockedPayment->member_membership_id,
+                'member_pt_package_id' => $lockedPayment->member_pt_package_id,
+                'type' => $lockedPayment->type->value,
                 'amount' => $lockedPayment->amount,
                 'method' => $paymentMethod->value,
                 'received_by_id' => $receivedBy->getKey(),

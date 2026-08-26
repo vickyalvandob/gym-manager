@@ -5,6 +5,8 @@ import {
     ChartNoAxesCombined,
     CircleDollarSign,
     Clock3,
+    Dumbbell,
+    Phone,
     RefreshCw,
     UserPlus,
     UserRoundCheck,
@@ -15,19 +17,25 @@ import type { ComponentType } from 'react';
 import CheckInController from '@/actions/App/Http/Controllers/CheckInController';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
+import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
+import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { PaymentStatusBadge } from '@/components/payments/payment-status-badge';
+import { PtSessionStatusBadge } from '@/components/personal-training/pt-session-status-badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency, formatDateTime } from '@/lib/formatters';
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { dashboard } from '@/routes';
 import { index as membersIndex } from '@/routes/members';
 import { index as reportsIndex } from '@/routes/reports';
+import { index as trainerMembersIndex } from '@/routes/trainer-members';
 import type {
     DashboardMetrics,
     DashboardProps,
     DashboardRecentCheckIn,
     DashboardRecentPayment,
     DashboardSnapshot,
+    TrainerDashboardWorkspace,
 } from '@/types';
 
 export default function Dashboard({ snapshot }: DashboardProps) {
@@ -48,8 +56,9 @@ export default function Dashboard({ snapshot }: DashboardProps) {
                             Dashboard
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Ringkasan operasional yang perlu ditindaklanjuti
-                            hari ini.
+                            {auth.role === 'trainer'
+                                ? 'Member assignment dan tindak lanjut latihan hari ini.'
+                                : 'Ringkasan operasional yang perlu ditindaklanjuti hari ini.'}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -104,6 +113,18 @@ function DashboardContent({
     const currency = auth.currentGym?.currency ?? 'IDR';
     const timezone = auth.currentGym?.timezone ?? 'Asia/Jakarta';
     const warningDays = auth.currentGym?.membership_expiry_warning_days ?? 7;
+
+    if (auth.role === 'trainer' && snapshot.trainer_workspace) {
+        return (
+            <TrainerWorkspace
+                workspace={snapshot.trainer_workspace}
+                generatedAt={snapshot.generated_at}
+                timezone={timezone}
+                reloading={reloading}
+            />
+        );
+    }
+
     const metrics = metricItems(
         snapshot.metrics,
         currency,
@@ -182,6 +203,273 @@ function DashboardContent({
                 Diperbarui {formatDateTime(snapshot.generated_at, timezone)}
             </p>
         </div>
+    );
+}
+
+function TrainerWorkspace({
+    workspace,
+    generatedAt,
+    timezone,
+    reloading,
+}: {
+    workspace: TrainerDashboardWorkspace;
+    generatedAt: string;
+    timezone: string;
+    reloading: boolean;
+}) {
+    if (!workspace.trainer) {
+        return (
+            <div
+                className={reloading ? 'space-y-5 opacity-60' : 'space-y-5'}
+                aria-busy={reloading}
+            >
+                <div className="flex justify-end">
+                    <RefreshDashboardButton reloading={reloading} />
+                </div>
+                <section className="flex min-h-72 flex-col items-center justify-center border-y px-6 py-12 text-center">
+                    <Dumbbell className="size-9 text-muted-foreground" />
+                    <h2 className="mt-4 text-base font-semibold">
+                        Profil trainer belum terhubung
+                    </h2>
+                    <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
+                        Minta Owner menghubungkan akun login ini ke profil
+                        trainer agar assignment member dapat ditampilkan.
+                    </p>
+                </section>
+            </div>
+        );
+    }
+
+    const metrics = [
+        {
+            label: 'Sesi hari ini',
+            value: String(workspace.today_sessions_count),
+            detail: 'Jadwal yang perlu ditangani',
+            icon: CalendarClock,
+        },
+        {
+            label: 'Jadwal mendatang',
+            value: String(workspace.upcoming_sessions_count),
+            detail: 'Sesi setelah hari ini',
+            icon: Users,
+        },
+        {
+            label: 'Klien PT aktif',
+            value: String(workspace.active_pt_clients_count),
+            detail: 'Punya paket PT berjalan',
+            icon: Dumbbell,
+        },
+        {
+            label: 'Total member',
+            value: String(workspace.assigned_members_count),
+            detail: 'Assignment aktif',
+            icon: UsersRound,
+        },
+    ];
+
+    return (
+        <div
+            className={reloading ? 'space-y-7 opacity-60' : 'space-y-7'}
+            aria-busy={reloading}
+        >
+            <section aria-labelledby="trainer-summary-heading">
+                <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                    <div>
+                        <p className="text-sm font-medium text-primary">
+                            {workspace.trainer.name}
+                        </p>
+                        <h2
+                            id="trainer-summary-heading"
+                            className="mt-1 text-base font-semibold"
+                        >
+                            Workspace trainer
+                        </h2>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {workspace.trainer.specialization ??
+                                'Spesialisasi belum dicatat'}
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <RefreshDashboardButton reloading={reloading} />
+                        <Button size="sm" asChild>
+                            <Link href={trainerMembersIndex()}>
+                                <UsersRound />
+                                Buka member saya
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="grid overflow-hidden rounded-lg border sm:grid-cols-2 xl:grid-cols-4">
+                    {metrics.map((metric) => (
+                        <MetricItem key={metric.label} {...metric} />
+                    ))}
+                </div>
+            </section>
+
+            <section className="grid gap-7 border-t pt-7 xl:grid-cols-2">
+                <div>
+                    <h2 className="text-base font-semibold">Sesi hari ini</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Urutan jadwal Personal Training hari ini.
+                    </p>
+                    {workspace.today_sessions.length === 0 ? (
+                        <p className="mt-4 border-y py-5 text-sm text-muted-foreground">
+                            Tidak ada sesi hari ini.
+                        </p>
+                    ) : (
+                        <div className="mt-4 divide-y border-y">
+                            {workspace.today_sessions.map((session) => (
+                                <Link
+                                    key={session.id}
+                                    href={PtSessionController.show(session.id)}
+                                    className="flex items-center justify-between gap-4 py-3 hover:text-primary"
+                                >
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            {session.member.name}
+                                        </p>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {formatDateTime(
+                                                session.scheduled_at,
+                                                timezone,
+                                            )}{' '}
+                                            · {session.duration_minutes} menit
+                                        </p>
+                                    </div>
+                                    <PtSessionStatusBadge
+                                        status={session.status}
+                                        label={session.status_label}
+                                    />
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                <div>
+                    <h2 className="text-base font-semibold">Perlu perhatian</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Paket tersisa satu sesi atau sudah habis.
+                    </p>
+                    {workspace.attention_members.length === 0 ? (
+                        <p className="mt-4 border-y py-5 text-sm text-muted-foreground">
+                            Tidak ada quota kritis.
+                        </p>
+                    ) : (
+                        <div className="mt-4 divide-y border-y">
+                            {workspace.attention_members.map((item) => (
+                                <article
+                                    key={item.member.id}
+                                    className="flex items-center justify-between gap-4 py-3"
+                                >
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            {item.member.name}
+                                        </p>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {item.pt_package_name} ·{' '}
+                                            {formatDate(item.expires_at)}
+                                        </p>
+                                    </div>
+                                    <span className="text-sm font-semibold tabular-nums">
+                                        {item.remaining_sessions} sesi
+                                    </span>
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            <section
+                className="border-t pt-7"
+                aria-labelledby="trainer-members-heading"
+            >
+                <div>
+                    <h2
+                        id="trainer-members-heading"
+                        className="text-base font-semibold"
+                    >
+                        Member terbaru
+                    </h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Assignment terbaru yang perlu dikenali trainer.
+                    </p>
+                </div>
+
+                {workspace.assigned_members.length === 0 ? (
+                    <DashboardEmptyState
+                        icon={UsersRound}
+                        title="Belum ada member assignment"
+                        description="Owner atau Front Desk belum menugaskan member ke profil Anda."
+                    />
+                ) : (
+                    <div className="mt-4 grid gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-2">
+                        {workspace.assigned_members.map((member) => (
+                            <article
+                                key={member.id}
+                                className="bg-background p-4"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium">
+                                            {member.name}
+                                        </p>
+                                        <p className="mt-0.5 text-xs text-muted-foreground">
+                                            {member.member_number}
+                                        </p>
+                                    </div>
+                                    <MemberStatusBadge
+                                        status={member.status}
+                                        label={member.status_label}
+                                    />
+                                </div>
+                                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <Phone className="size-3.5" />
+                                        {member.phone}
+                                    </span>
+                                    {member.membership ? (
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <CalendarClock className="size-3.5" />
+                                            {member.membership.plan_name} ·{' '}
+                                            {formatDate(
+                                                member.membership.end_date,
+                                                timezone,
+                                            )}
+                                        </span>
+                                    ) : (
+                                        <Badge variant="outline">
+                                            Membership tidak aktif
+                                        </Badge>
+                                    )}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            <p className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground">
+                <Clock3 className="size-3.5" aria-hidden="true" />
+                Diperbarui {formatDateTime(generatedAt, timezone)}
+            </p>
+        </div>
+    );
+}
+
+function RefreshDashboardButton({ reloading }: { reloading: boolean }) {
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={reloading}
+            onClick={() => router.reload({ only: ['snapshot'] })}
+        >
+            <RefreshCw className={reloading ? 'animate-spin' : ''} />
+            Segarkan
+        </Button>
     );
 }
 

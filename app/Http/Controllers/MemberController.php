@@ -5,16 +5,22 @@ namespace App\Http\Controllers;
 use App\Actions\Members\CreateMember;
 use App\Actions\Members\UpdateMember;
 use App\Enums\MemberGender;
+use App\Enums\MemberPtPackageStatus;
 use App\Enums\MemberStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\PtSessionStatus;
+use App\Enums\TrainerStatus;
 use App\Http\Requests\IndexMemberRequest;
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
 use App\Models\CheckIn;
 use App\Models\Member;
 use App\Models\MemberMembership;
+use App\Models\MemberPtPackage;
 use App\Models\MembershipPlan;
 use App\Models\Payment;
+use App\Models\PtSession;
+use App\Models\Trainer;
 use App\Support\CheckInData;
 use App\Support\CheckInEligibility;
 use App\Support\GymContext;
@@ -182,6 +188,63 @@ class MemberController extends Controller
             ->paginate(10, ['*'], 'check_in_page')
             ->withQueryString()
             ->through(fn (CheckIn $checkIn): array => $this->checkInData->make($checkIn));
+        $currentTrainer = $memberModel->trainers()
+            ->select([
+                'trainers.id',
+                'trainers.trainer_code',
+                'trainers.name',
+                'trainers.specialization',
+            ])
+            ->first();
+        $activePtPackage = $memberModel->ptPackages()
+            ->with(['ptPackage:id,name', 'trainer:id,trainer_code,name,specialization', 'payment'])
+            ->withCount([
+                'sessions as scheduled_sessions_count' => fn ($query) => $query
+                    ->where('status', PtSessionStatus::Scheduled->value),
+            ])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->where('status', MemberPtPackageStatus::Active->value)
+            ->whereDate('start_date', '<=', $today->toDateString())
+            ->where(function ($query) use ($today): void {
+                $query->whereNull('expires_at')
+                    ->orWhereDate('expires_at', '>=', $today->toDateString());
+            })
+            ->latest('id')
+            ->first();
+        $ptPackageHistory = $memberModel->ptPackages()
+            ->with(['ptPackage:id,name', 'trainer:id,trainer_code,name,specialization', 'payment'])
+            ->withCount([
+                'sessions as scheduled_sessions_count' => fn ($query) => $query
+                    ->where('status', PtSessionStatus::Scheduled->value),
+            ])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->latest('id')
+            ->limit(10)
+            ->get()
+            ->map(fn (MemberPtPackage $memberPtPackage): array => $this->memberPtPackageData(
+                $memberPtPackage,
+                $today,
+            ))
+            ->all();
+        $upcomingPtSessions = $memberModel->ptSessions()
+            ->with(['trainer:id,trainer_code,name', 'memberPtPackage.ptPackage:id,name'])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->where('status', PtSessionStatus::Scheduled->value)
+            ->where('scheduled_at', '>=', $now)
+            ->oldest('scheduled_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (PtSession $session): array => $this->ptSessionData($session))
+            ->all();
+        $ptSessionHistory = $memberModel->ptSessions()
+            ->with(['trainer:id,trainer_code,name', 'memberPtPackage.ptPackage:id,name'])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->where('status', '!=', PtSessionStatus::Scheduled->value)
+            ->latest('scheduled_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (PtSession $session): array => $this->ptSessionData($session))
+            ->all();
 
         return Inertia::render('members/show', [
             'member' => $this->detailMemberData($memberModel, $today),
@@ -214,6 +277,22 @@ class MemberController extends Controller
                         ->max($today)
                         ->toDateString()
                     : $today->toDateString(),
+            ],
+            'currentTrainer' => $currentTrainer instanceof Trainer
+                ? $this->trainerOptionData($currentTrainer)
+                : null,
+            'activePtPackage' => $activePtPackage instanceof MemberPtPackage
+                ? $this->memberPtPackageData($activePtPackage, $today)
+                : null,
+            'ptPackageHistory' => $ptPackageHistory,
+            'upcomingPtSessions' => $upcomingPtSessions,
+            'ptSessionHistory' => $ptSessionHistory,
+            'ptPackageOptions' => $this->activePtPackages(),
+            'trainerOptions' => $this->activeTrainers(),
+            'canPurchasePt' => Gate::allows('purchasePtPackage', $memberModel),
+            'ptDefaults' => [
+                'purchase_start_date' => $today->toDateString(),
+                'schedule_date' => $today->addDay()->toDateString(),
             ],
         ]);
     }
@@ -422,6 +501,99 @@ class MemberController extends Controller
             ],
             PaymentMethod::cases(),
         );
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function activePtPackages(): array
+    {
+        return $this->gymContext->gym()->ptPackages()
+            ->select([
+                'pt_packages.id',
+                'pt_packages.name',
+                'pt_packages.session_count',
+                'pt_packages.validity_days',
+                'pt_packages.price',
+            ])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($ptPackage): array => [
+                'id' => $ptPackage->getKey(),
+                'name' => $ptPackage->name,
+                'session_count' => $ptPackage->session_count,
+                'validity_days' => $ptPackage->validity_days,
+                'price' => $ptPackage->price,
+            ])
+            ->all();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function activeTrainers(): array
+    {
+        return $this->gymContext->gym()->trainers()
+            ->select([
+                'trainers.id',
+                'trainers.trainer_code',
+                'trainers.name',
+                'trainers.specialization',
+            ])
+            ->where('status', TrainerStatus::Active->value)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Trainer $trainer): array => $this->trainerOptionData($trainer))
+            ->all();
+    }
+
+    /** @return array<string, mixed> */
+    private function trainerOptionData(Trainer $trainer): array
+    {
+        return [
+            'id' => $trainer->getKey(),
+            'trainer_code' => $trainer->trainer_code,
+            'name' => $trainer->name,
+            'specialization' => $trainer->specialization,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function memberPtPackageData(
+        MemberPtPackage $memberPtPackage,
+        CarbonImmutable $today,
+    ): array {
+        $scheduledSessions = (int) ($memberPtPackage->getAttribute('scheduled_sessions_count') ?? 0);
+
+        return [
+            'id' => $memberPtPackage->getKey(),
+            'name' => $memberPtPackage->ptPackage->name,
+            'trainer' => $this->trainerOptionData($memberPtPackage->trainer),
+            'total_sessions' => $memberPtPackage->total_sessions,
+            'used_sessions' => $memberPtPackage->used_sessions,
+            'scheduled_sessions' => $scheduledSessions,
+            'available_sessions' => $memberPtPackage->availableSessions($scheduledSessions),
+            'start_date' => $memberPtPackage->start_date->toDateString(),
+            'expires_at' => $memberPtPackage->expires_at?->toDateString(),
+            'price' => $memberPtPackage->price,
+            'status' => $memberPtPackage->effectiveStatusOn($today)->value,
+            'status_label' => $memberPtPackage->effectiveStatusOn($today)->label(),
+            'payment_status' => $memberPtPackage->payment_status->value,
+            'payment' => $memberPtPackage->payment instanceof Payment
+                ? $this->paymentData($memberPtPackage->payment)
+                : null,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function ptSessionData(PtSession $session): array
+    {
+        return [
+            'id' => $session->getKey(),
+            'scheduled_at' => $session->scheduled_at->toIso8601String(),
+            'duration_minutes' => $session->duration_minutes,
+            'status' => $session->status->value,
+            'status_label' => $session->status->label(),
+            'trainer' => $this->trainerOptionData($session->trainer),
+            'pt_package_name' => $session->memberPtPackage->ptPackage->name,
+        ];
     }
 
     /**

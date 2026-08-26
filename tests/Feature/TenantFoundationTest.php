@@ -64,8 +64,10 @@ test('development seeder creates the role based demo accounts', function () {
         ->orderBy('gym_user.role')
         ->pluck('gym_user.role', 'users.email');
 
-    expect($roles)->toHaveCount(3)
+    expect($roles)->toHaveCount(5)
         ->and($roles->get('owner@gym.test'))->toBe(GymRole::Owner->value)
         ->and($roles->get('frontdesk@gym.test'))->toBe(GymRole::Admin->value)
-        ->and($roles->get('trainer@gym.test'))->toBe(GymRole::Trainer->value);
+        ->and($roles->get('andi@gym.test'))->toBe(GymRole::Trainer->value)
+        ->and($roles->get('budi@gym.test'))->toBe(GymRole::Trainer->value)
+        ->and($roles->get('rina@gym.test'))->toBe(GymRole::Trainer->value);
 });

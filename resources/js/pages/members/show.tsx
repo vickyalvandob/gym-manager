@@ -10,10 +10,12 @@ import {
     Pencil,
     Phone,
     ShieldAlert,
+    Dumbbell,
     UserRound,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
+import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
 import { CheckInButton } from '@/components/check-ins/check-in-button';
 import { MemberAvatar } from '@/components/members/member-avatar';
 import { MemberMembershipDialog } from '@/components/members/member-membership-dialog';
@@ -23,6 +25,9 @@ import { MemberStatusDialog } from '@/components/members/member-status-dialog';
 import { CreateMembershipPaymentButton } from '@/components/payments/create-membership-payment-button';
 import { PaymentStatusBadge } from '@/components/payments/payment-status-badge';
 import { RecordPaymentDialog } from '@/components/payments/record-payment-dialog';
+import { PtPurchaseDialog } from '@/components/personal-training/pt-purchase-dialog';
+import { PtScheduleDialog } from '@/components/personal-training/pt-schedule-dialog';
+import { PtSessionStatusBadge } from '@/components/personal-training/pt-session-status-badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { index } from '@/routes/members';
@@ -35,7 +40,21 @@ import type {
     PaginatedMemberMemberships,
     PaginatedCheckIns,
     SelectOption,
+    MemberPtPackageSummary,
+    PtPackageOption,
+    PtTrainerOption,
+    PtSessionStatus,
 } from '@/types';
+
+type MemberPtSession = {
+    id: number;
+    scheduled_at: string;
+    duration_minutes: number;
+    status: PtSessionStatus;
+    status_label: string;
+    trainer: PtTrainerOption;
+    pt_package_name: string;
+};
 
 type ShowMemberProps = {
     member: MemberDetail;
@@ -47,6 +66,15 @@ type ShowMemberProps = {
     membershipPlans: MembershipPlanOption[];
     paymentMethodOptions: SelectOption[];
     membershipDefaults: MembershipDefaults;
+    currentTrainer: PtTrainerOption | null;
+    activePtPackage: MemberPtPackageSummary | null;
+    ptPackageHistory: MemberPtPackageSummary[];
+    upcomingPtSessions: MemberPtSession[];
+    ptSessionHistory: MemberPtSession[];
+    ptPackageOptions: PtPackageOption[];
+    trainerOptions: PtTrainerOption[];
+    canPurchasePt: boolean;
+    ptDefaults: { purchase_start_date: string; schedule_date: string };
 };
 
 export default function ShowMember({
@@ -59,6 +87,15 @@ export default function ShowMember({
     membershipPlans,
     paymentMethodOptions,
     membershipDefaults,
+    currentTrainer,
+    activePtPackage,
+    ptPackageHistory,
+    upcomingPtSessions,
+    ptSessionHistory,
+    ptPackageOptions,
+    trainerOptions,
+    canPurchasePt,
+    ptDefaults,
 }: ShowMemberProps) {
     const { auth } = usePage().props;
     const currency = auth.currentGym?.currency ?? 'IDR';
@@ -105,6 +142,30 @@ export default function ShowMember({
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2 pl-14 sm:pl-0">
+                        {canPurchasePt && !activePtPackage && (
+                            <PtPurchaseDialog
+                                memberId={member.id}
+                                memberName={member.name}
+                                packages={ptPackageOptions}
+                                trainers={trainerOptions}
+                                paymentMethods={paymentMethodOptions}
+                                defaultTrainerId={currentTrainer?.id ?? null}
+                                defaultStartDate={
+                                    ptDefaults.purchase_start_date
+                                }
+                            />
+                        )}
+                        {activePtPackage && (
+                            <PtScheduleDialog
+                                memberPtPackageId={activePtPackage.id}
+                                memberName={member.name}
+                                packageName={activePtPackage.name}
+                                availableSessions={
+                                    activePtPackage.available_sessions
+                                }
+                                defaultDate={ptDefaults.schedule_date}
+                            />
+                        )}
                         <CheckInButton
                             memberId={member.id}
                             disabled={!checkInEligibility.can_check_in}
@@ -210,6 +271,14 @@ export default function ShowMember({
                             currency={currency}
                             methodOptions={paymentMethodOptions}
                         />
+                        <PersonalTrainingHistory
+                            packages={ptPackageHistory}
+                            upcomingSessions={upcomingPtSessions}
+                            sessionHistory={ptSessionHistory}
+                            timezone={
+                                auth.currentGym?.timezone ?? 'Asia/Jakarta'
+                            }
+                        />
                         <CheckInHistory
                             checkIns={checkIns}
                             timezone={
@@ -219,6 +288,73 @@ export default function ShowMember({
                     </main>
 
                     <aside className="space-y-7">
+                        <section>
+                            <div className="flex items-center gap-2">
+                                <Dumbbell className="size-4 text-muted-foreground" />
+                                <h2 className="text-base font-semibold">
+                                    Personal Training
+                                </h2>
+                            </div>
+                            {activePtPackage ? (
+                                <dl className="mt-4 divide-y border-y text-sm">
+                                    <div className="py-3">
+                                        <dt className="text-muted-foreground">
+                                            Paket aktif
+                                        </dt>
+                                        <dd className="mt-1 font-medium">
+                                            {activePtPackage.name}
+                                        </dd>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 py-3">
+                                        <div>
+                                            <dt className="text-muted-foreground">
+                                                Tersedia
+                                            </dt>
+                                            <dd className="mt-1 text-xl font-semibold">
+                                                {
+                                                    activePtPackage.available_sessions
+                                                }
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-muted-foreground">
+                                                Terpakai
+                                            </dt>
+                                            <dd className="mt-1 text-xl font-semibold">
+                                                {activePtPackage.used_sessions}
+                                            </dd>
+                                        </div>
+                                    </div>
+                                    <div className="py-3">
+                                        <dt className="text-muted-foreground">
+                                            Trainer
+                                        </dt>
+                                        <dd className="mt-1 font-medium">
+                                            {activePtPackage.trainer.name}
+                                        </dd>
+                                    </div>
+                                    <div className="py-3">
+                                        <dt className="text-muted-foreground">
+                                            Berlaku sampai
+                                        </dt>
+                                        <dd className="mt-1 font-medium">
+                                            {formatDate(
+                                                activePtPackage.expires_at,
+                                            )}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            ) : (
+                                <p className="mt-4 border-y py-4 text-sm text-muted-foreground">
+                                    Belum ada paket PT aktif.
+                                </p>
+                            )}
+                            {!activePtPackage && currentTrainer && (
+                                <p className="mt-3 text-xs text-muted-foreground">
+                                    Trainer saat ini: {currentTrainer.name}
+                                </p>
+                            )}
+                        </section>
                         <section>
                             <div className="flex items-center justify-between gap-3">
                                 <h2 className="text-base font-semibold">
@@ -542,6 +678,107 @@ function MembershipHistory({
                     </div>
                 </nav>
             )}
+        </section>
+    );
+}
+
+function PersonalTrainingHistory({
+    packages,
+    upcomingSessions,
+    sessionHistory,
+    timezone,
+}: {
+    packages: MemberPtPackageSummary[];
+    upcomingSessions: MemberPtSession[];
+    sessionHistory: MemberPtSession[];
+    timezone: string;
+}) {
+    return (
+        <section className="py-6">
+            <div className="flex items-center gap-2">
+                <Dumbbell className="size-5 text-muted-foreground" />
+                <div>
+                    <h2 className="text-base font-semibold">
+                        Personal Training
+                    </h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        {packages.length} paket tersimpan
+                    </p>
+                </div>
+            </div>
+            {upcomingSessions.length > 0 && (
+                <div className="mt-5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                        Jadwal mendatang
+                    </p>
+                    <div className="mt-2 divide-y border-y">
+                        {upcomingSessions.map((session) => (
+                            <Link
+                                key={session.id}
+                                href={PtSessionController.show(session.id)}
+                                className="flex items-center justify-between gap-4 py-3 hover:text-primary"
+                            >
+                                <div>
+                                    <p className="text-sm font-medium">
+                                        {formatDateTime(
+                                            session.scheduled_at,
+                                            timezone,
+                                        )}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {session.trainer.name} ·{' '}
+                                        {session.duration_minutes} menit
+                                    </p>
+                                </div>
+                                <PtSessionStatusBadge
+                                    status={session.status}
+                                    label={session.status_label}
+                                />
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {sessionHistory.length > 0 && (
+                <div className="mt-5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                        Riwayat sesi terakhir
+                    </p>
+                    <div className="mt-2 divide-y border-y">
+                        {sessionHistory.map((session) => (
+                            <Link
+                                key={session.id}
+                                href={PtSessionController.show(session.id)}
+                                className="flex items-center justify-between gap-4 py-3 hover:text-primary"
+                            >
+                                <div>
+                                    <p className="text-sm font-medium">
+                                        {formatDateTime(
+                                            session.scheduled_at,
+                                            timezone,
+                                        )}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {session.trainer.name} ·{' '}
+                                        {session.pt_package_name}
+                                    </p>
+                                </div>
+                                <PtSessionStatusBadge
+                                    status={session.status}
+                                    label={session.status_label}
+                                />
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {packages.length === 0 &&
+                upcomingSessions.length === 0 &&
+                sessionHistory.length === 0 && (
+                    <p className="mt-5 text-sm text-muted-foreground">
+                        Belum ada aktivitas Personal Training.
+                    </p>
+                )}
         </section>
     );
 }

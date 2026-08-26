@@ -3,6 +3,7 @@
 namespace App\Actions\Payments;
 
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
 use App\Models\Gym;
 use App\Models\MemberMembership;
 use App\Models\Payment;
@@ -46,6 +47,7 @@ class CreateMembershipPayment
             $payment = $lockedMembership->payment()->create([
                 'gym_id' => $lockedGym->getKey(),
                 'member_id' => $lockedMembership->member_id,
+                'type' => PaymentType::Membership,
                 'invoice_number' => $invoiceNumber,
                 'amount' => $lockedMembership->price,
                 'status' => PaymentStatus::Pending,
@@ -59,6 +61,7 @@ class CreateMembershipPayment
                 'invoice_number' => $payment->invoice_number,
                 'member_id' => $payment->member_id,
                 'member_membership_id' => $payment->member_membership_id,
+                'type' => $payment->type->value,
                 'amount' => $payment->amount,
                 'status' => $payment->status->value,
             ]);

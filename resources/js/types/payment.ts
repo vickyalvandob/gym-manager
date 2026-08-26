@@ -1,6 +1,7 @@
 import type { PaginationLink, SelectOption } from './member';
 
 export type PaymentStatus = 'pending' | 'paid';
+export type PaymentType = 'membership' | 'personal_training';
 export type PaymentMethod =
     'cash' | 'bank_transfer' | 'debit_card' | 'credit_card' | 'e_wallet';
 
@@ -24,6 +25,8 @@ export type MembershipPayment = {
 };
 
 export type PaymentListItem = MembershipPayment & {
+    type: PaymentType;
+    type_label: string;
     member: {
         id: number;
         member_number: string;
@@ -35,7 +38,15 @@ export type PaymentListItem = MembershipPayment & {
         plan_name: string;
         start_date: string;
         end_date: string;
-    };
+    } | null;
+    personal_training: {
+        id: number;
+        package_name: string;
+        trainer_name: string;
+        total_sessions: number;
+        start_date: string;
+        expires_at: string | null;
+    } | null;
 };
 
 export type PaginatedPayments = {
@@ -53,6 +64,7 @@ export type PaymentFilters = {
     search: string;
     status: string;
     method: string;
+    type: string;
     date_from: string;
     date_to: string;
     per_page: number;
@@ -63,6 +75,8 @@ export type PaymentSummary = {
     outstanding_total: string;
     paid_count: number;
     pending_count: number;
+    membership_revenue: string;
+    pt_revenue: string;
 };
 
 export type PaymentIndexProps = {
@@ -71,4 +85,5 @@ export type PaymentIndexProps = {
     summary: PaymentSummary;
     statusOptions: SelectOption[];
     methodOptions: SelectOption[];
+    typeOptions: SelectOption[];
 };

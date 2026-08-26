@@ -2,11 +2,17 @@
 
 namespace App\Support;
 
+use App\Enums\MemberPtPackageStatus;
 use App\Enums\MemberStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
+use App\Enums\PtSessionStatus;
+use App\Enums\TrainerStatus;
 use App\Models\Member;
 use App\Models\MemberMembership;
+use App\Models\Trainer;
+use Carbon\CarbonImmutable;
 
 class ReportSnapshot
 {
@@ -20,6 +26,7 @@ class ReportSnapshot
             'members' => $this->members($range),
             'memberships' => $this->memberships($range),
             'check_ins' => $this->checkIns($range),
+            'personal_training' => $this->personalTraining($range),
         ];
     }
 
@@ -34,7 +41,13 @@ class ReportSnapshot
             ->toBase()
             ->selectRaw(
                 'COALESCE(SUM(amount), 0) AS total, COUNT(*) AS payment_count, '
-                .'COALESCE(AVG(amount), 0) AS average',
+                .'COALESCE(AVG(amount), 0) AS average, '
+                .'COALESCE(SUM(CASE WHEN type = ? THEN amount ELSE 0 END), 0) AS membership_total, '
+                .'COALESCE(SUM(CASE WHEN type = ? THEN amount ELSE 0 END), 0) AS pt_total',
+                [
+                    PaymentType::Membership->value,
+                    PaymentType::PersonalTraining->value,
+                ],
             )
             ->first();
         $total = $this->decimalString($summary->total ?? 0);
@@ -65,7 +78,93 @@ class ReportSnapshot
             'total' => $total,
             'payment_count' => $paymentCount,
             'average' => $this->decimalString($summary->average ?? 0),
+            'membership_total' => $this->decimalString($summary->membership_total ?? 0),
+            'pt_total' => $this->decimalString($summary->pt_total ?? 0),
             'method_breakdown' => $methodBreakdown,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function personalTraining(ReportDateRange $range): array
+    {
+        $gym = $this->gymContext->gym();
+        $asOf = $range->end->toDateString();
+        $nowUtc = CarbonImmutable::now('UTC');
+        $activeClients = $gym->memberPtPackages()
+            ->where('status', MemberPtPackageStatus::Active->value)
+            ->whereDate('start_date', '<=', $asOf)
+            ->where(function ($query) use ($asOf): void {
+                $query->whereNull('expires_at')->orWhereDate('expires_at', '>=', $asOf);
+            })
+            ->distinct()
+            ->count('member_id');
+        $packagesSold = $gym->memberPtPackages()
+            ->where('created_at', '>=', $range->startUtc())
+            ->where('created_at', '<', $range->endUtcExclusive())
+            ->count();
+        $sessionMetrics = $gym->ptSessions()
+            ->toBase()
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN status = ? AND completed_at >= ? AND completed_at < ? THEN 1 ELSE 0 END), 0) AS completed_sessions, '
+                .'COALESCE(SUM(CASE WHEN status = ? AND scheduled_at >= ? THEN 1 ELSE 0 END), 0) AS upcoming_sessions, '
+                .'COALESCE(SUM(CASE WHEN status = ? AND scheduled_at >= ? AND scheduled_at < ? THEN 1 ELSE 0 END), 0) AS no_shows',
+                [
+                    PtSessionStatus::Completed->value,
+                    $range->startUtc(),
+                    $range->endUtcExclusive(),
+                    PtSessionStatus::Scheduled->value,
+                    $nowUtc,
+                    PtSessionStatus::NoShow->value,
+                    $range->startUtc(),
+                    $range->endUtcExclusive(),
+                ],
+            )
+            ->first();
+        $revenue = $gym->payments()
+            ->where('type', PaymentType::PersonalTraining->value)
+            ->where('status', PaymentStatus::Paid->value)
+            ->where('paid_at', '>=', $range->startUtc())
+            ->where('paid_at', '<', $range->endUtcExclusive())
+            ->sum('amount');
+        $trainerSummary = $gym->trainers()
+            ->select(['trainers.id', 'trainers.trainer_code', 'trainers.name'])
+            ->where('status', TrainerStatus::Active->value)
+            ->withCount([
+                'ptPackages as active_clients_count' => fn ($query) => $query
+                    ->where('status', MemberPtPackageStatus::Active->value)
+                    ->whereDate('start_date', '<=', $asOf)
+                    ->where(function ($query) use ($asOf): void {
+                        $query->whereNull('expires_at')->orWhereDate('expires_at', '>=', $asOf);
+                    }),
+                'ptSessions as completed_sessions_count' => fn ($query) => $query
+                    ->where('status', PtSessionStatus::Completed->value)
+                    ->where('completed_at', '>=', $range->startUtc())
+                    ->where('completed_at', '<', $range->endUtcExclusive()),
+                'ptSessions as upcoming_sessions_count' => fn ($query) => $query
+                    ->where('status', PtSessionStatus::Scheduled->value)
+                    ->where('scheduled_at', '>=', $nowUtc),
+            ])
+            ->orderBy('name')
+            ->limit(100)
+            ->get()
+            ->map(fn (Trainer $trainer): array => [
+                'id' => $trainer->getKey(),
+                'trainer_code' => $trainer->trainer_code,
+                'name' => $trainer->name,
+                'active_clients' => (int) $trainer->getAttribute('active_clients_count'),
+                'completed_sessions' => (int) $trainer->getAttribute('completed_sessions_count'),
+                'upcoming_sessions' => (int) $trainer->getAttribute('upcoming_sessions_count'),
+            ])
+            ->all();
+
+        return [
+            'active_clients' => $activeClients,
+            'packages_sold' => $packagesSold,
+            'revenue' => $this->decimalString($revenue),
+            'completed_sessions' => (int) ($sessionMetrics->completed_sessions ?? 0),
+            'upcoming_sessions' => (int) ($sessionMetrics->upcoming_sessions ?? 0),
+            'no_shows' => (int) ($sessionMetrics->no_shows ?? 0),
+            'trainers' => $trainerSummary,
         ];
     }
 

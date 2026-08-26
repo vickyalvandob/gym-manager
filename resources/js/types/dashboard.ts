@@ -1,4 +1,5 @@
 import type { PaymentStatus } from './payment';
+import type { PtSessionStatus } from './personal-training';
 
 export type DashboardMetrics = {
     active_members: number;
@@ -39,10 +40,54 @@ export type DashboardRecentPayment = {
     };
 };
 
+export type TrainerDashboardWorkspace = {
+    trainer: {
+        id: number;
+        name: string;
+        specialization: string | null;
+    } | null;
+    assigned_members_count: number;
+    active_members_count: number;
+    today_sessions_count: number;
+    upcoming_sessions_count: number;
+    active_pt_clients_count: number;
+    expiring_soon_count: number;
+    check_ins_today: number;
+    today_sessions: Array<{
+        id: number;
+        scheduled_at: string;
+        duration_minutes: number;
+        status: PtSessionStatus;
+        status_label: string;
+        member: { id: number; member_number: string; name: string };
+        pt_package_name: string;
+    }>;
+    attention_members: Array<{
+        member: { id: number; member_number: string; name: string };
+        pt_package_name: string;
+        remaining_sessions: number;
+        available_sessions: number;
+        expires_at: string | null;
+    }>;
+    assigned_members: Array<{
+        id: number;
+        member_number: string;
+        name: string;
+        phone: string;
+        status: 'active' | 'inactive';
+        status_label: string;
+        membership: {
+            plan_name: string;
+            end_date: string;
+        } | null;
+    }>;
+};
+
 export type DashboardSnapshot = {
     metrics: DashboardMetrics;
     recent_check_ins: DashboardRecentCheckIn[];
     recent_payments: DashboardRecentPayment[];
+    trainer_workspace: TrainerDashboardWorkspace | null;
     generated_at: string;
 };
 

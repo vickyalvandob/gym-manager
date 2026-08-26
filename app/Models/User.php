@@ -63,6 +63,12 @@ class User extends Authenticatable
         return $this->hasMany(CheckIn::class, 'created_by');
     }
 
+    /** @return HasMany<Trainer, $this> */
+    public function trainerProfiles(): HasMany
+    {
+        return $this->hasMany(Trainer::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

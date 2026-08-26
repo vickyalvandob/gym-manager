@@ -6,16 +6,25 @@ use App\Enums\GymRole;
 use App\Enums\GymStatus;
 use App\Enums\GymUserStatus;
 use App\Enums\MemberGender;
+use App\Enums\MemberPtPackageStatus;
 use App\Enums\MembershipDurationUnit;
 use App\Enums\MemberStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
+use App\Enums\PtSessionStatus;
+use App\Enums\TrainerStatus;
 use App\Models\CheckIn;
 use App\Models\Gym;
 use App\Models\Member;
 use App\Models\MemberMembership;
+use App\Models\MemberPtPackage;
 use App\Models\MembershipPlan;
 use App\Models\Payment;
+use App\Models\PtPackage;
+use App\Models\PtSession;
+use App\Models\Trainer;
+use App\Models\TrainerMember;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -44,7 +53,9 @@ class DemoGymSeeder extends Seeder
         $accounts = [
             ['name' => 'Owner GymFlow', 'email' => 'owner@gym.test', 'role' => GymRole::Owner],
             ['name' => 'Front Desk GymFlow', 'email' => 'frontdesk@gym.test', 'role' => GymRole::Admin],
-            ['name' => 'Trainer GymFlow', 'email' => 'trainer@gym.test', 'role' => GymRole::Trainer],
+            ['name' => 'Andi Pratama', 'email' => 'andi@gym.test', 'role' => GymRole::Trainer],
+            ['name' => 'Budi Santoso', 'email' => 'budi@gym.test', 'role' => GymRole::Trainer],
+            ['name' => 'Rina Maharani', 'email' => 'rina@gym.test', 'role' => GymRole::Trainer],
         ];
 
         foreach ($accounts as $account) {
@@ -94,6 +105,85 @@ class DemoGymSeeder extends Seeder
 
         $gym->forceFill([
             'next_member_sequence' => max($gym->next_member_sequence, count($members) + 1),
+        ])->save();
+
+        $owner = User::query()->where('email', 'owner@gym.test')->firstOrFail();
+        $trainerProfiles = [
+            [
+                'trainer_code' => 'TRN-000001',
+                'name' => 'Andi Pratama',
+                'phone' => '081288880001',
+                'email' => 'andi@gym.test',
+                'specialization' => 'Strength & Conditioning',
+                'bio' => 'Berfokus pada kekuatan dasar, teknik angkat beban, dan progres yang terukur.',
+                'status' => TrainerStatus::Active,
+                'joined_at' => today()->subYears(2),
+                'notes' => 'Trainer utama untuk program kekuatan dasar.',
+                'user_id' => User::query()->where('email', 'andi@gym.test')->value('id'),
+            ],
+            [
+                'trainer_code' => 'TRN-000002',
+                'name' => 'Budi Santoso',
+                'phone' => '081288880002',
+                'email' => 'budi@gym.test',
+                'specialization' => 'Functional Training',
+                'bio' => 'Mendampingi latihan fungsional dan peningkatan mobilitas untuk aktivitas harian.',
+                'status' => TrainerStatus::Active,
+                'joined_at' => today()->subYear(),
+                'notes' => null,
+                'user_id' => User::query()->where('email', 'budi@gym.test')->value('id'),
+            ],
+            [
+                'trainer_code' => 'TRN-000003',
+                'name' => 'Rina Maharani',
+                'phone' => '081288880003',
+                'email' => 'rina@gym.test',
+                'specialization' => 'Weight Loss',
+                'bio' => 'Program penurunan berat badan yang memadukan latihan beban dan conditioning.',
+                'status' => TrainerStatus::Active,
+                'joined_at' => today()->subMonths(8),
+                'notes' => null,
+                'user_id' => User::query()->where('email', 'rina@gym.test')->value('id'),
+            ],
+        ];
+
+        foreach ($trainerProfiles as $trainerProfile) {
+            Trainer::query()->updateOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'email' => $trainerProfile['email'],
+                ],
+                $trainerProfile,
+            );
+        }
+
+        $primaryTrainer = $gym->trainers()->where('email', 'andi@gym.test')->firstOrFail();
+        $functionalTrainer = $gym->trainers()->where('email', 'budi@gym.test')->firstOrFail();
+        $weightLossTrainer = $gym->trainers()->where('email', 'rina@gym.test')->firstOrFail();
+        foreach ([
+            'MBR-000001' => $primaryTrainer,
+            'MBR-000002' => $primaryTrainer,
+            'MBR-000004' => $functionalTrainer,
+            'MBR-000006' => $weightLossTrainer,
+        ] as $memberNumber => $trainer) {
+            TrainerMember::query()->updateOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'member_id' => $gym->members()->where('member_number', $memberNumber)->firstOrFail()->getKey(),
+                    'is_active' => true,
+                ],
+                [
+                    'trainer_id' => $trainer->getKey(),
+                    'assigned_at' => now(),
+                    'assigned_by' => $owner->getKey(),
+                    'ended_at' => null,
+                    'ended_by' => null,
+                ],
+            );
+        }
+
+        $gym->forceFill([
+            'next_trainer_sequence' => max($gym->next_trainer_sequence, 4),
         ])->save();
 
         $membershipPlans = [
@@ -212,7 +302,6 @@ class DemoGymSeeder extends Seeder
             ],
         );
 
-        $owner = User::query()->where('email', 'owner@gym.test')->firstOrFail();
         $invoiceMonth = $today->format('Ym');
         $paymentExamples = [
             [$adityaPrevious, PaymentStatus::Paid, PaymentMethod::Cash, $today->copy()->subWeeks(3), 'Pembayaran periode sebelumnya.'],
@@ -230,6 +319,8 @@ class DemoGymSeeder extends Seeder
                 ],
                 [
                     'member_id' => $membership->member_id,
+                    'type' => PaymentType::Membership,
+                    'member_pt_package_id' => null,
                     'invoice_number' => sprintf('INV-%s-%06d', $invoiceMonth, $index + 1),
                     'amount' => $membership->price,
                     'status' => $status,
@@ -266,5 +357,104 @@ class DemoGymSeeder extends Seeder
                 ],
             );
         }
+
+        $ptPackages = [
+            ['name' => 'PT Trial', 'session_count' => 1, 'validity_days' => 14, 'price' => '150000.00', 'description' => 'Satu sesi untuk asesmen dan pengenalan program.', 'is_active' => true],
+            ['name' => 'PT Starter', 'session_count' => 4, 'validity_days' => 45, 'price' => '550000.00', 'description' => 'Empat sesi pendampingan untuk membangun kebiasaan latihan.', 'is_active' => true],
+            ['name' => 'PT Regular', 'session_count' => 8, 'validity_days' => 90, 'price' => '1000000.00', 'description' => 'Delapan sesi progresif dengan trainer pilihan.', 'is_active' => true],
+        ];
+
+        foreach ($ptPackages as $ptPackageData) {
+            PtPackage::query()->updateOrCreate(
+                ['gym_id' => $gym->getKey(), 'name' => $ptPackageData['name']],
+                $ptPackageData,
+            );
+        }
+
+        $ptRegular = $gym->ptPackages()->where('name', 'PT Regular')->firstOrFail();
+        $ptStarter = $gym->ptPackages()->where('name', 'PT Starter')->firstOrFail();
+        $ptExamples = [
+            [$aditya, $primaryTrainer, $ptRegular, 2, $today->copy()->subWeeks(2), $today->copy()->addDays(75)],
+            [$nadia, $primaryTrainer, $ptStarter, 0, $today->copy()->subWeek(), $today->copy()->addDays(38)],
+            [$salsabila, $functionalTrainer, $ptRegular, 0, $today->copy(), $today->copy()->addDays(89)],
+        ];
+        $memberPtPackages = [];
+
+        foreach ($ptExamples as $index => [$member, $trainer, $package, $usedSessions, $startDate, $expiresAt]) {
+            $memberPtPackage = MemberPtPackage::query()->updateOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'member_id' => $member->getKey(),
+                    'pt_package_id' => $package->getKey(),
+                ],
+                [
+                    'trainer_id' => $trainer->getKey(),
+                    'total_sessions' => $package->session_count,
+                    'used_sessions' => $usedSessions,
+                    'start_date' => $startDate,
+                    'expires_at' => $expiresAt,
+                    'price' => $package->price,
+                    'status' => MemberPtPackageStatus::Active,
+                    'payment_status' => PaymentStatus::Paid,
+                    'notes' => 'Data demo Personal Training.',
+                    'created_by' => $owner->getKey(),
+                ],
+            );
+            $memberPtPackages[] = $memberPtPackage;
+
+            Payment::query()->updateOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'member_pt_package_id' => $memberPtPackage->getKey(),
+                ],
+                [
+                    'member_id' => $member->getKey(),
+                    'type' => PaymentType::PersonalTraining,
+                    'member_membership_id' => null,
+                    'invoice_number' => sprintf('INV-%s-%06d', $invoiceMonth, $index + 6),
+                    'amount' => $package->price,
+                    'method' => $index === 0 ? PaymentMethod::BankTransfer : PaymentMethod::Cash,
+                    'status' => PaymentStatus::Paid,
+                    'paid_at' => now()->subDays(4 - $index),
+                    'notes' => 'Pembayaran paket PT demo.',
+                    'received_by_id' => $owner->getKey(),
+                ],
+            );
+        }
+
+        [$adityaPt, $nadiaPt, $salsabilaPt] = $memberPtPackages;
+        $sessionExamples = [
+            [$adityaPt, $today->copy()->subDays(8)->setTime(18, 0), PtSessionStatus::Completed, true, $today->copy()->subDays(8)->setTime(19, 0), null],
+            [$adityaPt, $today->copy()->subDays(3)->setTime(18, 0), PtSessionStatus::NoShow, true, null, null],
+            [$adityaPt, now($gym->timezone)->addHours(2)->startOfHour(), PtSessionStatus::Scheduled, false, null, null],
+            [$nadiaPt, $today->copy()->subDays(2)->setTime(17, 0), PtSessionStatus::Cancelled, false, null, 'Member meminta perubahan jadwal.'],
+            [$nadiaPt, $today->copy()->addDay()->setTime(17, 0), PtSessionStatus::Scheduled, false, null, null],
+            [$salsabilaPt, $today->copy()->addDays(3)->setTime(19, 0), PtSessionStatus::Scheduled, false, null, null],
+        ];
+
+        foreach ($sessionExamples as [$memberPtPackage, $scheduledAt, $status, $quotaConsumed, $completedAt, $cancellationReason]) {
+            PtSession::query()->updateOrCreate(
+                [
+                    'gym_id' => $gym->getKey(),
+                    'member_pt_package_id' => $memberPtPackage->getKey(),
+                    'status' => $status,
+                ],
+                [
+                    'member_id' => $memberPtPackage->member_id,
+                    'trainer_id' => $memberPtPackage->trainer_id,
+                    'scheduled_at' => $scheduledAt->copy()->utc(),
+                    'duration_minutes' => 60,
+                    'completed_at' => $completedAt?->copy()->utc(),
+                    'notes' => 'Sesi demo Personal Training.',
+                    'cancellation_reason' => $cancellationReason,
+                    'quota_consumed' => $quotaConsumed,
+                    'created_by' => $owner->getKey(),
+                ],
+            );
+        }
+
+        $gym->forceFill([
+            'next_invoice_sequence' => max($gym->next_invoice_sequence, 9),
+        ])->save();
     }
 }

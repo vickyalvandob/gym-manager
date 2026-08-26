@@ -5,5 +5,7 @@ export type * from './member';
 export type * from './membership-plan';
 export type * from './navigation';
 export type * from './payment';
+export type * from './personal-training';
 export type * from './report';
+export type * from './trainer';
 export type * from './ui';

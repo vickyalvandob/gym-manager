@@ -34,4 +34,5 @@ export type Gym = {
     timezone: string;
     currency: string;
     membership_expiry_warning_days: number;
+    count_pt_no_show_as_used_session: boolean;
 };

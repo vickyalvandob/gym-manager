@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
 use App\Models\Gym;
 use App\Models\Member;
 use App\Models\MemberMembership;
@@ -28,10 +29,12 @@ class PaymentFactory extends Factory
             'member_id' => fn (array $attributes): int => Member::factory()->create([
                 'gym_id' => $attributes['gym_id'],
             ])->getKey(),
+            'type' => PaymentType::Membership,
             'member_membership_id' => fn (array $attributes): int => MemberMembership::factory()->create([
                 'gym_id' => $attributes['gym_id'],
                 'member_id' => $attributes['member_id'],
             ])->getKey(),
+            'member_pt_package_id' => null,
             'invoice_number' => 'INV-'.now()->format('Ym').'-'.fake()->unique()->numerify('######'),
             'amount' => (string) (fake()->numberBetween(5, 50) * 50000),
             'method' => null,

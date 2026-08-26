@@ -19,8 +19,10 @@ use Illuminate\Support\Carbon;
  * @property string $timezone
  * @property string $currency
  * @property int $membership_expiry_warning_days
+ * @property bool $count_pt_no_show_as_used_session
  * @property int $next_member_sequence
  * @property int $next_invoice_sequence
+ * @property int $next_trainer_sequence
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -31,8 +33,10 @@ use Illuminate\Support\Carbon;
     'timezone',
     'currency',
     'membership_expiry_warning_days',
+    'count_pt_no_show_as_used_session',
     'next_member_sequence',
     'next_invoice_sequence',
+    'next_trainer_sequence',
 ])]
 class Gym extends Model
 {
@@ -45,8 +49,10 @@ class Gym extends Model
         'timezone' => 'Asia/Jakarta',
         'currency' => 'IDR',
         'membership_expiry_warning_days' => 7,
+        'count_pt_no_show_as_used_session' => true,
         'next_member_sequence' => 1,
         'next_invoice_sequence' => 1,
+        'next_trainer_sequence' => 1,
     ];
 
     /**
@@ -99,6 +105,30 @@ class Gym extends Model
         return $this->hasMany(CheckIn::class);
     }
 
+    /** @return HasMany<Trainer, $this> */
+    public function trainers(): HasMany
+    {
+        return $this->hasMany(Trainer::class);
+    }
+
+    /** @return HasMany<PtPackage, $this> */
+    public function ptPackages(): HasMany
+    {
+        return $this->hasMany(PtPackage::class);
+    }
+
+    /** @return HasMany<MemberPtPackage, $this> */
+    public function memberPtPackages(): HasMany
+    {
+        return $this->hasMany(MemberPtPackage::class);
+    }
+
+    /** @return HasMany<PtSession, $this> */
+    public function ptSessions(): HasMany
+    {
+        return $this->hasMany(PtSession::class);
+    }
+
     /**
      * @return array<string, string>
      */
@@ -107,8 +137,10 @@ class Gym extends Model
         return [
             'status' => GymStatus::class,
             'membership_expiry_warning_days' => 'integer',
+            'count_pt_no_show_as_used_session' => 'boolean',
             'next_member_sequence' => 'integer',
             'next_invoice_sequence' => 'integer',
+            'next_trainer_sequence' => 'integer',
         ];
     }
 }

@@ -36,6 +36,7 @@ class SetCurrentGym
                 'gyms.timezone',
                 'gyms.currency',
                 'gyms.membership_expiry_warning_days',
+                'gyms.count_pt_no_show_as_used_session',
             ])
             ->where('gyms.status', GymStatus::Active->value)
             ->wherePivot('status', GymUserStatus::Active->value)

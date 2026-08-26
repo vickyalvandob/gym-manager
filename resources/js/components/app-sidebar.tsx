@@ -1,10 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     ChartNoAxesCombined,
+    CalendarClock,
     CircleDollarSign,
+    Dumbbell,
     LayoutDashboard,
     LogIn,
     Tickets,
+    UserRoundCog,
     UsersRound,
 } from 'lucide-react';
 import CheckInController from '@/actions/App/Http/Controllers/CheckInController';
@@ -24,12 +27,44 @@ import {
 import { dashboard } from '@/routes';
 import { index as membersIndex } from '@/routes/members';
 import { index as membershipPlansIndex } from '@/routes/membership-plans';
+import { edit as profileEdit } from '@/routes/profile';
+import { index as ptPackagesIndex } from '@/routes/pt-packages';
+import { index as ptSessionsIndex } from '@/routes/pt-sessions';
 import { index as reportsIndex } from '@/routes/reports';
+import { index as trainerMembersIndex } from '@/routes/trainer-members';
+import { index as trainersIndex } from '@/routes/trainers';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
     const { auth } = usePage().props;
-    const mainNavItems: NavItem[] = [
+    const trainerNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutDashboard,
+        },
+        {
+            title: 'Jadwal Saya',
+            href: ptSessionsIndex({ query: { scope: 'upcoming' } }),
+            icon: CalendarClock,
+        },
+        {
+            title: 'Member Saya',
+            href: trainerMembersIndex(),
+            icon: UsersRound,
+        },
+        {
+            title: 'Riwayat Sesi',
+            href: ptSessionsIndex({ query: { scope: 'history' } }),
+            icon: Dumbbell,
+        },
+        {
+            title: 'Profil',
+            href: profileEdit(),
+            icon: UserRoundCog,
+        },
+    ];
+    const managementNavItems: NavItem[] = [
         {
             title: 'Dashboard',
             href: dashboard(),
@@ -57,6 +92,21 @@ export function AppSidebar() {
                       href: CheckInController.index(),
                       icon: LogIn,
                   },
+                  {
+                      title: 'Trainer',
+                      href: trainersIndex(),
+                      icon: Dumbbell,
+                  },
+                  {
+                      title: 'Paket PT',
+                      href: ptPackagesIndex(),
+                      icon: Tickets,
+                  },
+                  {
+                      title: 'Sesi PT',
+                      href: ptSessionsIndex(),
+                      icon: CalendarClock,
+                  },
               ]
             : []),
         ...(auth.permissions.view_reports
@@ -69,6 +119,8 @@ export function AppSidebar() {
               ]
             : []),
     ];
+    const mainNavItems =
+        auth.role === 'trainer' ? trainerNavItems : managementNavItems;
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">

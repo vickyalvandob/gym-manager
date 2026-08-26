@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
@@ -79,6 +80,51 @@ class Member extends Model
     public function checkIns(): HasMany
     {
         return $this->hasMany(CheckIn::class);
+    }
+
+    /** @return BelongsToMany<Trainer, $this> */
+    public function trainers(): BelongsToMany
+    {
+        return $this->belongsToMany(Trainer::class, 'trainer_members')
+            ->wherePivot('is_active', true)
+            ->withPivot([
+                'gym_id',
+                'assigned_at',
+                'ended_at',
+                'is_active',
+                'assigned_by',
+                'ended_by',
+                'notes',
+            ])
+            ->withTimestamps();
+    }
+
+    /** @return BelongsToMany<Trainer, $this> */
+    public function trainerHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(Trainer::class, 'trainer_members')
+            ->withPivot([
+                'gym_id',
+                'assigned_at',
+                'ended_at',
+                'is_active',
+                'assigned_by',
+                'ended_by',
+                'notes',
+            ])
+            ->withTimestamps();
+    }
+
+    /** @return HasMany<MemberPtPackage, $this> */
+    public function ptPackages(): HasMany
+    {
+        return $this->hasMany(MemberPtPackage::class);
+    }
+
+    /** @return HasMany<PtSession, $this> */
+    public function ptSessions(): HasMany
+    {
+        return $this->hasMany(PtSession::class);
     }
 
     /** @return HasOne<CheckIn, $this> */

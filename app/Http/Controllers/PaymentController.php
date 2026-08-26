@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
 use App\Http\Requests\IndexPaymentRequest;
 use App\Models\Payment;
 use App\Support\GymContext;
@@ -22,6 +23,7 @@ class PaymentController extends Controller
         $search = Str::squish((string) $request->validated('search', ''));
         $status = $request->validated('status');
         $method = $request->validated('method');
+        $type = $request->validated('type');
         $dateFrom = $request->validated('date_from');
         $dateTo = $request->validated('date_to');
         $timezone = $this->gymContext->gym()->timezone;
@@ -36,6 +38,7 @@ class PaymentController extends Controller
             $search,
             is_string($status) ? $status : null,
             is_string($method) ? $method : null,
+            is_string($type) ? $type : null,
             $dateFromUtc,
             $dateToUtc,
         );
@@ -45,12 +48,18 @@ class PaymentController extends Controller
                 'COALESCE(SUM(CASE WHEN status = ? THEN amount ELSE 0 END), 0) AS paid_total, '
                 .'COALESCE(SUM(CASE WHEN status = ? THEN amount ELSE 0 END), 0) AS outstanding_total, '
                 .'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS paid_count, '
-                .'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending_count',
+                .'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? AND type = ? THEN amount ELSE 0 END), 0) AS membership_revenue, '
+                .'COALESCE(SUM(CASE WHEN status = ? AND type = ? THEN amount ELSE 0 END), 0) AS pt_revenue',
                 [
                     PaymentStatus::Paid->value,
                     PaymentStatus::Pending->value,
                     PaymentStatus::Paid->value,
                     PaymentStatus::Pending->value,
+                    PaymentStatus::Paid->value,
+                    PaymentType::Membership->value,
+                    PaymentStatus::Paid->value,
+                    PaymentType::PersonalTraining->value,
                 ],
             )
             ->first();
@@ -58,7 +67,9 @@ class PaymentController extends Controller
             ->select([
                 'payments.id',
                 'payments.member_id',
+                'payments.type',
                 'payments.member_membership_id',
+                'payments.member_pt_package_id',
                 'payments.invoice_number',
                 'payments.amount',
                 'payments.method',
@@ -71,6 +82,9 @@ class PaymentController extends Controller
             ->with([
                 'member:id,member_number,name,phone',
                 'memberMembership:id,plan_name,start_date,end_date',
+                'memberPtPackage:id,pt_package_id,trainer_id,total_sessions,start_date,expires_at',
+                'memberPtPackage.ptPackage:id,name',
+                'memberPtPackage.trainer:id,name',
                 'receivedBy:id,name',
             ])
             ->latest('payments.id')
@@ -84,6 +98,7 @@ class PaymentController extends Controller
                 'search' => $search,
                 'status' => is_string($status) ? $status : '',
                 'method' => is_string($method) ? $method : '',
+                'type' => is_string($type) ? $type : '',
                 'date_from' => is_string($dateFrom) ? $dateFrom : '',
                 'date_to' => is_string($dateTo) ? $dateTo : '',
                 'per_page' => (int) $request->validated('per_page', 15),
@@ -93,9 +108,12 @@ class PaymentController extends Controller
                 'outstanding_total' => $this->decimalString($summary->outstanding_total),
                 'paid_count' => (int) ($summary->paid_count ?? 0),
                 'pending_count' => (int) ($summary->pending_count ?? 0),
+                'membership_revenue' => $this->decimalString($summary->membership_revenue),
+                'pt_revenue' => $this->decimalString($summary->pt_revenue),
             ],
             'statusOptions' => $this->statusOptions(),
             'methodOptions' => $this->methodOptions(),
+            'typeOptions' => $this->typeOptions(),
         ]);
     }
 
@@ -104,6 +122,7 @@ class PaymentController extends Controller
         string $search,
         ?string $status,
         ?string $method,
+        ?string $type,
         ?CarbonImmutable $dateFromUtc,
         ?CarbonImmutable $dateToUtc,
     ): Builder {
@@ -123,6 +142,7 @@ class PaymentController extends Controller
             })
             ->when($status !== null, fn (Builder $query) => $query->where('status', $status))
             ->when($method !== null, fn (Builder $query) => $query->where('method', $method))
+            ->when($type !== null, fn (Builder $query) => $query->where('type', $type))
             ->when($dateFromUtc !== null, fn (Builder $query) => $query->where('payments.created_at', '>=', $dateFromUtc))
             ->when($dateToUtc !== null, fn (Builder $query) => $query->where('payments.created_at', '<', $dateToUtc));
     }
@@ -133,6 +153,8 @@ class PaymentController extends Controller
         return [
             'id' => $payment->getKey(),
             'invoice_number' => $payment->invoice_number,
+            'type' => $payment->type->value,
+            'type_label' => $payment->type->label(),
             'amount' => $payment->amount,
             'status' => $payment->status->value,
             'status_label' => $payment->status->label(),
@@ -147,11 +169,19 @@ class PaymentController extends Controller
                 'name' => $payment->member->name,
                 'phone' => $payment->member->phone,
             ],
-            'membership' => [
+            'membership' => $payment->memberMembership === null ? null : [
                 'id' => $payment->memberMembership->getKey(),
                 'plan_name' => $payment->memberMembership->plan_name,
                 'start_date' => $payment->memberMembership->start_date->toDateString(),
                 'end_date' => $payment->memberMembership->end_date->toDateString(),
+            ],
+            'personal_training' => $payment->memberPtPackage === null ? null : [
+                'id' => $payment->memberPtPackage->getKey(),
+                'package_name' => $payment->memberPtPackage->ptPackage->name,
+                'trainer_name' => $payment->memberPtPackage->trainer->name,
+                'total_sessions' => $payment->memberPtPackage->total_sessions,
+                'start_date' => $payment->memberPtPackage->start_date->toDateString(),
+                'expires_at' => $payment->memberPtPackage->expires_at?->toDateString(),
             ],
             'received_by' => $payment->receivedBy === null
                 ? null
@@ -183,6 +213,18 @@ class PaymentController extends Controller
                 'label' => $method->label(),
             ],
             PaymentMethod::cases(),
+        );
+    }
+
+    /** @return array<int, array{value: string, label: string}> */
+    private function typeOptions(): array
+    {
+        return array_map(
+            fn (PaymentType $type): array => [
+                'value' => $type->value,
+                'label' => $type->label(),
+            ],
+            PaymentType::cases(),
         );
     }
 

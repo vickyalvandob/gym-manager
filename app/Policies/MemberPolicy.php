@@ -63,6 +63,16 @@ class MemberPolicy
         return $this->belongsToCurrentGym($member) && $this->canManageMembers();
     }
 
+    public function purchasePtPackage(User $user, Member $member): bool
+    {
+        return $this->belongsToCurrentGym($member) && $this->canManageMembers();
+    }
+
+    public function assignTrainer(User $user, Member $member): bool
+    {
+        return $this->belongsToCurrentGym($member) && $this->canManageMembers();
+    }
+
     private function canManageMembers(): bool
     {
         return $this->gymContext->hasGym()
