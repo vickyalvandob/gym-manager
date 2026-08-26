@@ -27,6 +27,7 @@ export function PtPurchaseDialog({
     paymentMethods,
     defaultTrainerId,
     defaultStartDate,
+    triggerVariant = 'default',
 }: {
     memberId: number;
     memberName: string;
@@ -35,6 +36,7 @@ export function PtPurchaseDialog({
     paymentMethods: SelectOption[];
     defaultTrainerId: number | null;
     defaultStartDate: string;
+    triggerVariant?: 'default' | 'outline' | 'ghost';
 }) {
     const { auth } = usePage().props;
     const [packageId, setPackageId] = useState(packages[0]?.id ?? 0);
@@ -47,7 +49,12 @@ export function PtPurchaseDialog({
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button type="button" size="sm" disabled={unavailable}>
+                <Button
+                    type="button"
+                    size="sm"
+                    variant={triggerVariant}
+                    disabled={unavailable}
+                >
                     <Dumbbell />
                     Beli paket PT
                 </Button>

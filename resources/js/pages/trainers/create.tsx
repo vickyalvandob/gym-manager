@@ -2,14 +2,12 @@ import { Head } from '@inertiajs/react';
 import TrainerController from '@/actions/App/Http/Controllers/TrainerController';
 import { TrainerForm } from '@/components/trainers/trainer-form';
 import { index } from '@/routes/trainers';
-import type { SelectOption, TrainerAccountOption } from '@/types';
+import type { SelectOption } from '@/types';
 
 export default function CreateTrainer({
     statusOptions,
-    accountOptions,
 }: {
     statusOptions: SelectOption[];
-    accountOptions: TrainerAccountOption[];
 }) {
     return (
         <>
@@ -21,15 +19,13 @@ export default function CreateTrainer({
                         Tambah trainer
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Tambahkan profil trainer untuk mulai mengatur member
-                        assignment.
+                        Buat profil dan akun login PT dalam satu langkah.
                     </p>
                 </header>
 
                 <TrainerForm
                     form={TrainerController.store.form()}
                     statusOptions={statusOptions}
-                    accountOptions={accountOptions}
                     cancelHref={index()}
                     submitLabel="Simpan trainer"
                 />

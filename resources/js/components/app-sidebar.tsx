@@ -33,94 +33,141 @@ import { index as ptSessionsIndex } from '@/routes/pt-sessions';
 import { index as reportsIndex } from '@/routes/reports';
 import { index as trainerMembersIndex } from '@/routes/trainer-members';
 import { index as trainersIndex } from '@/routes/trainers';
-import type { NavItem } from '@/types';
+import type { NavSection } from '@/types';
 
 export function AppSidebar() {
     const { auth } = usePage().props;
-    const trainerNavItems: NavItem[] = [
+    const trainerNavSections: NavSection[] = [
         {
-            title: 'Dashboard',
-            href: dashboard(),
-            icon: LayoutDashboard,
+            title: 'Hari ini',
+            items: [
+                {
+                    title: 'Ringkasan',
+                    href: dashboard(),
+                    icon: LayoutDashboard,
+                },
+                {
+                    title: 'Jadwal Saya',
+                    href: ptSessionsIndex({ query: { scope: 'upcoming' } }),
+                    icon: CalendarClock,
+                },
+            ],
         },
         {
-            title: 'Jadwal Saya',
-            href: ptSessionsIndex({ query: { scope: 'upcoming' } }),
-            icon: CalendarClock,
+            title: 'Member & sesi',
+            items: [
+                {
+                    title: 'Member Saya',
+                    href: trainerMembersIndex(),
+                    icon: UsersRound,
+                },
+                {
+                    title: 'Riwayat Sesi',
+                    href: ptSessionsIndex({ query: { scope: 'history' } }),
+                    icon: Dumbbell,
+                },
+            ],
         },
         {
-            title: 'Member Saya',
-            href: trainerMembersIndex(),
-            icon: UsersRound,
-        },
-        {
-            title: 'Riwayat Sesi',
-            href: ptSessionsIndex({ query: { scope: 'history' } }),
-            icon: Dumbbell,
-        },
-        {
-            title: 'Profil',
-            href: profileEdit(),
-            icon: UserRoundCog,
+            title: 'Akun',
+            items: [
+                {
+                    title: 'Profil Saya',
+                    href: profileEdit(),
+                    icon: UserRoundCog,
+                },
+            ],
         },
     ];
-    const managementNavItems: NavItem[] = [
+    const managementNavSections: NavSection[] = [
         {
-            title: 'Dashboard',
-            href: dashboard(),
-            icon: LayoutDashboard,
+            title: 'Utama',
+            items: [
+                {
+                    title: 'Ringkasan',
+                    href: dashboard(),
+                    icon: LayoutDashboard,
+                },
+            ],
         },
         ...(auth.permissions.operate_front_desk
             ? [
                   {
-                      title: 'Member',
-                      href: membersIndex(),
-                      icon: UsersRound,
+                      title: 'Membership',
+                      items: [
+                          {
+                              title: 'Member',
+                              href: membersIndex(),
+                              icon: UsersRound,
+                          },
+                          {
+                              title: 'Paket Membership',
+                              href: membershipPlansIndex(),
+                              icon: Tickets,
+                          },
+                          {
+                              title: 'Check-in',
+                              href: CheckInController.index(),
+                              icon: LogIn,
+                          },
+                      ],
                   },
                   {
-                      title: 'Paket Membership',
-                      href: membershipPlansIndex(),
-                      icon: Tickets,
+                      title: 'Personal Trainer',
+                      items: [
+                          {
+                              title: 'Trainer',
+                              href: trainersIndex(),
+                              icon: Dumbbell,
+                          },
+                          {
+                              title: 'Paket PT',
+                              href: ptPackagesIndex(),
+                              icon: Tickets,
+                          },
+                          {
+                              title: 'Jadwal PT',
+                              href: ptSessionsIndex(),
+                              icon: CalendarClock,
+                          },
+                      ],
                   },
+              ]
+            : []),
+            
+        ...(auth.permissions.operate_front_desk
+            ? [
                   {
-                      title: 'Pembayaran',
-                      href: PaymentController.index(),
-                      icon: CircleDollarSign,
-                  },
-                  {
-                      title: 'Check-in',
-                      href: CheckInController.index(),
-                      icon: LogIn,
-                  },
-                  {
-                      title: 'Trainer',
-                      href: trainersIndex(),
-                      icon: Dumbbell,
-                  },
-                  {
-                      title: 'Paket PT',
-                      href: ptPackagesIndex(),
-                      icon: Tickets,
-                  },
-                  {
-                      title: 'Sesi PT',
-                      href: ptSessionsIndex(),
-                      icon: CalendarClock,
+                      title: 'Keuangan',
+                      items: [
+                          {
+                              title: 'Pembayaran',
+                              href: PaymentController.index({
+                                  query: { type: 'membership' },
+                              }),
+                              icon: CircleDollarSign,
+                          },
+                      ],
                   },
               ]
             : []),
         ...(auth.permissions.view_reports
             ? [
                   {
-                      title: 'Laporan',
-                      href: reportsIndex(),
-                      icon: ChartNoAxesCombined,
+                      title: 'Analitik',
+                      items: [
+                          {
+                              title: 'Laporan',
+                              href: reportsIndex(),
+                              icon: ChartNoAxesCombined,
+                          },
+                      ],
                   },
               ]
             : []),
     ];
-    const mainNavItems =
-        auth.role === 'trainer' ? trainerNavItems : managementNavItems;
+    const mainNavSections =
+        auth.role === 'trainer' ? trainerNavSections : managementNavSections;
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">
@@ -137,7 +184,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain sections={mainNavSections} />
             </SidebarContent>
 
             <SidebarFooter className="border-t border-sidebar-border/70 p-3">

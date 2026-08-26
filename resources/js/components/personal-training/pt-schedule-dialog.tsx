@@ -23,6 +23,7 @@ export function PtScheduleDialog({
     availableSessions,
     defaultDate,
     triggerLabel = 'Jadwalkan sesi',
+    triggerVariant = 'default',
 }: {
     memberPtPackageId: number;
     memberName: string;
@@ -30,6 +31,7 @@ export function PtScheduleDialog({
     availableSessions: number;
     defaultDate: string;
     triggerLabel?: string;
+    triggerVariant?: 'default' | 'outline' | 'ghost';
 }) {
     return (
         <Dialog>
@@ -37,6 +39,7 @@ export function PtScheduleDialog({
                 <Button
                     type="button"
                     size="sm"
+                    variant={triggerVariant}
                     disabled={availableSessions < 1}
                 >
                     <CalendarPlus />

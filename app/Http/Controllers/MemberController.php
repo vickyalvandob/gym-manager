@@ -27,6 +27,7 @@ use App\Support\GymContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -153,41 +154,11 @@ class MemberController extends Controller
             ->latest('end_date')
             ->latest('id')
             ->first();
-        $memberships = $memberModel->memberships()
-            ->with(['payment.receivedBy:id,name'])
-            ->where('gym_id', $this->gymContext->gymId())
-            ->latest('start_date')
-            ->latest('id')
-            ->paginate(10, ['*'], 'membership_page')
-            ->withQueryString()
-            ->through(fn (MemberMembership $membership): array => $this->membershipData(
-                $membership,
-                $today,
-            ));
         $latestCheckIn = $memberModel->checkIns()
             ->where('gym_id', $this->gymContext->gymId())
             ->latest('checked_in_at')
             ->latest('id')
             ->first();
-        $checkIns = $memberModel->checkIns()
-            ->select([
-                'check_ins.id',
-                'check_ins.member_id',
-                'check_ins.member_membership_id',
-                'check_ins.checked_in_at',
-                'check_ins.created_by',
-            ])
-            ->with([
-                'member:id,member_number,name,phone,photo',
-                'memberMembership:id,plan_name,end_date',
-                'createdBy:id,name',
-            ])
-            ->where('gym_id', $this->gymContext->gymId())
-            ->latest('checked_in_at')
-            ->latest('id')
-            ->paginate(10, ['*'], 'check_in_page')
-            ->withQueryString()
-            ->through(fn (CheckIn $checkIn): array => $this->checkInData->make($checkIn));
         $currentTrainer = $memberModel->trainers()
             ->select([
                 'trainers.id',
@@ -211,40 +182,6 @@ class MemberController extends Controller
             })
             ->latest('id')
             ->first();
-        $ptPackageHistory = $memberModel->ptPackages()
-            ->with(['ptPackage:id,name', 'trainer:id,trainer_code,name,specialization', 'payment'])
-            ->withCount([
-                'sessions as scheduled_sessions_count' => fn ($query) => $query
-                    ->where('status', PtSessionStatus::Scheduled->value),
-            ])
-            ->where('gym_id', $this->gymContext->gymId())
-            ->latest('id')
-            ->limit(10)
-            ->get()
-            ->map(fn (MemberPtPackage $memberPtPackage): array => $this->memberPtPackageData(
-                $memberPtPackage,
-                $today,
-            ))
-            ->all();
-        $upcomingPtSessions = $memberModel->ptSessions()
-            ->with(['trainer:id,trainer_code,name', 'memberPtPackage.ptPackage:id,name'])
-            ->where('gym_id', $this->gymContext->gymId())
-            ->where('status', PtSessionStatus::Scheduled->value)
-            ->where('scheduled_at', '>=', $now)
-            ->oldest('scheduled_at')
-            ->limit(10)
-            ->get()
-            ->map(fn (PtSession $session): array => $this->ptSessionData($session))
-            ->all();
-        $ptSessionHistory = $memberModel->ptSessions()
-            ->with(['trainer:id,trainer_code,name', 'memberPtPackage.ptPackage:id,name'])
-            ->where('gym_id', $this->gymContext->gymId())
-            ->where('status', '!=', PtSessionStatus::Scheduled->value)
-            ->latest('scheduled_at')
-            ->limit(10)
-            ->get()
-            ->map(fn (PtSession $session): array => $this->ptSessionData($session))
-            ->all();
 
         return Inertia::render('members/show', [
             'member' => $this->detailMemberData($memberModel, $today),
@@ -254,8 +191,17 @@ class MemberController extends Controller
             'upcomingMembership' => $upcomingMembership instanceof MemberMembership
                 ? $this->membershipData($upcomingMembership, $today)
                 : null,
-            'memberships' => $memberships,
-            'checkIns' => $checkIns,
+            'hasMembershipHistory' => $renewalSource instanceof MemberMembership,
+            'memberships' => Inertia::defer(
+                fn (): LengthAwarePaginator => $this->membershipHistory($memberModel, $today),
+                'memberHistory',
+                rescue: true,
+            ),
+            'checkIns' => Inertia::defer(
+                fn (): LengthAwarePaginator => $this->checkInHistory($memberModel),
+                'memberHistory',
+                rescue: true,
+            ),
             'checkInEligibility' => $this->checkInEligibility->evaluate(
                 $memberModel,
                 $activeMembership instanceof MemberMembership ? $activeMembership : null,
@@ -284,9 +230,21 @@ class MemberController extends Controller
             'activePtPackage' => $activePtPackage instanceof MemberPtPackage
                 ? $this->memberPtPackageData($activePtPackage, $today)
                 : null,
-            'ptPackageHistory' => $ptPackageHistory,
-            'upcomingPtSessions' => $upcomingPtSessions,
-            'ptSessionHistory' => $ptSessionHistory,
+            'ptPackageHistory' => Inertia::defer(
+                fn (): array => $this->ptPackageHistory($memberModel, $today),
+                'memberHistory',
+                rescue: true,
+            ),
+            'upcomingPtSessions' => Inertia::defer(
+                fn (): array => $this->upcomingPtSessions($memberModel, $now),
+                'memberHistory',
+                rescue: true,
+            ),
+            'ptSessionHistory' => Inertia::defer(
+                fn (): array => $this->ptSessionHistory($memberModel),
+                'memberHistory',
+                rescue: true,
+            ),
             'ptPackageOptions' => $this->activePtPackages(),
             'trainerOptions' => $this->activeTrainers(),
             'canPurchasePt' => Gate::allows('purchasePtPackage', $memberModel),
@@ -295,6 +253,101 @@ class MemberController extends Controller
                 'schedule_date' => $today->addDay()->toDateString(),
             ],
         ]);
+    }
+
+    /** @return LengthAwarePaginator<int, array<string, mixed>> */
+    private function membershipHistory(
+        Member $member,
+        CarbonImmutable $today,
+    ): LengthAwarePaginator {
+        return $member->memberships()
+            ->with(['payment.receivedBy:id,name'])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->latest('start_date')
+            ->latest('id')
+            ->paginate(10, ['*'], 'membership_page')
+            ->withQueryString()
+            ->through(fn (MemberMembership $membership): array => $this->membershipData(
+                $membership,
+                $today,
+            ));
+    }
+
+    /** @return LengthAwarePaginator<int, array<string, mixed>> */
+    private function checkInHistory(Member $member): LengthAwarePaginator
+    {
+        return $member->checkIns()
+            ->select([
+                'check_ins.id',
+                'check_ins.member_id',
+                'check_ins.member_membership_id',
+                'check_ins.checked_in_at',
+                'check_ins.created_by',
+            ])
+            ->with([
+                'member:id,member_number,name,phone,photo',
+                'memberMembership:id,plan_name,end_date',
+                'createdBy:id,name',
+            ])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->latest('checked_in_at')
+            ->latest('id')
+            ->paginate(10, ['*'], 'check_in_page')
+            ->withQueryString()
+            ->through(fn (CheckIn $checkIn): array => $this->checkInData->make($checkIn));
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function ptPackageHistory(
+        Member $member,
+        CarbonImmutable $today,
+    ): array {
+        return $member->ptPackages()
+            ->with(['ptPackage:id,name', 'trainer:id,trainer_code,name,specialization', 'payment'])
+            ->withCount([
+                'sessions as scheduled_sessions_count' => fn ($query) => $query
+                    ->where('status', PtSessionStatus::Scheduled->value),
+            ])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->latest('id')
+            ->limit(10)
+            ->get()
+            ->map(fn (MemberPtPackage $memberPtPackage): array => $this->memberPtPackageData(
+                $memberPtPackage,
+                $today,
+            ))
+            ->all();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function upcomingPtSessions(
+        Member $member,
+        CarbonImmutable $now,
+    ): array {
+        return $member->ptSessions()
+            ->with(['trainer:id,trainer_code,name', 'memberPtPackage.ptPackage:id,name'])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->where('status', PtSessionStatus::Scheduled->value)
+            ->where('scheduled_at', '>=', $now)
+            ->oldest('scheduled_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (PtSession $session): array => $this->ptSessionData($session))
+            ->all();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function ptSessionHistory(Member $member): array
+    {
+        return $member->ptSessions()
+            ->with(['trainer:id,trainer_code,name', 'memberPtPackage.ptPackage:id,name'])
+            ->where('gym_id', $this->gymContext->gymId())
+            ->where('status', '!=', PtSessionStatus::Scheduled->value)
+            ->latest('scheduled_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (PtSession $session): array => $this->ptSessionData($session))
+            ->all();
     }
 
     public function edit(int $member): Response

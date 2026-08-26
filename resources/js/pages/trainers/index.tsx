@@ -148,6 +148,19 @@ export default function TrainersIndex({
                                 </Link>
                             </Button>
                         )}
+                        {hasFilters && (
+                            <Button
+                                className="mt-5"
+                                size="sm"
+                                variant="outline"
+                                asChild
+                            >
+                                <Link href={index()}>
+                                    <RotateCcw />
+                                    Hapus filter
+                                </Link>
+                            </Button>
+                        )}
                     </section>
                 ) : (
                     <>

@@ -37,7 +37,7 @@ export default function PtPackagesIndex({
         <>
             <Head title="Paket PT" />
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                <header className="flex items-end justify-between gap-4">
+                <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div>
                         <p className="text-sm font-medium text-primary">
                             {ptPackages.total} paket
@@ -45,6 +45,10 @@ export default function PtPackagesIndex({
                         <h1 className="mt-1 text-2xl font-semibold">
                             Paket Personal Training
                         </h1>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Produk sesi privat yang dapat dibeli dan dijadwalkan
+                            untuk member.
+                        </p>
                     </div>
                     {canCreate && (
                         <Button asChild>
@@ -107,11 +111,26 @@ export default function PtPackagesIndex({
                 </form>
 
                 {ptPackages.data.length === 0 ? (
-                    <div className="flex min-h-64 flex-col items-center justify-center border-y text-center">
+                    <div className="flex min-h-64 flex-col items-center justify-center border-y px-6 text-center">
                         <Dumbbell className="size-8 text-muted-foreground" />
                         <p className="mt-3 text-sm font-medium">
-                            Belum ada paket PT.
+                            {hasFilters
+                                ? 'Paket PT tidak ditemukan'
+                                : 'Belum ada paket PT'}
                         </p>
+                        <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
+                            {hasFilters
+                                ? 'Ubah kata pencarian atau status untuk melihat hasil lain.'
+                                : 'Tambahkan paket agar Front Desk dapat menjual sesi Personal Training.'}
+                        </p>
+                        {canCreate && !hasFilters && (
+                            <Button className="mt-4" size="sm" asChild>
+                                <Link href={PtPackageController.create()}>
+                                    <Plus />
+                                    Tambah paket
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

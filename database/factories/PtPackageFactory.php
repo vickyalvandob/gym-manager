@@ -20,7 +20,7 @@ class PtPackageFactory extends Factory
     {
         return [
             'gym_id' => Gym::factory(),
-            'name' => 'PT '.fake()->unique()->words(2, true),
+            'name' => fake()->unique()->bothify('PT Package ###'),
             'session_count' => fake()->randomElement([1, 4, 8, 12]),
             'validity_days' => fake()->randomElement([null, 30, 60, 90]),
             'price' => (string) (fake()->numberBetween(3, 25) * 50000),

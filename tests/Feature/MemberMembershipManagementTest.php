@@ -154,8 +154,15 @@ test('member pages expose active upcoming expired and expiry warning states', fu
             ->where('activeMembership.is_expiring_soon', true)
             ->where('upcomingMembership.plan_name', 'Upcoming Plan')
             ->where('upcomingMembership.status', 'upcoming')
-            ->where('memberships.total', 3)
-            ->where('memberships.data.2.status', 'expired'));
+            ->where('hasMembershipHistory', true)
+            ->missing('memberships')
+            ->loadDeferredProps('memberHistory', fn (Assert $reload) => $reload
+                ->where('memberships.total', 3)
+                ->where('memberships.data.2.status', 'expired')
+                ->has('ptPackageHistory')
+                ->has('upcomingPtSessions')
+                ->has('ptSessionHistory')
+                ->has('checkIns')));
 
     $this->get(route('members.index'))
         ->assertOk()

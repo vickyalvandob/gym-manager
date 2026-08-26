@@ -74,7 +74,11 @@ class PtSessionController extends Controller
                 'memberPtPackage:id,pt_package_id,total_sessions,used_sessions,expires_at',
                 'memberPtPackage.ptPackage:id,name',
             ])
-            ->orderBy('scheduled_at')
+            ->when(
+                $scope === 'history',
+                fn (Builder $query) => $query->latest('scheduled_at'),
+                fn (Builder $query) => $query->oldest('scheduled_at'),
+            )
             ->paginate((int) $request->validated('per_page', 15))
             ->withQueryString()
             ->through(fn (PtSession $session): array => $this->sessionData($session));

@@ -89,7 +89,7 @@ class TrainerMemberController extends Controller
             ->firstOrFail();
     }
 
-    /** @return array<string, callable> */
+    /** @return array<string, \Closure> */
     private function memberRelations(
         Trainer $trainer,
         CarbonImmutable $today,

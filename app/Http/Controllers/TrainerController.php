@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Actions\Trainers\CreateTrainer;
 use App\Actions\Trainers\UpdateTrainer;
-use App\Enums\GymRole;
-use App\Enums\GymUserStatus;
 use App\Enums\MemberPtPackageStatus;
 use App\Enums\MemberStatus;
 use App\Enums\PtSessionStatus;
@@ -16,7 +14,6 @@ use App\Http\Requests\StoreTrainerRequest;
 use App\Http\Requests\UpdateTrainerRequest;
 use App\Models\Member;
 use App\Models\Trainer;
-use App\Models\User;
 use App\Support\GymContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -81,7 +78,6 @@ class TrainerController extends Controller
 
         return Inertia::render('trainers/create', [
             'statusOptions' => $this->statusOptions(),
-            'accountOptions' => $this->availableTrainerAccounts(),
         ]);
     }
 
@@ -177,7 +173,6 @@ class TrainerController extends Controller
         return Inertia::render('trainers/edit', [
             'trainer' => $this->trainerData($trainerModel),
             'statusOptions' => $this->statusOptions(),
-            'accountOptions' => $this->availableTrainerAccounts($trainerModel),
         ]);
     }
 
@@ -293,33 +288,6 @@ class TrainerController extends Controller
                 'phone' => $member->phone,
                 'status' => $member->status->value,
                 'status_label' => $member->status->label(),
-            ])
-            ->values()
-            ->all();
-    }
-
-    /** @return array<int, array{value: int, label: string, description: string}> */
-    private function availableTrainerAccounts(?Trainer $trainer = null): array
-    {
-        $usedUserIds = $this->gymContext->gym()->trainers()
-            ->whereNotNull('user_id')
-            ->when(
-                $trainer !== null,
-                fn ($query) => $query->where('trainers.id', '!=', $trainer->getKey()),
-            )
-            ->select('user_id');
-
-        return $this->gymContext->gym()->users()
-            ->select(['users.id', 'users.name', 'users.email'])
-            ->wherePivot('role', GymRole::Trainer->value)
-            ->wherePivot('status', GymUserStatus::Active->value)
-            ->whereNotIn('users.id', $usedUserIds)
-            ->orderBy('users.name')
-            ->get()
-            ->map(fn (User $user): array => [
-                'value' => $user->getKey(),
-                'label' => $user->name,
-                'description' => $user->email,
             ])
             ->values()
             ->all();

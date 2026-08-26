@@ -2,7 +2,6 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
-    Eye,
     FilterX,
     Pencil,
     Plus,
@@ -12,9 +11,7 @@ import {
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import MembershipPlanController from '@/actions/App/Http/Controllers/MembershipPlanController';
-import { MembershipPlanDeleteDialog } from '@/components/membership-plans/membership-plan-delete-dialog';
 import { MembershipPlanStatusBadge } from '@/components/membership-plans/membership-plan-status-badge';
-import { MembershipPlanStatusDialog } from '@/components/membership-plans/membership-plan-status-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/formatters';
@@ -72,6 +69,10 @@ export default function MembershipPlansIndex({
                         <h1 className="mt-1 text-2xl font-semibold tracking-normal">
                             Paket Membership
                         </h1>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Atur paket yang dipilih saat pendaftaran dan
+                            perpanjangan member.
+                        </p>
                     </div>
                     <Button asChild>
                         <Link href={MembershipPlanController.create()}>
@@ -152,12 +153,25 @@ export default function MembershipPlansIndex({
                                 ? 'Paket tidak ditemukan'
                                 : 'Belum ada paket membership'}
                         </p>
-                        <Button className="mt-4" size="sm" asChild>
-                            <Link href={MembershipPlanController.create()}>
-                                <Plus />
-                                Tambah paket
-                            </Link>
-                        </Button>
+                        {hasFilters ? (
+                            <Button
+                                type="button"
+                                className="mt-4"
+                                size="sm"
+                                variant="outline"
+                                onClick={clearFilters}
+                            >
+                                <FilterX />
+                                Hapus filter
+                            </Button>
+                        ) : (
+                            <Button className="mt-4" size="sm" asChild>
+                                <Link href={MembershipPlanController.create()}>
+                                    <Plus />
+                                    Tambah paket
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <>
@@ -228,8 +242,7 @@ export default function MembershipPlansIndex({
                                                     <div className="flex justify-end gap-1">
                                                         <Button
                                                             variant="ghost"
-                                                            size="icon"
-                                                            title="Lihat paket"
+                                                            size="sm"
                                                             asChild
                                                         >
                                                             <Link
@@ -237,16 +250,12 @@ export default function MembershipPlansIndex({
                                                                     membershipPlan.id,
                                                                 )}
                                                             >
-                                                                <Eye />
-                                                                <span className="sr-only">
-                                                                    Lihat paket
-                                                                </span>
+                                                                Detail
                                                             </Link>
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
-                                                            size="icon"
-                                                            title="Edit paket"
+                                                            size="sm"
                                                             asChild
                                                         >
                                                             <Link
@@ -255,35 +264,9 @@ export default function MembershipPlansIndex({
                                                                 )}
                                                             >
                                                                 <Pencil />
-                                                                <span className="sr-only">
-                                                                    Edit paket
-                                                                </span>
+                                                                Edit
                                                             </Link>
                                                         </Button>
-                                                        <MembershipPlanStatusDialog
-                                                            membershipPlanId={
-                                                                membershipPlan.id
-                                                            }
-                                                            membershipPlanName={
-                                                                membershipPlan.name
-                                                            }
-                                                            isActive={
-                                                                membershipPlan.is_active
-                                                            }
-                                                            buttonVariant="ghost"
-                                                        />
-                                                        <MembershipPlanDeleteDialog
-                                                            membershipPlanId={
-                                                                membershipPlan.id
-                                                            }
-                                                            membershipPlanName={
-                                                                membershipPlan.name
-                                                            }
-                                                            canDelete={
-                                                                membershipPlan.can_delete
-                                                            }
-                                                            buttonVariant="ghost"
-                                                        />
                                                     </div>
                                                 </td>
                                             </tr>
@@ -335,7 +318,6 @@ export default function MembershipPlansIndex({
                                                     membershipPlan.id,
                                                 )}
                                             >
-                                                <Eye />
                                                 Detail
                                             </Link>
                                         </Button>

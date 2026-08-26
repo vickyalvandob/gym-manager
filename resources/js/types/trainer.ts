@@ -27,12 +27,6 @@ export type Trainer = {
     updated_at: string | null;
 };
 
-export type TrainerAccountOption = {
-    value: number;
-    label: string;
-    description: string;
-};
-
 export type TrainerMember = {
     id: number;
     member_number: string;

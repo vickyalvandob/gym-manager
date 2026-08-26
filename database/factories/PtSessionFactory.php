@@ -26,10 +26,12 @@ class PtSessionFactory extends Factory
                 'gym_id' => $attributes['gym_id'],
             ])->getKey(),
             'member_id' => fn (array $attributes): int => MemberPtPackage::query()
-                ->findOrFail($attributes['member_pt_package_id'])
+                ->whereKey($attributes['member_pt_package_id'])
+                ->firstOrFail()
                 ->member_id,
             'trainer_id' => fn (array $attributes): int => MemberPtPackage::query()
-                ->findOrFail($attributes['member_pt_package_id'])
+                ->whereKey($attributes['member_pt_package_id'])
+                ->firstOrFail()
                 ->trainer_id,
             'scheduled_at' => now()->addDay()->startOfHour(),
             'duration_minutes' => 60,

@@ -227,9 +227,11 @@ test('member detail exposes check-in eligibility and paginated history', functio
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('checkInEligibility.can_check_in', true)
-            ->where('checkIns.total', 1)
-            ->where('checkIns.data.0.id', $checkIn->getKey())
-            ->where('checkIns.data.0.membership.id', $membership->getKey()));
+            ->missing('checkIns')
+            ->loadDeferredProps('memberHistory', fn (Assert $reload) => $reload
+                ->where('checkIns.total', 1)
+                ->where('checkIns.data.0.id', $checkIn->getKey())
+                ->where('checkIns.data.0.membership.id', $membership->getKey())));
 });
 
 test('trainer cannot create check-ins', function () {

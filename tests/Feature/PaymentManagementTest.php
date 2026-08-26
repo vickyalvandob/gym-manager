@@ -4,12 +4,16 @@ use App\Enums\GymRole;
 use App\Enums\GymUserStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
 use App\Models\ActivityLog;
 use App\Models\Gym;
 use App\Models\Member;
 use App\Models\MemberMembership;
+use App\Models\MemberPtPackage;
 use App\Models\MembershipPlan;
 use App\Models\Payment;
+use App\Models\PtPackage;
+use App\Models\Trainer;
 use App\Models\User;
 use Database\Seeders\DemoGymSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -232,6 +236,23 @@ test('payment history filters and report summary use the same scoped dataset', f
         'amount' => '300000.00',
         'created_at' => '2026-08-15 03:00:00',
     ]);
+    $trainer = Trainer::factory()->for($gym)->create();
+    $ptPackage = PtPackage::factory()->for($gym)->create(['name' => 'PT Strength']);
+    $memberPtPackage = MemberPtPackage::factory()->for($gym)->create([
+        'member_id' => $member->getKey(),
+        'trainer_id' => $trainer->getKey(),
+        'pt_package_id' => $ptPackage->getKey(),
+        'payment_status' => PaymentStatus::Pending,
+    ]);
+    Payment::factory()->for($gym)->create([
+        'member_id' => $member->getKey(),
+        'type' => PaymentType::PersonalTraining,
+        'member_membership_id' => null,
+        'member_pt_package_id' => $memberPtPackage->getKey(),
+        'invoice_number' => 'INV-REPORT-PT',
+        'amount' => '450000.00',
+        'created_at' => '2026-08-16 03:00:00',
+    ]);
 
     $this->actingAs($user)
         ->withSession(['current_gym_id' => $gym->getKey()])
@@ -244,6 +265,7 @@ test('payment history filters and report summary use the same scoped dataset', f
         ->assertInertia(fn (Assert $page) => $page
             ->component('payments/index')
             ->where('payments.total', 2)
+            ->where('filters.type', PaymentType::Membership->value)
             ->where('summary.paid_total', '250000.00')
             ->where('summary.outstanding_total', '300000.00')
             ->where('summary.paid_count', 1)
@@ -257,6 +279,15 @@ test('payment history filters and report summary use the same scoped dataset', f
         ->where('payments.data.0.invoice_number', 'INV-REPORT-PAID')
         ->where('summary.paid_total', '250000.00')
         ->where('summary.outstanding_total', '0.00'));
+
+    $this->get(route('payments.index', [
+        'type' => PaymentType::PersonalTraining->value,
+    ]))->assertInertia(fn (Assert $page) => $page
+        ->where('filters.type', PaymentType::PersonalTraining->value)
+        ->where('payments.total', 1)
+        ->where('payments.data.0.invoice_number', 'INV-REPORT-PT')
+        ->where('payments.data.0.personal_training.package_name', 'PT Strength')
+        ->where('summary.outstanding_total', '450000.00'));
 });
 
 test('member detail exposes its membership invoice and payment state', function () {
@@ -281,7 +312,9 @@ test('member detail exposes its membership invoice and payment state', function 
         ->assertInertia(fn (Assert $page) => $page
             ->where('activeMembership.payment.id', $payment->getKey())
             ->where('activeMembership.payment.status', PaymentStatus::Pending->value)
-            ->where('memberships.data.0.payment.invoice_number', $payment->invoice_number)
+            ->missing('memberships')
+            ->loadDeferredProps('memberHistory', fn (Assert $reload) => $reload
+                ->where('memberships.data.0.payment.invoice_number', $payment->invoice_number))
             ->has('paymentMethodOptions', 5));
 });
 

@@ -2,11 +2,8 @@
 
 namespace App\Concerns;
 
-use App\Enums\GymRole;
-use App\Enums\GymUserStatus;
 use App\Enums\TrainerStatus;
 use App\Models\Trainer;
-use App\Models\User;
 use App\Support\GymContext;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Str;
@@ -20,26 +17,11 @@ trait TrainerValidationRules
         $gymId = $gymContext->gymId();
         $uniqueEmail = Rule::unique(Trainer::class, 'email')
             ->where(fn (Builder $query): Builder => $query->where('gym_id', $gymId));
-        $availableTrainerUserIds = $gymContext->gym()->users()
-            ->wherePivot('role', GymRole::Trainer->value)
-            ->wherePivot('status', GymUserStatus::Active->value)
-            ->select('users.id');
-        $usedTrainerUserIds = Trainer::query()
-            ->where('gym_id', $gymId)
-            ->whereNotNull('user_id')
-            ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
-            ->select('user_id');
-        $availableTrainerUser = Rule::exists(User::class, 'id')
-            ->where(fn (Builder $query): Builder => $query
-                ->whereIn('id', $availableTrainerUserIds)
-                ->whereNotIn('id', $usedTrainerUserIds));
-
         if ($ignoreId !== null) {
             $uniqueEmail->ignore($ignoreId);
         }
 
         return [
-            'user_id' => ['nullable', 'integer', $availableTrainerUser],
             'name' => ['required', 'string', 'max:120'],
             'phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+()\-\s]+$/'],
             'email' => ['nullable', 'email:rfc', 'max:255', $uniqueEmail],
@@ -54,7 +36,6 @@ trait TrainerValidationRules
     protected function prepareTrainerForValidation(): void
     {
         $this->merge([
-            'user_id' => $this->filled('user_id') ? (int) $this->input('user_id') : null,
             'name' => Str::squish((string) $this->input('name')),
             'phone' => Str::squish((string) $this->input('phone')),
             'email' => $this->filled('email')
@@ -77,16 +58,20 @@ trait TrainerValidationRules
     {
         return [
             'phone.regex' => 'Nomor telepon hanya boleh berisi angka, spasi, dan simbol telepon.',
-            'user_id.exists' => 'Akun login trainer tidak tersedia untuk gym ini atau sudah digunakan.',
-            'email.unique' => 'Email trainer sudah digunakan pada gym ini.',
+            'email.unique' => 'Email sudah digunakan oleh profil PT atau akun login lain.',
         ];
     }
 
     /** @return array<string, string> */
     public function attributes(): array
     {
+        return $this->trainerAttributes();
+    }
+
+    /** @return array<string, string> */
+    protected function trainerAttributes(): array
+    {
         return [
-            'user_id' => 'akun login',
             'name' => 'nama trainer',
             'phone' => 'nomor telepon',
             'email' => 'email',

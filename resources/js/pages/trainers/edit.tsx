@@ -2,16 +2,14 @@ import { Head } from '@inertiajs/react';
 import TrainerController from '@/actions/App/Http/Controllers/TrainerController';
 import { TrainerForm } from '@/components/trainers/trainer-form';
 import { index, show } from '@/routes/trainers';
-import type { SelectOption, Trainer, TrainerAccountOption } from '@/types';
+import type { SelectOption, Trainer } from '@/types';
 
 export default function EditTrainer({
     trainer,
     statusOptions,
-    accountOptions,
 }: {
     trainer: Trainer;
     statusOptions: SelectOption[];
-    accountOptions: TrainerAccountOption[];
 }) {
     return (
         <>
@@ -30,7 +28,6 @@ export default function EditTrainer({
                     form={TrainerController.update.form.patch(trainer.id)}
                     trainer={trainer}
                     statusOptions={statusOptions}
-                    accountOptions={accountOptions}
                     cancelHref={show(trainer.id)}
                     submitLabel="Simpan perubahan"
                 />

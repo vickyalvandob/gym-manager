@@ -26,7 +26,6 @@ function attachTrainerRoleUser(Gym $gym, User $user, GymRole $role): void
 function validTrainerPayload(array $overrides = []): array
 {
     return [
-        'user_id' => null,
         'name' => 'Raka Pratama',
         'phone' => '081288880001',
         'email' => 'raka@example.test',
@@ -42,18 +41,18 @@ function validTrainerPayload(array $overrides = []): array
 test('owner can manage trainer profiles with tenant scoped audit logs', function () {
     $gym = Gym::factory()->create();
     $owner = User::factory()->create();
-    $trainerAccount = User::factory()->create();
     attachTrainerRoleUser($gym, $owner, GymRole::Owner);
-    attachTrainerRoleUser($gym, $trainerAccount, GymRole::Trainer);
 
     $this->actingAs($owner)
         ->withSession(['current_gym_id' => $gym->getKey()])
         ->post(route('trainers.store'), validTrainerPayload([
-            'user_id' => $trainerAccount->getKey(),
+            'account_mode' => 'none',
+            'user_id' => $owner->getKey(),
         ]))
         ->assertRedirect();
 
     $trainer = $gym->trainers()->firstOrFail();
+    $trainerAccount = User::query()->where('email', 'raka@example.test')->firstOrFail();
     expect($trainer->name)->toBe('Raka Pratama')
         ->and($trainer->user_id)->toBe($trainerAccount->getKey());
 
@@ -66,16 +65,24 @@ test('owner can manage trainer profiles with tenant scoped audit logs', function
             ->where('canCreate', true));
 
     $this->patch(route('trainers.update', $trainer), validTrainerPayload([
-        'user_id' => $trainerAccount->getKey(),
         'name' => 'Raka Utama',
+        'email' => 'raka.utama@example.test',
         'status' => TrainerStatus::Inactive->value,
     ]))->assertRedirect(route('trainers.show', $trainer));
 
     expect($trainer->fresh()->name)->toBe('Raka Utama')
-        ->and($trainer->fresh()->status)->toBe(TrainerStatus::Inactive);
+        ->and($trainer->fresh()->status)->toBe(TrainerStatus::Inactive)
+        ->and($trainerAccount->fresh()->name)->toBe('Raka Utama')
+        ->and($trainerAccount->fresh()->email)->toBe('raka.utama@example.test');
 
     $this->assertModelExists($trainer);
     $this->assertModelExists($trainerAccount);
+    $this->assertDatabaseHas('gym_user', [
+        'gym_id' => $gym->getKey(),
+        'user_id' => $trainerAccount->getKey(),
+        'role' => GymRole::Trainer->value,
+        'status' => GymUserStatus::Inactive->value,
+    ]);
     expect(ActivityLog::query()->where('event', 'trainer.created')->count())->toBe(1)
         ->and(ActivityLog::query()->where('event', 'trainer.updated')->count())->toBe(1)
         ->and(ActivityLog::query()->where('event', 'trainer.deactivated')->count())->toBe(1);
@@ -198,24 +205,52 @@ test('trainer dashboard exposes only the linked trainers assigned members', func
     expect($unassignedMember->name)->toBe('Member Bukan Assignment');
 });
 
-test('trainer validation rejects duplicate tenant email and cross gym login accounts', function () {
+test('trainer validation rejects duplicate profile and login emails', function () {
     $gym = Gym::factory()->create();
-    $foreignGym = Gym::factory()->create();
     $owner = User::factory()->create();
-    $foreignTrainerAccount = User::factory()->create();
+    User::factory()->create(['email' => 'login-used@example.test']);
     attachTrainerRoleUser($gym, $owner, GymRole::Owner);
-    attachTrainerRoleUser($foreignGym, $foreignTrainerAccount, GymRole::Trainer);
     Trainer::factory()->for($gym)->create(['email' => 'used@example.test']);
 
     $this->actingAs($owner)
         ->withSession(['current_gym_id' => $gym->getKey()])
         ->post(route('trainers.store'), validTrainerPayload([
             'email' => 'USED@example.test',
-            'user_id' => $foreignTrainerAccount->getKey(),
         ]))
-        ->assertSessionHasErrors(['email', 'user_id']);
+        ->assertSessionHasErrors('email');
+
+    $this->post(route('trainers.store'), validTrainerPayload([
+        'email' => 'LOGIN-USED@example.test',
+    ]))->assertSessionHasErrors('email');
 
     expect($gym->trainers()->count())->toBe(1);
+});
+
+test('owner always creates a trainer with a login account', function () {
+    $gym = Gym::factory()->create();
+    $owner = User::factory()->create();
+    attachTrainerRoleUser($gym, $owner, GymRole::Owner);
+
+    $this->actingAs($owner)
+        ->withSession(['current_gym_id' => $gym->getKey()])
+        ->post(route('trainers.store'), validTrainerPayload())
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    $trainerWithAccount = $gym->trainers()->firstOrFail();
+    $loginAccount = User::query()->where('email', 'raka@example.test')->firstOrFail();
+
+    expect($trainerWithAccount->user_id)->toBe($loginAccount->getKey())
+        ->and($trainerWithAccount->user_id)->not->toBe($owner->getKey())
+        ->and($gym->users()->whereKey($loginAccount->getKey())->exists())->toBeTrue();
+
+    $this->post(route('trainers.store'), validTrainerPayload([
+        'name' => 'Dimas Trainer',
+        'phone' => '081288880002',
+        'email' => null,
+        'password' => null,
+        'password_confirmation' => null,
+    ]))->assertSessionHasErrors(['email', 'password']);
 });
 
 test('cross tenant trainer records consistently return not found', function () {

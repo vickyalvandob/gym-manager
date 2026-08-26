@@ -23,7 +23,10 @@ class PaymentController extends Controller
         $search = Str::squish((string) $request->validated('search', ''));
         $status = $request->validated('status');
         $method = $request->validated('method');
-        $type = $request->validated('type');
+        $validatedType = $request->validated('type');
+        $type = is_string($validatedType)
+            ? $validatedType
+            : PaymentType::Membership->value;
         $dateFrom = $request->validated('date_from');
         $dateTo = $request->validated('date_to');
         $timezone = $this->gymContext->gym()->timezone;
@@ -38,7 +41,7 @@ class PaymentController extends Controller
             $search,
             is_string($status) ? $status : null,
             is_string($method) ? $method : null,
-            is_string($type) ? $type : null,
+            $type,
             $dateFromUtc,
             $dateToUtc,
         );
@@ -48,18 +51,12 @@ class PaymentController extends Controller
                 'COALESCE(SUM(CASE WHEN status = ? THEN amount ELSE 0 END), 0) AS paid_total, '
                 .'COALESCE(SUM(CASE WHEN status = ? THEN amount ELSE 0 END), 0) AS outstanding_total, '
                 .'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS paid_count, '
-                .'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending_count, '
-                .'COALESCE(SUM(CASE WHEN status = ? AND type = ? THEN amount ELSE 0 END), 0) AS membership_revenue, '
-                .'COALESCE(SUM(CASE WHEN status = ? AND type = ? THEN amount ELSE 0 END), 0) AS pt_revenue',
+                .'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending_count',
                 [
                     PaymentStatus::Paid->value,
                     PaymentStatus::Pending->value,
                     PaymentStatus::Paid->value,
                     PaymentStatus::Pending->value,
-                    PaymentStatus::Paid->value,
-                    PaymentType::Membership->value,
-                    PaymentStatus::Paid->value,
-                    PaymentType::PersonalTraining->value,
                 ],
             )
             ->first();
@@ -88,7 +85,7 @@ class PaymentController extends Controller
                 'receivedBy:id,name',
             ])
             ->latest('payments.id')
-            ->paginate((int) $request->validated('per_page', 15))
+            ->paginate(15)
             ->withQueryString()
             ->through(fn (Payment $payment): array => $this->paymentData($payment));
 
@@ -98,22 +95,18 @@ class PaymentController extends Controller
                 'search' => $search,
                 'status' => is_string($status) ? $status : '',
                 'method' => is_string($method) ? $method : '',
-                'type' => is_string($type) ? $type : '',
+                'type' => $type,
                 'date_from' => is_string($dateFrom) ? $dateFrom : '',
                 'date_to' => is_string($dateTo) ? $dateTo : '',
-                'per_page' => (int) $request->validated('per_page', 15),
             ],
             'summary' => [
                 'paid_total' => $this->decimalString($summary->paid_total),
                 'outstanding_total' => $this->decimalString($summary->outstanding_total),
                 'paid_count' => (int) ($summary->paid_count ?? 0),
                 'pending_count' => (int) ($summary->pending_count ?? 0),
-                'membership_revenue' => $this->decimalString($summary->membership_revenue),
-                'pt_revenue' => $this->decimalString($summary->pt_revenue),
             ],
             'statusOptions' => $this->statusOptions(),
             'methodOptions' => $this->methodOptions(),
-            'typeOptions' => $this->typeOptions(),
         ]);
     }
 
@@ -122,7 +115,7 @@ class PaymentController extends Controller
         string $search,
         ?string $status,
         ?string $method,
-        ?string $type,
+        string $type,
         ?CarbonImmutable $dateFromUtc,
         ?CarbonImmutable $dateToUtc,
     ): Builder {
@@ -142,7 +135,7 @@ class PaymentController extends Controller
             })
             ->when($status !== null, fn (Builder $query) => $query->where('status', $status))
             ->when($method !== null, fn (Builder $query) => $query->where('method', $method))
-            ->when($type !== null, fn (Builder $query) => $query->where('type', $type))
+            ->where('type', $type)
             ->when($dateFromUtc !== null, fn (Builder $query) => $query->where('payments.created_at', '>=', $dateFromUtc))
             ->when($dateToUtc !== null, fn (Builder $query) => $query->where('payments.created_at', '<', $dateToUtc));
     }
@@ -213,18 +206,6 @@ class PaymentController extends Controller
                 'label' => $method->label(),
             ],
             PaymentMethod::cases(),
-        );
-    }
-
-    /** @return array<int, array{value: string, label: string}> */
-    private function typeOptions(): array
-    {
-        return array_map(
-            fn (PaymentType $type): array => [
-                'value' => $type->value,
-                'label' => $type->label(),
-            ],
-            PaymentType::cases(),
         );
     }
 

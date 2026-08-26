@@ -23,24 +23,32 @@ export function PtPackageForm({
     const [isActive, setIsActive] = useState(ptPackage?.is_active ?? true);
 
     return (
-        <Form {...form} options={{ preserveScroll: true }}>
+        <Form
+            {...form}
+            options={{ preserveScroll: true }}
+            className="max-w-3xl"
+        >
             {({ errors, processing }) => (
-                <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-                    <div className="min-w-0 divide-y border-y">
-                        <section className="grid gap-5 py-6 sm:grid-cols-2">
-                            <div className="sm:col-span-2">
-                                <h2 className="text-base font-semibold">
-                                    Informasi paket PT
-                                </h2>
-                            </div>
+                <div className="grid gap-5">
+                    <section className="rounded-lg border p-5 sm:p-6">
+                        <div>
+                            <h2 className="text-base font-semibold">
+                                Detail paket PT
+                            </h2>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Atur jumlah sesi, masa berlaku, dan harga jual.
+                            </p>
+                        </div>
+
+                        <div className="mt-5 grid gap-5 sm:grid-cols-2">
                             <div className="grid gap-2 sm:col-span-2">
-                                <Label htmlFor="name">Nama paket</Label>
+                                <Label htmlFor="name">Nama paket *</Label>
                                 <Input
                                     id="name"
                                     name="name"
                                     defaultValue={ptPackage?.name ?? ''}
                                     maxLength={120}
-                                    placeholder="Contoh: PT Regular"
+                                    placeholder="Contoh: PT Regular 8 Sesi"
                                     autoFocus
                                     required
                                 />
@@ -48,7 +56,7 @@ export function PtPackageForm({
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="session_count">
-                                    Jumlah sesi
+                                    Jumlah sesi *
                                 </Label>
                                 <Input
                                     id="session_count"
@@ -57,6 +65,7 @@ export function PtPackageForm({
                                     min={1}
                                     max={1000}
                                     step={1}
+                                    inputMode="numeric"
                                     defaultValue={ptPackage?.session_count ?? 8}
                                     required
                                 />
@@ -64,7 +73,7 @@ export function PtPackageForm({
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="validity_days">
-                                    Masa berlaku (hari)
+                                    Masa berlaku
                                 </Label>
                                 <Input
                                     id="validity_days"
@@ -73,15 +82,20 @@ export function PtPackageForm({
                                     min={1}
                                     max={3650}
                                     step={1}
+                                    inputMode="numeric"
                                     defaultValue={
                                         ptPackage?.validity_days ?? ''
                                     }
-                                    placeholder="Kosong = tanpa batas"
+                                    placeholder="Contoh: 60 hari"
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Kosongkan jika paket tidak memiliki batas
+                                    hari.
+                                </p>
                                 <InputError message={errors.validity_days} />
                             </div>
                             <div className="grid gap-2 sm:col-span-2">
-                                <Label htmlFor="price">Harga</Label>
+                                <Label htmlFor="price">Harga *</Label>
                                 <Input
                                     id="price"
                                     name="price"
@@ -89,71 +103,85 @@ export function PtPackageForm({
                                     min={0}
                                     max={999999999999.99}
                                     step="0.01"
+                                    inputMode="decimal"
                                     defaultValue={ptPackage?.price ?? ''}
                                     placeholder="900000"
                                     required
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Masukkan angka tanpa pemisah ribuan.
+                                </p>
                                 <InputError message={errors.price} />
                             </div>
-                        </section>
-                        <section className="grid gap-3 py-6">
+
+                            <div className="sm:col-span-2">
+                                <div className="flex items-start gap-3 rounded-md bg-muted/40 p-4">
+                                    <Checkbox
+                                        id="pt_package_active"
+                                        checked={isActive}
+                                        onCheckedChange={(checked) =>
+                                            setIsActive(checked === true)
+                                        }
+                                    />
+                                    <div>
+                                        <Label htmlFor="pt_package_active">
+                                            Paket dapat dijual
+                                        </Label>
+                                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                            Paket nonaktif tetap tersimpan untuk
+                                            menjaga histori transaksi.
+                                        </p>
+                                    </div>
+                                </div>
+                                <input
+                                    type="hidden"
+                                    name="is_active"
+                                    value={isActive ? '1' : '0'}
+                                />
+                                <InputError
+                                    message={errors.is_active}
+                                    className="mt-2"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="rounded-lg border p-5 sm:p-6">
+                        <h2 className="text-base font-semibold">
+                            Deskripsi paket
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Opsional; tulis manfaat atau ketentuan yang perlu
+                            diketahui Front Desk.
+                        </p>
+                        <div className="mt-5 grid gap-2">
                             <Label htmlFor="description">Deskripsi</Label>
                             <textarea
                                 id="description"
                                 name="description"
-                                rows={5}
+                                rows={4}
                                 maxLength={2000}
                                 defaultValue={ptPackage?.description ?? ''}
-                                className="min-h-32 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
+                                placeholder="Contoh: Latihan privat dengan evaluasi progres."
                             />
                             <InputError message={errors.description} />
-                        </section>
-                    </div>
+                        </div>
+                    </section>
 
-                    <aside className="space-y-6">
-                        <div className="border-y py-5">
-                            <div className="flex items-start gap-3">
-                                <Checkbox
-                                    id="pt_package_active"
-                                    checked={isActive}
-                                    onCheckedChange={(checked) =>
-                                        setIsActive(checked === true)
-                                    }
-                                />
-                                <div>
-                                    <Label htmlFor="pt_package_active">
-                                        Paket aktif
-                                    </Label>
-                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                        Hanya paket aktif yang dapat dijual.
-                                    </p>
-                                </div>
-                            </div>
-                            <input
-                                type="hidden"
-                                name="is_active"
-                                value={isActive ? '1' : '0'}
-                            />
-                            <InputError
-                                message={errors.is_active}
-                                className="mt-2"
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <Button
-                                type="submit"
-                                disabled={processing}
-                                className="flex-1"
-                                data-test="save-pt-package"
-                            >
-                                <Save />
-                                {processing ? 'Menyimpan...' : submitLabel}
-                            </Button>
-                            <Button variant="outline" asChild>
-                                <Link href={cancelHref}>Batal</Link>
-                            </Button>
-                        </div>
-                    </aside>
+                    <div className="flex flex-col-reverse gap-2 border-t pt-5 sm:flex-row sm:justify-end">
+                        <Button variant="outline" asChild>
+                            <Link href={cancelHref}>Batal</Link>
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={processing}
+                            data-test="save-pt-package"
+                        >
+                            <Save />
+                            {processing ? 'Menyimpan...' : submitLabel}
+                        </Button>
+                    </div>
                 </div>
             )}
         </Form>

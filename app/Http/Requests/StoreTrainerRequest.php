@@ -34,17 +34,13 @@ class StoreTrainerRequest extends FormRequest
     {
         $rules = $this->trainerRules($gymContext);
         $rules['email'][0] = 'required';
+        $rules['email'][] = Rule::unique(User::class, 'email');
         $rules['password'] = [
-            'required_without:user_id',
-            'nullable',
+            'required',
             'string',
             Password::default(),
             'confirmed',
         ];
-
-        if (! $this->filled('user_id')) {
-            $rules['email'][] = Rule::unique(User::class, 'email');
-        }
 
         return $rules;
     }
@@ -59,7 +55,17 @@ class StoreTrainerRequest extends FormRequest
     {
         return [
             ...$this->trainerMessages(),
-            'password.required_without' => 'Password akun login trainer wajib diisi.',
+            'email.required' => 'Email akun login PT wajib diisi.',
+            'password.required' => 'Kata sandi akun login PT wajib diisi.',
+        ];
+    }
+
+    /** @return array<string, string> */
+    public function attributes(): array
+    {
+        return [
+            ...$this->trainerAttributes(),
+            'password' => 'kata sandi',
         ];
     }
 }

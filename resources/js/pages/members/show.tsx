@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Deferred, Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     CalendarDays,
@@ -9,6 +9,7 @@ import {
     MapPin,
     Pencil,
     Phone,
+    RefreshCw,
     ShieldAlert,
     Dumbbell,
     UserRound,
@@ -29,6 +30,7 @@ import { PtPurchaseDialog } from '@/components/personal-training/pt-purchase-dia
 import { PtScheduleDialog } from '@/components/personal-training/pt-schedule-dialog';
 import { PtSessionStatusBadge } from '@/components/personal-training/pt-session-status-badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { index } from '@/routes/members';
 import type {
@@ -60,17 +62,18 @@ type ShowMemberProps = {
     member: MemberDetail;
     activeMembership: MemberMembership | null;
     upcomingMembership: MemberMembership | null;
-    memberships: PaginatedMemberMemberships;
-    checkIns: PaginatedCheckIns;
+    hasMembershipHistory: boolean;
+    memberships?: PaginatedMemberMemberships;
+    checkIns?: PaginatedCheckIns;
     checkInEligibility: CheckInEligibility;
     membershipPlans: MembershipPlanOption[];
     paymentMethodOptions: SelectOption[];
     membershipDefaults: MembershipDefaults;
     currentTrainer: PtTrainerOption | null;
     activePtPackage: MemberPtPackageSummary | null;
-    ptPackageHistory: MemberPtPackageSummary[];
-    upcomingPtSessions: MemberPtSession[];
-    ptSessionHistory: MemberPtSession[];
+    ptPackageHistory?: MemberPtPackageSummary[];
+    upcomingPtSessions?: MemberPtSession[];
+    ptSessionHistory?: MemberPtSession[];
     ptPackageOptions: PtPackageOption[];
     trainerOptions: PtTrainerOption[];
     canPurchasePt: boolean;
@@ -81,6 +84,7 @@ export default function ShowMember({
     member,
     activeMembership,
     upcomingMembership,
+    hasMembershipHistory,
     memberships,
     checkIns,
     checkInEligibility,
@@ -99,7 +103,6 @@ export default function ShowMember({
 }: ShowMemberProps) {
     const { auth } = usePage().props;
     const currency = auth.currentGym?.currency ?? 'IDR';
-    const hasMembershipHistory = memberships.total > 0;
 
     return (
         <>
@@ -142,35 +145,38 @@ export default function ShowMember({
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2 pl-14 sm:pl-0">
-                        {canPurchasePt && !activePtPackage && (
-                            <PtPurchaseDialog
-                                memberId={member.id}
-                                memberName={member.name}
-                                packages={ptPackageOptions}
-                                trainers={trainerOptions}
-                                paymentMethods={paymentMethodOptions}
-                                defaultTrainerId={currentTrainer?.id ?? null}
-                                defaultStartDate={
-                                    ptDefaults.purchase_start_date
-                                }
-                            />
-                        )}
-                        {activePtPackage && (
-                            <PtScheduleDialog
-                                memberPtPackageId={activePtPackage.id}
-                                memberName={member.name}
-                                packageName={activePtPackage.name}
-                                availableSessions={
-                                    activePtPackage.available_sessions
-                                }
-                                defaultDate={ptDefaults.schedule_date}
-                            />
-                        )}
-                        <CheckInButton
+                        <MemberStatusDialog
                             memberId={member.id}
-                            disabled={!checkInEligibility.can_check_in}
-                            disabledReason={checkInEligibility.reason}
+                            memberName={member.name}
+                            status={member.status}
                         />
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={MemberController.edit(member.id)}>
+                                <Pencil />
+                                Edit
+                            </Link>
+                        </Button>
+                    </div>
+                </header>
+
+                <section
+                    className="flex flex-col justify-between gap-4 rounded-lg border bg-muted/20 p-4 sm:flex-row sm:items-center"
+                    aria-labelledby="member-actions-heading"
+                >
+                    <div>
+                        <h2
+                            id="member-actions-heading"
+                            className="text-sm font-semibold"
+                        >
+                            Aksi operasional
+                        </h2>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                            {activeMembership
+                                ? 'Membership aktif. Check-in siap digunakan; renewal dan PT tetap tersedia.'
+                                : 'Tetapkan atau perpanjang membership sebelum melakukan check-in.'}
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                         {hasMembershipHistory ? (
                             <MemberMembershipDialog
                                 memberId={member.id}
@@ -187,6 +193,9 @@ export default function ShowMember({
                                 renewalSourceId={
                                     membershipDefaults.renewal_source_id
                                 }
+                                triggerVariant={
+                                    activeMembership ? 'outline' : 'default'
+                                }
                             />
                         ) : (
                             <MemberMembershipDialog
@@ -201,19 +210,40 @@ export default function ShowMember({
                                 mode="assign"
                             />
                         )}
-                        <MemberStatusDialog
+                        <CheckInButton
                             memberId={member.id}
-                            memberName={member.name}
-                            status={member.status}
+                            disabled={!checkInEligibility.can_check_in}
+                            disabledReason={checkInEligibility.reason}
+                            variant={activeMembership ? 'default' : 'outline'}
                         />
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={MemberController.edit(member.id)}>
-                                <Pencil />
-                                Edit
-                            </Link>
-                        </Button>
+                        {canPurchasePt && !activePtPackage && (
+                            <PtPurchaseDialog
+                                memberId={member.id}
+                                memberName={member.name}
+                                packages={ptPackageOptions}
+                                trainers={trainerOptions}
+                                paymentMethods={paymentMethodOptions}
+                                defaultTrainerId={currentTrainer?.id ?? null}
+                                defaultStartDate={
+                                    ptDefaults.purchase_start_date
+                                }
+                                triggerVariant="outline"
+                            />
+                        )}
+                        {activePtPackage && (
+                            <PtScheduleDialog
+                                memberPtPackageId={activePtPackage.id}
+                                memberName={member.name}
+                                packageName={activePtPackage.name}
+                                availableSessions={
+                                    activePtPackage.available_sessions
+                                }
+                                defaultDate={ptDefaults.schedule_date}
+                                triggerVariant="outline"
+                            />
+                        )}
                     </div>
-                </header>
+                </section>
 
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem]">
                     <main className="min-w-0 divide-y border-y">
@@ -266,25 +296,51 @@ export default function ShowMember({
                             </p>
                         </section>
 
-                        <MembershipHistory
-                            memberships={memberships}
-                            currency={currency}
-                            methodOptions={paymentMethodOptions}
-                        />
-                        <PersonalTrainingHistory
-                            packages={ptPackageHistory}
-                            upcomingSessions={upcomingPtSessions}
-                            sessionHistory={ptSessionHistory}
-                            timezone={
-                                auth.currentGym?.timezone ?? 'Asia/Jakarta'
-                            }
-                        />
-                        <CheckInHistory
-                            checkIns={checkIns}
-                            timezone={
-                                auth.currentGym?.timezone ?? 'Asia/Jakarta'
-                            }
-                        />
+                        <Deferred
+                            data={[
+                                'memberships',
+                                'checkIns',
+                                'ptPackageHistory',
+                                'upcomingPtSessions',
+                                'ptSessionHistory',
+                            ]}
+                            fallback={<MemberHistorySkeleton />}
+                            rescue={({ reloading }) => (
+                                <MemberHistoryError reloading={reloading} />
+                            )}
+                        >
+                            {memberships &&
+                                checkIns &&
+                                ptPackageHistory &&
+                                upcomingPtSessions &&
+                                ptSessionHistory && (
+                                    <>
+                                        <MembershipHistory
+                                            memberships={memberships}
+                                            currency={currency}
+                                            methodOptions={paymentMethodOptions}
+                                        />
+                                        <PersonalTrainingHistory
+                                            packages={ptPackageHistory}
+                                            upcomingSessions={
+                                                upcomingPtSessions
+                                            }
+                                            sessionHistory={ptSessionHistory}
+                                            timezone={
+                                                auth.currentGym?.timezone ??
+                                                'Asia/Jakarta'
+                                            }
+                                        />
+                                        <CheckInHistory
+                                            checkIns={checkIns}
+                                            timezone={
+                                                auth.currentGym?.timezone ??
+                                                'Asia/Jakarta'
+                                            }
+                                        />
+                                    </>
+                                )}
+                        </Deferred>
                     </main>
 
                     <aside className="space-y-7">
@@ -986,6 +1042,60 @@ function MembershipPaginationButton({
                 </span>
             )}
         </Button>
+    );
+}
+
+function MemberHistorySkeleton() {
+    return (
+        <div className="divide-y" aria-label="Memuat riwayat member">
+            {[
+                'Riwayat membership',
+                'Personal Training',
+                'Riwayat check-in',
+            ].map((section) => (
+                <section key={section} className="py-6">
+                    <Skeleton className="h-5 w-44" />
+                    <div className="mt-4 grid gap-3">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </div>
+                </section>
+            ))}
+        </div>
+    );
+}
+
+function MemberHistoryError({ reloading }: { reloading: boolean }) {
+    return (
+        <section className="flex min-h-56 flex-col items-center justify-center py-10 text-center">
+            <p className="text-sm font-medium">
+                Riwayat member belum dapat dimuat
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+                Data utama tetap aman. Coba muat ulang bagian riwayat.
+            </p>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                disabled={reloading}
+                onClick={() =>
+                    router.reload({
+                        only: [
+                            'memberships',
+                            'checkIns',
+                            'ptPackageHistory',
+                            'upcomingPtSessions',
+                            'ptSessionHistory',
+                        ],
+                    })
+                }
+            >
+                <RefreshCw className={reloading ? 'animate-spin' : ''} />
+                Coba lagi
+            </Button>
+        </section>
     );
 }
 

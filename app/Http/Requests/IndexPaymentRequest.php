@@ -34,7 +34,6 @@ class IndexPaymentRequest extends FormRequest
             'type' => ['nullable', Rule::enum(PaymentType::class)],
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
-            'per_page' => ['nullable', 'integer', Rule::in([10, 15, 25, 50])],
         ];
     }
 }

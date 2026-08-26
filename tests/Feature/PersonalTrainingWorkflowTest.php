@@ -17,6 +17,7 @@ use App\Models\PtSession;
 use App\Models\Trainer;
 use App\Models\TrainerMember;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 function attachPersonalTrainingUser(Gym $gym, User $user, GymRole $role): void
 {
@@ -121,6 +122,39 @@ test('trainer schedules only assigned PT clients and overlap is rejected', funct
     ])->assertSessionHasErrors('start_time');
 
     expect($gym->ptSessions()->count())->toBe(1);
+});
+
+test('personal training history lists the latest session first', function () {
+    $this->travelTo('2026-08-26 05:00:00');
+    $gym = Gym::factory()->create(['timezone' => 'Asia/Jakarta']);
+    $owner = User::factory()->create();
+    attachPersonalTrainingUser($gym, $owner, GymRole::Owner);
+    $member = Member::factory()->for($gym)->create();
+    $trainer = Trainer::factory()->for($gym)->create();
+    $package = MemberPtPackage::factory()->for($gym)->create([
+        'member_id' => $member->getKey(),
+        'trainer_id' => $trainer->getKey(),
+    ]);
+    $olderSession = PtSession::factory()->for($gym)->completed()->create([
+        'member_pt_package_id' => $package->getKey(),
+        'member_id' => $member->getKey(),
+        'trainer_id' => $trainer->getKey(),
+        'scheduled_at' => '2026-08-24 02:00:00',
+    ]);
+    $latestSession = PtSession::factory()->for($gym)->completed()->create([
+        'member_pt_package_id' => $package->getKey(),
+        'member_id' => $member->getKey(),
+        'trainer_id' => $trainer->getKey(),
+        'scheduled_at' => '2026-08-25 02:00:00',
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['current_gym_id' => $gym->getKey()])
+        ->get(route('pt-sessions.index', ['scope' => 'history']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('sessions.data.0.id', $latestSession->getKey())
+            ->where('sessions.data.1.id', $olderSession->getKey()));
 });
 
 test('completion is idempotent cancellation is free and no show follows gym setting', function () {

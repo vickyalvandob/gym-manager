@@ -28,6 +28,7 @@ type MemberMembershipDialogProps = {
     defaultStartDate: string;
     mode: 'assign' | 'renew';
     renewalSourceId?: number | null;
+    triggerVariant?: 'default' | 'outline' | 'ghost';
 };
 
 export function MemberMembershipDialog({
@@ -39,6 +40,7 @@ export function MemberMembershipDialog({
     defaultStartDate,
     mode,
     renewalSourceId = null,
+    triggerVariant,
 }: MemberMembershipDialogProps) {
     const [selectedPlanId, setSelectedPlanId] = useState(
         String(defaultPlanId ?? membershipPlans[0]?.id ?? ''),
@@ -62,7 +64,9 @@ export function MemberMembershipDialog({
                 <Button
                     type="button"
                     size="sm"
-                    variant={renewing ? 'outline' : 'default'}
+                    variant={
+                        triggerVariant ?? (renewing ? 'outline' : 'default')
+                    }
                     disabled={
                         membershipPlans.length === 0 ||
                         (renewing && !renewalSourceId)

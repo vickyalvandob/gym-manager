@@ -8,17 +8,20 @@ export function CheckInButton({
     disabled = false,
     disabledReason,
     compact = false,
+    variant = 'default',
 }: {
     memberId: number;
     disabled?: boolean;
     disabledReason?: string | null;
     compact?: boolean;
+    variant?: 'default' | 'outline' | 'ghost';
 }) {
     if (disabled) {
         return (
             <Button
                 type="button"
                 size="sm"
+                variant={variant}
                 disabled
                 title={disabledReason ?? 'Check-in belum tersedia'}
             >
@@ -39,6 +42,7 @@ export function CheckInButton({
                     <Button
                         type="submit"
                         size="sm"
+                        variant={variant}
                         disabled={processing}
                         data-test={`check-in-member-${memberId}`}
                     >

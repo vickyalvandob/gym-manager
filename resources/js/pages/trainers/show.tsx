@@ -165,7 +165,7 @@ export default function ShowTrainer({
                     </div>
 
                     {canAssign && (
-                        <div className="grid gap-4 border-y py-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                        <div className="border-y py-5">
                             <Form
                                 {...TrainerController.show.form(trainer.id)}
                                 options={{
@@ -173,7 +173,7 @@ export default function ShowTrainer({
                                     preserveScroll: true,
                                     only: ['assignableMembers', 'memberSearch'],
                                 }}
-                                className="grid content-start gap-2"
+                                className="grid gap-2"
                             >
                                 {({ processing }) => (
                                     <>
@@ -181,7 +181,7 @@ export default function ShowTrainer({
                                             htmlFor="member_search"
                                             className="text-sm font-medium"
                                         >
-                                            Cari member aktif
+                                            Tambahkan member aktif
                                         </label>
                                         <div className="flex gap-2">
                                             <div className="relative min-w-0 flex-1">
@@ -207,79 +207,69 @@ export default function ShowTrainer({
                                 )}
                             </Form>
 
-                            <Form
-                                {...AssignTrainerMemberController.form(
-                                    trainer.id,
-                                )}
-                                options={{ preserveScroll: true }}
-                                className="grid content-start gap-2"
-                            >
-                                {({ errors, processing }) => (
-                                    <>
-                                        <label
-                                            htmlFor="member_id"
-                                            className="text-sm font-medium"
-                                        >
-                                            Pilih hasil pencarian
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <select
-                                                id="member_id"
-                                                name="member_id"
-                                                defaultValue=""
-                                                required
-                                                disabled={
-                                                    assignableMembers.length ===
-                                                    0
-                                                }
-                                                className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                                            >
-                                                <option value="" disabled>
-                                                    {assignableMembers.length >
-                                                    0
-                                                        ? 'Pilih member'
-                                                        : 'Tidak ada member yang dapat dipilih'}
-                                                </option>
-                                                {assignableMembers.map(
-                                                    (member) => (
-                                                        <option
-                                                            key={member.id}
-                                                            value={member.id}
-                                                        >
-                                                            {
-                                                                member.member_number
-                                                            }{' '}
-                                                            — {member.name}
-                                                        </option>
-                                                    ),
+                            <div className="mt-4">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    {memberSearch
+                                        ? `${assignableMembers.length} hasil pencarian`
+                                        : 'Member aktif terbaru'}
+                                </p>
+                                {assignableMembers.length === 0 ? (
+                                    <p className="mt-3 rounded-md bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                                        Tidak ada member aktif yang cocok atau
+                                        semua hasil sudah ditugaskan.
+                                    </p>
+                                ) : (
+                                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                        {assignableMembers.map((member) => (
+                                            <Form
+                                                key={member.id}
+                                                {...AssignTrainerMemberController.form(
+                                                    trainer.id,
                                                 )}
-                                            </select>
-                                            <Button
-                                                type="submit"
-                                                disabled={
-                                                    processing ||
-                                                    assignableMembers.length ===
-                                                        0
-                                                }
-                                                data-test="assign-trainer-member"
+                                                options={{
+                                                    preserveScroll: true,
+                                                }}
+                                                className="flex items-center justify-between gap-3 rounded-md border p-3"
                                             >
-                                                <Plus />
-                                                Tugaskan
-                                            </Button>
-                                        </div>
-                                        {errors.member_id && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.member_id}
-                                            </p>
-                                        )}
-                                        {errors.trainer && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.trainer}
-                                            </p>
-                                        )}
-                                    </>
+                                                {({ processing }) => (
+                                                    <>
+                                                        <input
+                                                            type="hidden"
+                                                            name="member_id"
+                                                            value={member.id}
+                                                        />
+                                                        <div className="min-w-0">
+                                                            <p className="truncate text-sm font-medium">
+                                                                {member.name}
+                                                            </p>
+                                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                                                {
+                                                                    member.member_number
+                                                                }{' '}
+                                                                · {member.phone}
+                                                            </p>
+                                                        </div>
+                                                        <Button
+                                                            type="submit"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            disabled={
+                                                                processing
+                                                            }
+                                                            data-test={`assign-trainer-member-${member.id}`}
+                                                        >
+                                                            <Plus />
+                                                            {processing
+                                                                ? 'Menugaskan...'
+                                                                : 'Tugaskan'}
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </Form>
+                                        ))}
+                                    </div>
                                 )}
-                            </Form>
+                            </div>
                         </div>
                     )}
 

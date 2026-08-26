@@ -67,7 +67,6 @@ export type PaymentFilters = {
     type: string;
     date_from: string;
     date_to: string;
-    per_page: number;
 };
 
 export type PaymentSummary = {
@@ -75,8 +74,6 @@ export type PaymentSummary = {
     outstanding_total: string;
     paid_count: number;
     pending_count: number;
-    membership_revenue: string;
-    pt_revenue: string;
 };
 
 export type PaymentIndexProps = {
@@ -85,5 +82,4 @@ export type PaymentIndexProps = {
     summary: PaymentSummary;
     statusOptions: SelectOption[];
     methodOptions: SelectOption[];
-    typeOptions: SelectOption[];
 };

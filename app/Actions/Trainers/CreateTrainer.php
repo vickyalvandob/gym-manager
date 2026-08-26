@@ -4,6 +4,7 @@ namespace App\Actions\Trainers;
 
 use App\Enums\GymRole;
 use App\Enums\GymUserStatus;
+use App\Enums\TrainerStatus;
 use App\Models\Gym;
 use App\Models\Trainer;
 use App\Models\User;
@@ -26,28 +27,31 @@ class CreateTrainer
                 ->whereKey($this->gymContext->gymId())
                 ->lockForUpdate()
                 ->firstOrFail();
-            $password = $attributes['password'] ?? null;
-            unset($attributes['password'], $attributes['password_confirmation']);
+            $password = is_string($attributes['password'] ?? null)
+                ? $attributes['password']
+                : '';
+            unset(
+                $attributes['password'],
+                $attributes['password_confirmation'],
+            );
+            $user = User::query()->create([
+                'name' => $attributes['name'],
+                'email' => $attributes['email'],
+                'password' => $password,
+            ]);
+            $user->forceFill(['email_verified_at' => now()])->save();
+            $lockedGym->users()->attach($user, [
+                'role' => GymRole::Trainer->value,
+                'status' => $attributes['status'] === TrainerStatus::Active->value
+                    ? GymUserStatus::Active->value
+                    : GymUserStatus::Inactive->value,
+            ]);
+            $attributes['user_id'] = $user->getKey();
 
-            if (! isset($attributes['user_id'])) {
-                $password = is_string($password) ? $password : '';
-                $user = User::query()->create([
-                    'name' => $attributes['name'],
-                    'email' => $attributes['email'],
-                    'email_verified_at' => now(),
-                    'password' => $password,
-                ]);
-                $lockedGym->users()->attach($user, [
-                    'role' => GymRole::Trainer->value,
-                    'status' => GymUserStatus::Active->value,
-                ]);
-                $attributes['user_id'] = $user->getKey();
-
-                $this->activityLogger->record('user.created', $user, [
-                    'source' => 'trainer.created',
-                    'role' => GymRole::Trainer->value,
-                ]);
-            }
+            $this->activityLogger->record('user.created', $user, [
+                'source' => 'trainer.created',
+                'role' => GymRole::Trainer->value,
+            ]);
 
             $attributes['trainer_code'] = sprintf(
                 'TRN-%06d',
