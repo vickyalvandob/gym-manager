@@ -365,7 +365,7 @@ Seeder demo hanya dapat berjalan pada environment `local` atau `testing`. Passwo
 
 Jangan menjalankan demo seeder atau menggunakan credential tersebut di production.
 
-## Nilai Teknis untuk Portfolio
+## Nilai Teknis
 
 Project ini mendemonstrasikan kemampuan membangun aplikasi bisnis end-to-end, khususnya:
 
