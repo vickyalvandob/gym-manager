@@ -1,190 +1,386 @@
 # GymFlow
 
-GymFlow adalah aplikasi manajemen operasional gym berbasis Laravel, Inertia, React, TypeScript, dan Tailwind CSS. Arsitektur tenant menggunakan satu database dengan shared schema dan isolasi data berdasarkan gym aktif.
+> Aplikasi manajemen operasional gym multi-tenant untuk mengelola member, membership, pembayaran, check-in, trainer, dan Personal Training dalam satu alur kerja.
 
-## Completed Phases
+GymFlow dibangun sebagai studi kasus aplikasi bisnis berbasis web yang tidak berhenti pada CRUD. Setiap modul mengikuti proses operasional nyata, menerapkan pembatasan akses berbasis peran, menjaga konsistensi transaksi, dan mengisolasi data setiap gym di sisi backend.
 
-### Phase 1 - Tenant Foundation
+## Ringkasan Project
 
-- Authentication melalui Laravel Fortify.
-- Registrasi atomik untuk User, Gym, role Owner, dan audit log awal.
-- Relasi many-to-many User dan Gym dengan role Owner, Admin/Front Desk, atau Trainer.
-- `GymContext` request-scoped dan middleware pemilih gym aktif.
-- Policy gym untuk akses tenant, pengelolaan gym, user, dan operasional front desk.
-- Dashboard terlindungi, layout aplikasi responsif, sidebar mobile, dan identitas GymFlow.
-- Shared Inertia props untuk gym aktif, role, dan izin UI.
-- Seeder development untuk akun Owner, Front Desk, dan Trainer.
-- Proteksi production untuk perintah database destruktif dan demo seeder.
+| Informasi         | Detail                                                        |
+| ----------------- | ------------------------------------------------------------- |
+| Kategori          | SaaS / Gym Management System                                  |
+| Arsitektur tenant | Shared database, shared schema, isolasi melalui `gym_id`      |
+| Peran pengguna    | Owner, Front Desk, Trainer                                    |
+| Backend           | PHP 8.4, Laravel 13, MySQL                                    |
+| Frontend          | Inertia.js 3, React 19, TypeScript, Tailwind CSS 4            |
+| Quality tools     | Pest, PHPStan, Laravel Pint, ESLint, Prettier, GitHub Actions |
+| Status            | Fitur operasional utama telah diimplementasikan dan diuji     |
 
-### Phase 2 - Member Management
+## Masalah yang Diselesaikan
 
-- Profil member tenant-scoped dengan nomor otomatis `MBR-000001` per gym.
-- Daftar member dengan pencarian nomor/nama/telepon, filter status, dan pagination server-side.
-- Tambah, detail, edit, aktivasi, dan deaktivasi tanpa hard delete.
-- Policy backend untuk Owner dan Front Desk; Trainer tidak mendapat akses pengelolaan member.
-- Foto member tervalidasi dan disimpan pada private storage dengan endpoint terotorisasi.
-- Audit log untuk pembuatan, perubahan profil, dan perubahan status member.
+Operasional gym sering tersebar di spreadsheet, chat, dan pencatatan manual. Kondisi tersebut menyulitkan staf untuk mengetahui member yang masih aktif, pembayaran yang belum selesai, validitas kunjungan, sisa sesi Personal Training, dan jadwal trainer.
 
-### Phase 3 - Membership Plans
+GymFlow menyatukan proses tersebut sehingga:
 
-- CRUD paket membership tenant-scoped dengan durasi hari, minggu, bulan, atau tahun.
-- Harga disimpan sebagai decimal presisi dan ditampilkan sesuai currency gym aktif.
-- Daftar paket dengan pencarian, filter aktif/nonaktif, dan pagination server-side.
-- Aktivasi, deaktivasi, dan penghapusan paket dengan dialog konfirmasi.
-- Policy backend untuk Owner dan Front Desk; Trainer tidak mendapat akses pengelolaan paket.
-- Audit log untuk pembuatan, perubahan, perubahan status, dan penghapusan paket.
+- Front Desk dapat melayani pendaftaran, pembayaran, dan check-in dari data yang sama.
+- Owner memperoleh ringkasan bisnis dan laporan berbasis transaksi yang benar-benar sudah dibayar.
+- Trainer hanya melihat client dan jadwal yang menjadi tanggung jawabnya.
+- Setiap gym tetap terisolasi walaupun menggunakan database dan aplikasi yang sama.
+- Perubahan penting dapat ditelusuri melalui activity log.
 
-### Phase 4 - Membership Management
+## Fitur Utama
 
-- Assignment dan renewal membership dengan periode yang dihitung dari snapshot paket.
-- Periode membership tidak saling tumpang tindih dan riwayat lama tidak ditimpa.
-- Status upcoming, aktif, atau kedaluwarsa dihitung dari tanggal gym aktif.
-- Detail member menampilkan membership aktif, periode berikutnya, dan riwayat terpaginasikan.
+### 1. Autentikasi dan tenant foundation
 
-### Phase 5 - Payments
+- Registrasi membuat akun Owner, gym, relasi role, dan audit log dalam satu database transaction.
+- Login, logout, lupa password, reset password, pembaruan profil, dan perubahan password.
+- Rate limiting pada login dan perubahan password.
+- Middleware `SetCurrentGym` memvalidasi gym aktif dari relasi user, bukan dari input frontend.
+- Pengaturan profil gym meliputi nama, kontak, alamat, logo privat, dan batas peringatan membership.
 
-- Satu invoice immutable untuk setiap periode membership dengan nilai dari snapshot harga.
-- Nomor invoice berurutan per gym dan dialokasikan di dalam transaction dengan row lock.
-- Pencatatan pembayaran penuh untuk cash, transfer, kartu, atau e-wallet.
-- Riwayat pembayaran tenant-scoped dengan filter server-side, ringkasan, dan audit log.
+### 2. Manajemen member
 
-### Phase 6 - Check-in
+- Nomor member otomatis berurutan per gym dengan format `MBR-000001`.
+- Pencarian berdasarkan nomor, nama, dan telepon serta filter status dan pagination server-side.
+- Profil member, foto privat, kontak darurat, catatan, serta status aktif/nonaktif.
+- Riwayat membership, pembayaran, check-in, paket PT, dan sesi PT tersedia dari detail member.
+- Data historis tidak dihapus saat member dinonaktifkan.
 
-- Pencarian cepat berdasarkan nama, nomor member, atau telepon dengan validasi membership.
-- Check-in hanya untuk member aktif yang memiliki membership aktif pada tanggal gym lokal.
-- Proteksi check-in tidak sengaja selama lima menit, tanpa membatasi satu kunjungan per hari.
-- Recent check-ins diperbarui berkala dan riwayat lengkap menggunakan filter serta pagination server-side.
-- Detail member menyediakan aksi check-in dan riwayat kunjungan.
-- Setiap check-in menyimpan membership yang divalidasi, petugas, waktu, dan audit event `checkin.created`.
+### 3. Paket dan periode membership
 
-### Phase 7 - Dashboard & Reports
+- CRUD paket membership dengan durasi hari, minggu, bulan, atau tahun.
+- Harga disimpan sebagai `decimal(14,2)` dan diformat berdasarkan mata uang gym.
+- Assignment dan renewal membuat snapshot nama paket, durasi, dan harga.
+- Periode membership bersifat immutable dan tidak boleh saling tumpang tindih.
+- Status upcoming, aktif, segera berakhir, atau kedaluwarsa dihitung dari tanggal lokal gym.
 
-- Dashboard memakai snapshot ter-defer untuk member aktif, membership berakhir/segera berakhir, member baru, check-in, dan revenue.
-- Revenue dashboard dan laporan hanya menghitung invoice lunas berdasarkan `paid_at`; invoice pending tidak dianggap pendapatan.
-- Aktivitas terbaru menampilkan enam check-in dan invoice terakhir tanpa mengambil seluruh riwayat.
-- Laporan Owner mencakup revenue, status member, status membership, serta volume dan member teratas berdasarkan check-in.
-- Filter laporan menyediakan Hari Ini, Kemarin, Minggu Ini, Bulan Ini, Bulan Lalu, dan rentang kustom maksimal 366 hari.
-- Seluruh batas hari dikonversi dari timezone gym ke UTC dan semua agregat tetap di-scope oleh gym aktif.
+### 4. Invoice dan pembayaran
 
-## Architecture
+- Assignment atau renewal membership otomatis menghasilkan satu invoice.
+- Nomor invoice berurutan per gym dengan format `INV-YYYYMM-######`.
+- Pembayaran mendukung cash, transfer bank, kartu debit, kartu kredit, dan e-wallet.
+- Invoice hanya dapat berubah dari `pending` menjadi `paid`; nominal berasal dari snapshot backend.
+- Workspace pembayaran memisahkan transaksi Membership dan Personal Trainer.
+- Revenue hanya menghitung transaksi `paid` berdasarkan `paid_at`, bukan tanggal invoice dibuat.
 
-```text
-Browser -> React -> Inertia -> Laravel -> MySQL/MariaDB
-                                     |
-                                     -> GymContext -> gym_id scoped queries
+### 5. Check-in member
+
+- Pencarian cepat member dan pemeriksaan kelayakan membership secara real time.
+- Check-in hanya diizinkan untuk member aktif dengan membership aktif.
+- Proteksi duplikasi selama lima menit tanpa membatasi kunjungan lain pada hari yang sama.
+- Riwayat kunjungan dapat dicari dan difilter berdasarkan rentang tanggal.
+- Recent check-ins diperbarui secara berkala untuk kebutuhan meja resepsionis.
+
+### 6. Trainer dan assignment client
+
+- Owner mengelola profil trainer dan setiap trainer dibuat bersama akun login individual.
+- Kode trainer otomatis berurutan per gym.
+- Owner dan Front Desk dapat menugaskan atau mengakhiri assignment member ke trainer.
+- Riwayat assignment dipertahankan melalui periode aktif dan berakhir.
+- Trainer hanya dapat membuka profil sendiri dan member yang sedang ditugaskan kepadanya.
+
+### 7. Personal Training
+
+- Owner mengelola katalog paket PT; Front Desk dapat melihat dan menjual paket aktif.
+- Pembelian paket PT sekaligus memilih trainer, membuat assignment bila diperlukan, mengaktifkan kuota, mencatat pembayaran, dan menulis audit trail secara atomik.
+- Sisa kuota memperhitungkan sesi selesai serta sesi terjadwal yang masih memesan slot.
+- Penjadwalan menolak waktu lampau, paket kedaluwarsa, kuota habis, dan jadwal trainer yang bertabrakan.
+- Sesi dapat dijadwalkan ulang, dibatalkan, diselesaikan, atau ditandai no-show.
+- Pembatalan tidak memakai kuota; konsumsi kuota no-show mengikuti konfigurasi gym.
+- Trainer mengelola jadwal dan hasil sesi hanya untuk client miliknya.
+
+### 8. Dashboard dan laporan
+
+- Dashboard berbeda untuk Owner, Front Desk, dan Trainer.
+- Owner melihat revenue, membership, check-in, pembayaran tertunda, dan aktivitas terkini.
+- Front Desk melihat metrik operasional tanpa data revenue khusus Owner.
+- Trainer melihat jadwal hari ini, sesi berikutnya, client aktif, dan sisa kuota PT tanpa data finansial.
+- Laporan Owner mencakup revenue, status member, status membership, volume check-in, dan member teratas.
+- Filter laporan: hari ini, kemarin, minggu ini, bulan ini, bulan lalu, atau rentang kustom maksimal 366 hari.
+- Snapshot dashboard dan laporan dimuat secara deferred dengan state loading, empty, error, dan retry.
+
+## Matriks Hak Akses
+
+| Kapabilitas                    | Owner | Front Desk |    Trainer     |
+| ------------------------------ | :---: | :--------: | :------------: |
+| Melihat dashboard sesuai peran |   ✓   |     ✓      |       ✓        |
+| Mengubah profil dan logo gym   |   ✓   |     —      |       —        |
+| Mengelola member               |   ✓   |     ✓      |       —        |
+| Mengelola paket membership     |   ✓   |     ✓      |       —        |
+| Assign dan renewal membership  |   ✓   |     ✓      |       —        |
+| Memproses pembayaran           |   ✓   |     ✓      |       —        |
+| Melakukan check-in             |   ✓   |     ✓      |       —        |
+| Mengelola profil trainer       |   ✓   |     —      |       —        |
+| Mengelola assignment trainer   |   ✓   |     ✓      |       —        |
+| Mengelola katalog paket PT     |   ✓   |   Lihat    |       —        |
+| Menjual paket PT               |   ✓   |     ✓      |       —        |
+| Menjadwalkan sesi PT           |   ✓   |     ✓      | Client sendiri |
+| Menyelesaikan/no-show sesi PT  |   —   |     —      | Client sendiri |
+| Melihat laporan dan revenue    |   ✓   |     —      |       —        |
+
+Semua izin pada tabel di atas ditegakkan kembali oleh Laravel Policy di backend. Permission yang dikirim ke React hanya digunakan untuk mengatur tampilan antarmuka.
+
+## Workflow Operasional
+
+### Workflow membership
+
+```mermaid
+flowchart LR
+    A[Front Desk membuat atau memilih member] --> B[Memilih paket membership]
+    B --> C[Backend memvalidasi tenant dan periode]
+    C --> D[Menyimpan snapshot periode membership]
+    D --> E[Membuat invoice pending]
+    E --> F[Front Desk mengonfirmasi pembayaran]
+    F --> G[Invoice paid dan revenue tercatat]
+    G --> H[Member dapat check-in selama periode aktif]
 ```
 
-`current_gym_id` disimpan di session, tetapi selalu diverifikasi terhadap membership aktif milik user. Nilai tenant dari request atau frontend tidak digunakan sebagai sumber otoritatif. Model operasional pada phase berikutnya wajib memiliki `gym_id` dan harus diakses melalui gym yang telah diselesaikan middleware.
+### Workflow Personal Training
 
-## Database Changes
+```mermaid
+flowchart LR
+    A[Owner membuat paket PT dan trainer] --> B[Front Desk menjual paket PT]
+    B --> C[Member ditugaskan ke trainer]
+    C --> D[Pembayaran PT tercatat]
+    D --> E[Trainer menjadwalkan sesi]
+    E --> F{Hasil sesi}
+    F -->|Selesai| G[Kuota terpakai]
+    F -->|No-show| H[Kuota mengikuti setting gym]
+    F -->|Dibatalkan| I[Kuota dikembalikan]
+```
 
-### gyms
+### Workflow Owner
 
-Menyimpan identitas tenant, status, timezone, currency, dan batas peringatan membership.
+1. Mendaftarkan gym dan melengkapi profil operasional.
+2. Menyiapkan paket membership, trainer, dan paket Personal Training.
+3. Memantau member aktif, membership segera berakhir, pembayaran tertunda, check-in, dan revenue.
+4. Membuka laporan berdasarkan periode untuk evaluasi operasional dan bisnis.
 
-### gym_user
+## Arsitektur Aplikasi
 
-Pivot User-Gym dengan unique key `(gym_id, user_id)`, role, status, timestamp, dan index untuk membership aktif.
+GymFlow menggunakan pola monolith modern: Laravel menangani routing, autentikasi, otorisasi, validasi, dan domain logic; React menangani pengalaman SPA; Inertia menjadi penghubung tanpa REST API terpisah.
 
-### activity_logs
+```mermaid
+flowchart TB
+    UI[React + TypeScript UI] -->|Inertia request| ROUTE[Laravel Routes]
+    ROUTE --> MW[Auth + SetCurrentGym Middleware]
+    MW --> CONTROLLER[Controller]
+    CONTROLLER --> REQUEST[Form Request Validation]
+    CONTROLLER --> POLICY[Laravel Policy]
+    CONTROLLER --> ACTION[Domain Action]
+    ACTION --> SUPPORT[GymContext + Domain Services]
+    ACTION --> MODEL[Eloquent Models]
+    MODEL --> DB[(MySQL)]
+    ACTION --> AUDIT[Activity Logs]
+    CONTROLLER -->|Inertia response| UI
+```
 
-Menyimpan event penting per gym, actor, polymorphic subject, properti tambahan, dan alamat IP. Event aktif mencakup `user.created`, `member.created`, `member.updated`, dan `member.status_changed`.
+### Pembagian tanggung jawab
 
-### members
+| Layer           | Tanggung jawab                                                      |
+| --------------- | ------------------------------------------------------------------- |
+| Middleware      | Menentukan tenant aktif dan menolak akun/gym nonaktif               |
+| Form Request    | Validasi dan normalisasi input                                      |
+| Policy          | Otorisasi role serta kepemilikan resource tenant                    |
+| Controller      | Orkestrasi request dan Inertia response                             |
+| Action          | Aturan bisnis dan transaction boundary                              |
+| Support service | Kalkulasi dashboard, laporan, eligibility, dan penjadwalan          |
+| Model           | Relasi Eloquent, casts, dan query domain                            |
+| React page      | Interaksi pengguna, feedback validasi, filter, dan responsive state |
 
-Menyimpan profil member per gym. Unique key `(gym_id, member_number)` menjaga nomor member tetap unik di dalam tenant, sementara `gyms.next_member_sequence` dikunci saat alokasi nomor untuk mencegah duplikasi pada request bersamaan.
+### Isolasi multi-tenant
 
-### membership_plans
+```text
+Authenticated User
+       |
+       v
+active gym_user relation + active gym
+       |
+       v
+SetCurrentGym middleware
+       |
+       v
+request-scoped GymContext
+       |
+       v
+gym relation / gym_id-scoped operational queries
+```
 
-Menyimpan katalog paket per gym dengan unique key `(gym_id, name)`, durasi terstruktur, harga `decimal(14,2)`, deskripsi, dan status aktif. Index `(gym_id, is_active, created_at)` mendukung daftar operasional tenant.
+`current_gym_id` dapat disimpan di session, tetapi nilainya selalu diverifikasi terhadap relasi gym aktif milik user. Resource dari gym lain menghasilkan respons tidak ditemukan atau tidak diizinkan. Backend tidak menerima `gym_id`, nomor member, nomor trainer, nomor invoice, maupun nominal pembayaran dari frontend sebagai sumber kebenaran.
 
-### member_memberships
+## Model Data Inti
 
-Menyimpan snapshot paket dan periode historis per member. Index periode mendukung validasi membership aktif, expiry dashboard/report, dan constraint mencegah tanggal mulai ganda untuk member yang sama.
+```mermaid
+erDiagram
+    USERS ||--o{ GYM_USER : memiliki_akses
+    GYMS ||--o{ GYM_USER : memiliki_user
+    GYMS ||--o{ MEMBERS : memiliki
+    GYMS ||--o{ MEMBERSHIP_PLANS : menawarkan
+    MEMBERS ||--o{ MEMBER_MEMBERSHIPS : memiliki
+    MEMBERSHIP_PLANS ||--o{ MEMBER_MEMBERSHIPS : disnapshot_ke
+    MEMBER_MEMBERSHIPS ||--|| PAYMENTS : ditagihkan
+    MEMBERS ||--o{ CHECK_INS : melakukan
+    MEMBER_MEMBERSHIPS ||--o{ CHECK_INS : memvalidasi
+    GYMS ||--o{ TRAINERS : memiliki
+    TRAINERS ||--o{ TRAINER_MEMBERS : ditugaskan
+    MEMBERS ||--o{ TRAINER_MEMBERS : didampingi
+    GYMS ||--o{ PT_PACKAGES : menawarkan
+    PT_PACKAGES ||--o{ MEMBER_PT_PACKAGES : dibeli_sebagai
+    MEMBERS ||--o{ MEMBER_PT_PACKAGES : membeli
+    TRAINERS ||--o{ MEMBER_PT_PACKAGES : menangani
+    MEMBER_PT_PACKAGES ||--|| PAYMENTS : dibayar_dengan
+    MEMBER_PT_PACKAGES ||--o{ PT_SESSIONS : digunakan_untuk
+    TRAINERS ||--o{ PT_SESSIONS : melatih
+    GYMS ||--o{ ACTIVITY_LOGS : mencatat
+```
 
-### payments
+## Business Rules dan Integritas Data
 
-Menyimpan satu invoice penuh per membership, status pembayaran, metode, penerima, dan waktu pembayaran. Nomor invoice unik di dalam gym; index `(gym_id, status, paid_at)` mendukung agregat revenue tanpa memindai invoice tenant lain.
+- Setiap query operasional wajib melalui gym aktif dari `GymContext`.
+- Sequence member, trainer, dan invoice dialokasikan saat row gym dikunci dengan `lockForUpdate()`.
+- Proses yang mengubah beberapa tabel menggunakan database transaction.
+- Membership menyimpan snapshot paket agar histori tidak berubah ketika master paket diedit.
+- Periode membership tidak overlap dan renewal membuat record historis baru.
+- Invoice membership immutable, unik per periode, dan nominalnya tidak dapat dikirim ulang dari frontend.
+- Revenue hanya berasal dari pembayaran berstatus `paid` dan waktu `paid_at`.
+- Check-in menyimpan membership yang dipakai untuk validasi serta user yang melayani.
+- Kuota PT aman terhadap sesi paralel melalui penguncian paket member dan validasi jadwal.
+- Foto member dan logo gym disimpan pada private storage serta dilayani melalui endpoint terotorisasi.
+- Aktivitas penting seperti pembuatan, perubahan status, pembayaran, assignment, dan sesi PT dicatat pada audit log.
 
-### check_ins
+## UI/UX
 
-Menyimpan gym, member, membership yang tervalidasi, waktu check-in UTC, dan petugas. Index `(gym_id, checked_in_at)` mendukung recent/history, sedangkan `(gym_id, member_id, checked_in_at)` mendukung proteksi duplikat.
+- Antarmuka berbahasa Indonesia untuk kebutuhan operator gym.
+- Layout responsif dengan sidebar desktop dan navigasi mobile.
+- Tabel pada layar lebar dan tampilan card pada layar kecil untuk workspace operasional.
+- Pencarian, filter, pagination, empty state, konfirmasi, dan feedback validasi tersedia pada modul utama.
+- Dashboard disesuaikan dengan prioritas tiap peran: bisnis untuk Owner, operasional harian untuk Front Desk, dan agenda client untuk Trainer.
+- Navigasi frontend menggunakan helper route bertipe dari Laravel Wayfinder.
 
-## Business Rules
+## Tech Stack
 
-- Hanya user dengan membership gym aktif yang dapat membuka dashboard.
-- Gym berstatus suspended dan pivot user berstatus inactive tidak dapat menjadi current gym.
-- Manipulasi session ke gym tenant lain diabaikan dan tidak membuka akses.
-- Owner dapat mengubah gym dan mengelola user; Front Desk hanya mendapat akses operasional; Trainer mendapat workspace terbatas.
-- Public registration membuat user dan satu gym baru dalam satu database transaction.
-- Demo credential hanya dibuat pada environment `local` dan `testing`.
-- Nomor member dihasilkan backend dari sequence gym dan tidak menerima `gym_id` atau nomor dari frontend.
-- Member tidak dihapus permanen dari workflow operasional; gunakan status aktif/nonaktif.
-- Semua lookup detail, edit, status, dan foto dilakukan melalui relasi member milik `GymContext` aktif.
-- Nama paket membership unik di dalam satu gym, tetapi dapat digunakan kembali oleh gym lain.
-- Harga paket tidak dikonversi ke float; backend mempertahankan nilai decimal sebagai string.
-- Semua lookup, perubahan status, dan penghapusan paket dilakukan melalui relasi paket milik `GymContext` aktif.
-- Periode membership bersifat immutable, tidak overlap, dan statusnya dihitung menggunakan tanggal gym lokal.
-- Satu membership hanya memiliki satu invoice dengan nilai yang berasal dari snapshot paket.
-- Check-in ditolak jika member nonaktif atau tidak memiliki membership aktif pada tanggal gym lokal.
-- Request check-in berulang dalam lima menit ditolak di dalam transaction setelah member row dikunci; check-in berikutnya pada hari yang sama tetap diperbolehkan.
-- Riwayat check-in selalu diambil melalui relasi gym aktif dan tidak menerima `gym_id` dari frontend.
-- Dashboard hanya menampilkan revenue kepada Owner; Front Desk tetap menerima metrik operasional, sedangkan Trainer tidak menerima daftar transaksi atau aktivitas beridentitas.
-- Halaman laporan hanya dapat dibuka Owner melalui policy backend; permission frontend hanya mengatur visibilitas menu.
-- Revenue memakai waktu pembayaran `paid_at`, bukan waktu invoice dibuat, dan hanya mencakup status `paid`.
-- Status membership laporan dihitung pada tanggal akhir periode terpilih tanpa mengubah record historis.
-- Rentang laporan kustom tidak boleh melewati hari ini dan dibatasi maksimal 366 hari.
+| Area            | Teknologi                               |
+| --------------- | --------------------------------------- |
+| Language        | PHP 8.4, TypeScript                     |
+| Framework       | Laravel 13, React 19                    |
+| SPA bridge      | Inertia.js 3                            |
+| Styling         | Tailwind CSS 4, Radix UI primitives     |
+| Database        | MySQL; SQLite in-memory pada CI         |
+| Authentication  | Laravel Fortify                         |
+| Typed routes    | Laravel Wayfinder                       |
+| Testing         | Pest 5, PHPUnit 13                      |
+| Static analysis | PHPStan / Larastan, TypeScript compiler |
+| Code quality    | Laravel Pint, ESLint, Prettier          |
+| Build           | Vite 8                                  |
+| CI              | GitHub Actions                          |
 
-## Test Accounts
+## Struktur Project
 
-Semua akun development menggunakan password `password`.
+```text
+app/
+├── Actions/             # Use case dan transaction boundary
+├── Enums/               # Status dan role domain
+├── Http/
+│   ├── Controllers/     # Orkestrasi HTTP dan Inertia
+│   ├── Middleware/      # Resolusi tenant aktif
+│   └── Requests/        # Validasi input
+├── Models/              # Model dan relasi Eloquent
+├── Policies/            # Otorisasi backend
+└── Support/             # GymContext, snapshot, eligibility, scheduler
+database/
+├── factories/           # Data builder untuk testing
+├── migrations/          # Skema dan index database
+└── seeders/             # Data demo lokal/testing
+resources/js/
+├── actions/             # Generated Wayfinder controller actions
+├── components/          # Komponen UI reusable
+├── pages/               # Halaman Inertia React per modul
+├── routes/              # Generated named-route helpers
+└── types/               # Kontrak TypeScript
+tests/
+├── Feature/             # Pengujian workflow dan integrasi
+└── Unit/                # Pengujian unit
+```
 
-| Peran | Email |
-| --- | --- |
-| Owner | `owner@gym.test` |
-| Front Desk | `frontdesk@gym.test` |
-| Trainer | `trainer@gym.test` |
+## Pengujian dan CI
 
-## Local Setup
+Test suite memverifikasi workflow bisnis, bukan hanya respons halaman. Cakupannya meliputi:
+
+- autentikasi, registration transaction, dan rate limiting;
+- isolasi cross-tenant serta pembatasan Owner/Front Desk/Trainer;
+- sequence nomor pada request bersamaan dan audit trail;
+- lifecycle membership, invoice, pembayaran, dan check-in;
+- laporan berbasis timezone dan transaksi paid;
+- trainer assignment, penjadwalan bentrok, kuota PT, cancellation, completion, dan no-show;
+- validasi upload privat dan pengaturan profil gym.
+
+Pipeline GitHub Actions menyiapkan aplikasi dari checkout bersih, menjalankan migration dan Wayfinder generation, kemudian memeriksa:
+
+```bash
+composer ci:check
+npm run build
+```
+
+`composer ci:check` mencakup Pint, Prettier, TypeScript, ESLint, PHPStan/Larastan, dan seluruh Pest test suite.
+
+Snapshot verifikasi lokal saat dokumentasi diperbarui:
+
+- 95 test passed, 3 skipped, dan 1.087 assertions;
+- Pint, Prettier, ESLint, TypeScript, dan PHPStan passed;
+- production frontend build passed;
+- seluruh migration aktif berstatus `Ran` pada MySQL.
+
+## Menjalankan Project Secara Lokal
+
+### Prasyarat
+
+- PHP 8.4 dan Composer 2
+- Node.js 22 dan npm
+- MySQL 8 atau MariaDB yang kompatibel
+
+### Instalasi
 
 ```bash
 composer install
 npm install
-php artisan key:generate
-php artisan migrate --seed
+copy .env.example .env
+php artisan key:generate --no-interaction
+php artisan migrate --seed --no-interaction
+php artisan wayfinder:generate --with-form --no-interaction
 npm run build
 composer run dev
 ```
 
-Pastikan konfigurasi database MySQL/MariaDB pada `.env` sudah benar sebelum menjalankan migration.
+Pada Linux/macOS, gunakan `cp .env.example .env` sebagai pengganti `copy`. Sesuaikan koneksi database pada `.env` sebelum menjalankan migration.
 
-## Verification
+### Akun demo
 
-```bash
-php artisan test --compact
-composer run types:check
-npm run lint:check
-npm run format:check
-npm run types:check
-npm run build
-```
+Seeder demo hanya dapat berjalan pada environment `local` atau `testing`. Password seluruh akun demo adalah `password`.
 
-## Production Checklist
+| Peran      | Email                |
+| ---------- | -------------------- |
+| Owner      | `owner@gym.test`     |
+| Front Desk | `frontdesk@gym.test` |
+| Trainer    | `trainer@gym.test`   |
 
-- Gunakan `APP_ENV=production` dan `APP_DEBUG=false`.
-- Gunakan secret `APP_KEY` yang unik dan database credential production.
-- Jalankan migration dengan `php artisan migrate --force`, tanpa demo seeder.
-- Konfigurasikan HTTPS, queue worker, scheduler, mail transport, backup off-site, dan monitoring log.
-- Jalankan `php artisan optimize` setelah deployment dan `php artisan optimize:clear` saat konfigurasi berubah.
-- Lakukan UAT tenant isolation menggunakan minimal dua gym sebelum go-live.
+Jangan menjalankan demo seeder atau menggunakan credential tersebut di production.
 
-## Known Limitations
+## Nilai Teknis untuk Portfolio
 
-- Selector untuk user multi-gym belum tersedia; middleware memakai gym aktif pertama atau gym session yang valid.
-- Trend chart revenue/member belum ditambahkan karena bersifat opsional; Phase 7 memprioritaskan agregat operasional dan daftar tindak lanjut.
-- Pengelolaan trainer, staff, dan pengaturan profil gym masuk phase lanjutan.
-- SaaS billing, subscription platform, dan Super Admin belum diimplementasikan.
+Project ini mendemonstrasikan kemampuan membangun aplikasi bisnis end-to-end, khususnya:
 
-## Remaining For Phase 8
+- merancang arsitektur multi-tenant dengan shared schema yang aman;
+- menerjemahkan proses bisnis menjadi transaction-safe domain actions;
+- memisahkan otorisasi backend dari visibilitas UI;
+- menangani uang, timezone, periode membership, sequence, dan kuota tanpa bergantung pada perhitungan frontend;
+- membangun SPA responsif tanpa menduplikasi backend menjadi REST API terpisah;
+- menulis pengujian integrasi untuk positive path, denial path, cross-tenant access, dan edge cases;
+- menyiapkan static analysis, formatting, build, serta continuous integration.
 
-Phase 8 mencakup trainer CRUD, assignment trainer-member, dan dashboard trainer dasar.
+## Batasan dan Pengembangan Berikutnya
+
+- UI pemilih gym untuk user yang memiliki akses ke beberapa tenant belum tersedia; middleware memakai gym session yang valid atau gym aktif pertama.
+- Belum ada partial payment, refund, pembatalan invoice, atau rekonsiliasi payment gateway.
+- Belum ada modul workout plan, inventory, payroll/komisi trainer, dan booking kelas grup.
+- Belum ada platform-level Super Admin dan subscription billing untuk model SaaS komersial.
+- Dokumentasi visual dapat dilengkapi dengan screenshot dashboard setiap role, alur pembayaran, check-in, dan jadwal PT saat project dipublikasikan.
