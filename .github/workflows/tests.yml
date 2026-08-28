@@ -50,6 +50,7 @@ jobs:
           cp .env.example .env
           php artisan key:generate --no-interaction
           php artisan migrate --force --no-interaction
+          php artisan wayfinder:generate --with-form --no-interaction
 
       - name: Run CI Checks
         run: composer ci:check

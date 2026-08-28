@@ -15,3 +15,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/dashboard.tsx | .ai/rules/pages.md |
 | resources/js/pages/payments/** | .ai/rules/payments.md |
 | database/seeders/** | .ai/rules/seeders.md |
+| .github/workflows/** | .ai/rules/workflows.md |
