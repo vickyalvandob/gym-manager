@@ -64,9 +64,15 @@ class HandleInertiaRequests extends Middleware
                 'id' => $currentGym->getKey(),
                 'name' => $currentGym->name,
                 'slug' => $currentGym->slug,
+                'logo_url' => $currentGym->logo === null
+                    ? null
+                    : route('gym-logo.show', ['v' => $currentGym->updated_at?->getTimestamp()]),
                 'status' => $currentGym->status->value,
                 'timezone' => $currentGym->timezone,
                 'currency' => $currentGym->currency,
+                'phone' => $currentGym->phone,
+                'email' => $currentGym->email,
+                'address' => $currentGym->address,
                 'membership_expiry_warning_days' => $currentGym->membership_expiry_warning_days,
                 'count_pt_no_show_as_used_session' => $currentGym->count_pt_no_show_as_used_session,
             ],

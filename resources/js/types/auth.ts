@@ -30,9 +30,13 @@ export type Gym = {
     id: number;
     name: string;
     slug: string;
+    logo_url: string | null;
     status: 'active' | 'suspended';
     timezone: string;
     currency: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
     membership_expiry_warning_days: number;
     count_pt_no_show_as_used_session: boolean;
 };

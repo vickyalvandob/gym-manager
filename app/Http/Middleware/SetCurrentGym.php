@@ -32,9 +32,13 @@ class SetCurrentGym
                 'gyms.id',
                 'gyms.name',
                 'gyms.slug',
+                'gyms.logo',
                 'gyms.status',
                 'gyms.timezone',
                 'gyms.currency',
+                'gyms.phone',
+                'gyms.email',
+                'gyms.address',
                 'gyms.membership_expiry_warning_days',
                 'gyms.count_pt_no_show_as_used_session',
             ])

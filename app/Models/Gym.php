@@ -15,9 +15,13 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $slug
+ * @property string|null $logo
  * @property GymStatus $status
  * @property string $timezone
  * @property string $currency
+ * @property string|null $phone
+ * @property string|null $email
+ * @property string|null $address
  * @property int $membership_expiry_warning_days
  * @property bool $count_pt_no_show_as_used_session
  * @property int $next_member_sequence
@@ -29,9 +33,13 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'name',
     'slug',
+    'logo',
     'status',
     'timezone',
     'currency',
+    'phone',
+    'email',
+    'address',
     'membership_expiry_warning_days',
     'count_pt_no_show_as_used_session',
     'next_member_sequence',

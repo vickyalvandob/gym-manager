@@ -7,6 +7,8 @@ use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\CompletePtSessionController;
 use App\Http\Controllers\CreateMembershipPaymentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GymLogoController;
+use App\Http\Controllers\GymSettingsController;
 use App\Http\Controllers\MarkPaymentPaidController;
 use App\Http\Controllers\MarkPtSessionNoShowController;
 use App\Http\Controllers\MemberController;
@@ -31,6 +33,14 @@ Route::redirect('/', '/login')->name('home');
 Route::middleware(['auth', 'verified', 'gym'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('reports', ReportController::class)->name('reports.index');
+
+    Route::get('settings/gym', [GymSettingsController::class, 'edit'])
+        ->name('gym-settings.edit');
+    Route::patch('settings/gym', [GymSettingsController::class, 'update'])
+        ->name('gym-settings.update');
+    Route::delete('settings/gym/logo', [GymSettingsController::class, 'destroyLogo'])
+        ->name('gym-settings.logo.destroy');
+    Route::get('gym-logo', GymLogoController::class)->name('gym-logo.show');
 
     Route::get('members/{member}/photo', MemberPhotoController::class)
         ->whereNumber('member')

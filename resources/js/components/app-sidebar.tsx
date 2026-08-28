@@ -6,11 +6,13 @@ import {
     Dumbbell,
     LayoutDashboard,
     LogIn,
+    Settings2,
     Tickets,
     UserRoundCog,
     UsersRound,
 } from 'lucide-react';
 import CheckInController from '@/actions/App/Http/Controllers/CheckInController';
+import GymSettingsController from '@/actions/App/Http/Controllers/GymSettingsController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -160,6 +162,20 @@ export function AppSidebar() {
                               title: 'Laporan',
                               href: reportsIndex(),
                               icon: ChartNoAxesCombined,
+                          },
+                      ],
+                  },
+              ]
+            : []),
+        ...(auth.permissions.manage_gym
+            ? [
+                  {
+                      title: 'Pengaturan',
+                      items: [
+                          {
+                              title: 'Profil Gym',
+                              href: GymSettingsController.edit(),
+                              icon: Settings2,
                           },
                       ],
                   },
