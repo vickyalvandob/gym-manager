@@ -8,7 +8,10 @@ use App\Models\ActivityLog;
 use App\Models\Gym;
 use App\Models\Member;
 use App\Models\MemberMembership;
+use App\Models\MemberPtPackage;
 use App\Models\MembershipPlan;
+use App\Models\PtPackage;
+use App\Models\PtSession;
 use App\Models\Trainer;
 use App\Models\User;
 use Database\Seeders\DemoGymSeeder;
@@ -165,9 +168,43 @@ test('trainer dashboard exposes only the linked trainers assigned members', func
         'gym_id' => $gym->getKey(),
         'assigned_by' => null,
     ]);
+    $trainer->members()->attach($foreignMember, [
+        'gym_id' => $foreignGym->getKey(),
+        'assigned_by' => null,
+    ]);
     $foreignTrainer->members()->attach($foreignMember, [
         'gym_id' => $foreignGym->getKey(),
         'assigned_by' => null,
+    ]);
+    $ptPackage = PtPackage::factory()->for($gym)->create(['name' => 'PT Strength']);
+    $memberPtPackage = MemberPtPackage::factory()->for($gym)->create([
+        'member_id' => $assignedMember->getKey(),
+        'trainer_id' => $trainer->getKey(),
+        'pt_package_id' => $ptPackage->getKey(),
+        'total_sessions' => 8,
+        'used_sessions' => 2,
+        'start_date' => '2026-08-01',
+        'expires_at' => '2026-09-30',
+    ]);
+    PtSession::factory()->for($gym)->create([
+        'member_pt_package_id' => $memberPtPackage->getKey(),
+        'member_id' => $assignedMember->getKey(),
+        'trainer_id' => $trainer->getKey(),
+        'scheduled_at' => '2026-08-25 06:00:00',
+    ]);
+    $foreignPtPackage = PtPackage::factory()->for($foreignGym)->create();
+    $foreignMemberPtPackage = MemberPtPackage::factory()->for($foreignGym)->create([
+        'member_id' => $foreignMember->getKey(),
+        'trainer_id' => $foreignTrainer->getKey(),
+        'pt_package_id' => $foreignPtPackage->getKey(),
+        'start_date' => '2026-08-01',
+        'expires_at' => '2026-09-30',
+    ]);
+    PtSession::factory()->for($foreignGym)->create([
+        'member_pt_package_id' => $foreignMemberPtPackage->getKey(),
+        'member_id' => $foreignMember->getKey(),
+        'trainer_id' => $foreignTrainer->getKey(),
+        'scheduled_at' => '2026-08-25 06:00:00',
     ]);
 
     $this->actingAs($trainerUser)
@@ -179,9 +216,17 @@ test('trainer dashboard exposes only the linked trainers assigned members', func
                 ->where('snapshot.metrics.revenue_today', null)
                 ->where('snapshot.trainer_workspace.trainer.id', $trainer->getKey())
                 ->where('snapshot.trainer_workspace.assigned_members_count', 1)
-                ->where('snapshot.trainer_workspace.active_members_count', 1)
-                ->has('snapshot.trainer_workspace.assigned_members', 1)
-                ->where('snapshot.trainer_workspace.assigned_members.0.name', 'Member Ditangani')));
+                ->where('snapshot.trainer_workspace.active_pt_clients_count', 1)
+                ->where('snapshot.trainer_workspace.today_sessions_count', 1)
+                ->where('snapshot.trainer_workspace.upcoming_sessions_count', 0)
+                ->has('snapshot.trainer_workspace.today_sessions', 1)
+                ->where('snapshot.trainer_workspace.today_sessions.0.member.name', 'Member Ditangani')
+                ->has('snapshot.trainer_workspace.session_members', 1)
+                ->where('snapshot.trainer_workspace.session_members.0.member.name', 'Member Ditangani')
+                ->where('snapshot.trainer_workspace.session_members.0.remaining_sessions', 6)
+                ->where('snapshot.trainer_workspace.session_members.0.available_sessions', 5)));
+
+    $trainer->members()->detach($foreignMember);
 
     $this->get(route('trainers.show', $trainer))
         ->assertOk()

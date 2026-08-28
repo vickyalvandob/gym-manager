@@ -4,12 +4,10 @@ namespace App\Support;
 
 use App\Enums\GymRole;
 use App\Enums\MemberPtPackageStatus;
-use App\Enums\MemberStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\PtSessionStatus;
 use App\Enums\TrainerStatus;
 use App\Models\CheckIn;
-use App\Models\Member;
 use App\Models\MemberMembership;
 use App\Models\MemberPtPackage;
 use App\Models\Payment;
@@ -37,7 +35,7 @@ class DashboardSnapshot
         $membershipTable = (new MemberMembership)->getTable();
 
         if ($role === GymRole::Trainer) {
-            return $this->trainerSnapshot($today, $tomorrow, $warningEnd);
+            return $this->trainerSnapshot($today, $tomorrow);
         }
 
         $membershipMetrics = $gym->memberMemberships()
@@ -80,9 +78,10 @@ class DashboardSnapshot
             ->where('checked_in_at', '<', $tomorrow->utc())
             ->count();
 
-        [$revenueToday, $revenueThisMonth] = $role === GymRole::Owner
-            ? $this->revenueMetrics($monthStart->utc(), $today->utc(), $tomorrow->utc())
-            : [null, null];
+        [$pendingPaymentsCount, $pendingPaymentsAmount] = $this->pendingPaymentMetrics();
+        [$revenueToday, $revenueThisMonth, $revenueTrend] = $role === GymRole::Owner
+            ? $this->ownerRevenueMetrics($monthStart, $today, $tomorrow)
+            : [null, null, null];
 
         return [
             'metrics' => [
@@ -93,7 +92,10 @@ class DashboardSnapshot
                 'check_ins_today' => $checkInsToday,
                 'revenue_today' => $revenueToday,
                 'revenue_this_month' => $revenueThisMonth,
+                'pending_payments_count' => $pendingPaymentsCount,
+                'pending_payments_amount' => $pendingPaymentsAmount,
             ],
+            'revenue_trend' => $revenueTrend,
             'recent_check_ins' => $this->recentCheckIns(),
             'recent_payments' => $this->recentPayments(),
             'trainer_workspace' => null,
@@ -105,8 +107,8 @@ class DashboardSnapshot
     private function trainerSnapshot(
         CarbonImmutable $today,
         CarbonImmutable $tomorrow,
-        CarbonImmutable $warningEnd,
     ): array {
+        $todayDate = $today->toDateString();
         $trainer = $this->gymContext->gym()->trainers()
             ->select([
                 'trainers.id',
@@ -114,6 +116,21 @@ class DashboardSnapshot
                 'trainers.name',
                 'trainers.specialization',
                 'trainers.status',
+            ])
+            ->withCount([
+                'members as assigned_members_count' => fn ($query) => $query
+                    ->where('members.gym_id', $this->gymContext->gymId()),
+                'ptPackages as active_pt_clients_count' => fn ($query) => $query
+                    ->where('member_pt_packages.gym_id', $this->gymContext->gymId())
+                    ->where('status', MemberPtPackageStatus::Active->value)
+                    ->where('start_date', '<=', $todayDate)
+                    ->where(function ($query) use ($todayDate): void {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>=', $todayDate);
+                    }),
+                'ptSessions as upcoming_sessions_count' => fn ($query) => $query
+                    ->where('pt_sessions.gym_id', $this->gymContext->gymId())
+                    ->where('status', PtSessionStatus::Scheduled->value)
+                    ->where('scheduled_at', '>=', $tomorrow->utc()),
             ])
             ->where('user_id', $this->request->user()?->getKey())
             ->where('status', TrainerStatus::Active->value)
@@ -123,33 +140,9 @@ class DashboardSnapshot
             return $this->emptyTrainerSnapshot();
         }
 
-        $todayDate = $today->toDateString();
-        $assignedMembers = $trainer->members();
-        $assignedMembersCount = (clone $assignedMembers)->count();
-        $activeMembersCount = (clone $assignedMembers)
-            ->where('members.status', MemberStatus::Active->value)
-            ->whereHas('memberships', fn ($query) => $query
-                ->where('member_memberships.gym_id', $this->gymContext->gymId())
-                ->where('start_date', '<=', $todayDate)
-                ->where('end_date', '>=', $todayDate))
-            ->count();
-        $expiringSoonCount = (clone $assignedMembers)
-            ->where('members.status', MemberStatus::Active->value)
-            ->whereHas('memberships', fn ($query) => $query
-                ->where('member_memberships.gym_id', $this->gymContext->gymId())
-                ->where('start_date', '<=', $todayDate)
-                ->whereBetween('end_date', [$todayDate, $warningEnd->toDateString()]))
-            ->count();
-        $newMembersThisMonth = (clone $assignedMembers)
-            ->where('members.created_at', '>=', $today->startOfMonth()->utc())
-            ->where('members.created_at', '<', $tomorrow->utc())
-            ->count();
-        $assignedMemberIds = $trainer->members()->select('members.id');
-        $checkInsToday = $this->gymContext->gym()->checkIns()
-            ->whereIn('member_id', $assignedMemberIds)
-            ->where('checked_in_at', '>=', $today->utc())
-            ->where('checked_in_at', '<', $tomorrow->utc())
-            ->count();
+        $assignedMembersCount = (int) $trainer->getAttribute('assigned_members_count');
+        $activePtClientsCount = (int) $trainer->getAttribute('active_pt_clients_count');
+        $upcomingSessionsCount = (int) $trainer->getAttribute('upcoming_sessions_count');
         $todaySessions = $this->gymContext->gym()->ptSessions()
             ->select([
                 'pt_sessions.id',
@@ -168,31 +161,20 @@ class DashboardSnapshot
             ])
             ->orderBy('scheduled_at')
             ->get();
-        $upcomingSessionsCount = $this->gymContext->gym()->ptSessions()
-            ->where('trainer_id', $trainer->getKey())
-            ->where('status', PtSessionStatus::Scheduled->value)
-            ->where('scheduled_at', '>=', $tomorrow->utc())
-            ->count();
-        $activePtClientsCount = $this->gymContext->gym()->memberPtPackages()
-            ->where('trainer_id', $trainer->getKey())
-            ->where('status', MemberPtPackageStatus::Active->value)
-            ->whereDate('start_date', '<=', $todayDate)
-            ->where(function ($query) use ($todayDate): void {
-                $query->whereNull('expires_at')->orWhereDate('expires_at', '>=', $todayDate);
-            })
-            ->distinct()
-            ->count('member_id');
 
         return [
             'metrics' => [
-                'active_members' => $activeMembersCount,
-                'expired_members' => max(0, $assignedMembersCount - $activeMembersCount),
-                'expiring_soon' => $expiringSoonCount,
-                'new_members_this_month' => $newMembersThisMonth,
-                'check_ins_today' => $checkInsToday,
+                'active_members' => $assignedMembersCount,
+                'expired_members' => 0,
+                'expiring_soon' => 0,
+                'new_members_this_month' => 0,
+                'check_ins_today' => 0,
                 'revenue_today' => null,
                 'revenue_this_month' => null,
+                'pending_payments_count' => null,
+                'pending_payments_amount' => null,
             ],
+            'revenue_trend' => null,
             'recent_check_ins' => [],
             'recent_payments' => [],
             'trainer_workspace' => [
@@ -202,12 +184,9 @@ class DashboardSnapshot
                     'specialization' => $trainer->specialization,
                 ],
                 'assigned_members_count' => $assignedMembersCount,
-                'active_members_count' => $activeMembersCount,
                 'today_sessions_count' => $todaySessions->count(),
                 'upcoming_sessions_count' => $upcomingSessionsCount,
                 'active_pt_clients_count' => $activePtClientsCount,
-                'expiring_soon_count' => $expiringSoonCount,
-                'check_ins_today' => $checkInsToday,
                 'today_sessions' => $todaySessions
                     ->map(fn (PtSession $session): array => [
                         'id' => $session->getKey(),
@@ -223,8 +202,7 @@ class DashboardSnapshot
                         'pt_package_name' => $session->memberPtPackage->ptPackage->name,
                     ])
                     ->all(),
-                'attention_members' => $this->trainerAttentionMembers($trainer, $today),
-                'assigned_members' => $this->trainerAssignedMembers($trainer, $todayDate),
+                'session_members' => $this->trainerSessionMembers($trainer, $todayDate),
             ],
             'generated_at' => CarbonImmutable::now('UTC')->toIso8601String(),
         ];
@@ -242,76 +220,28 @@ class DashboardSnapshot
                 'check_ins_today' => 0,
                 'revenue_today' => null,
                 'revenue_this_month' => null,
+                'pending_payments_count' => null,
+                'pending_payments_amount' => null,
             ],
+            'revenue_trend' => null,
             'recent_check_ins' => [],
             'recent_payments' => [],
             'trainer_workspace' => [
                 'trainer' => null,
                 'assigned_members_count' => 0,
-                'active_members_count' => 0,
                 'today_sessions_count' => 0,
                 'upcoming_sessions_count' => 0,
                 'active_pt_clients_count' => 0,
-                'expiring_soon_count' => 0,
-                'check_ins_today' => 0,
                 'today_sessions' => [],
-                'attention_members' => [],
-                'assigned_members' => [],
+                'session_members' => [],
             ],
             'generated_at' => CarbonImmutable::now('UTC')->toIso8601String(),
         ];
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function trainerAssignedMembers(Trainer $trainer, string $today): array
+    private function trainerSessionMembers(Trainer $trainer, string $today): array
     {
-        return $trainer->members()
-            ->select([
-                'members.id',
-                'members.member_number',
-                'members.name',
-                'members.phone',
-                'members.status',
-            ])
-            ->with(['memberships' => fn ($query) => $query
-                ->select([
-                    'member_memberships.id',
-                    'member_memberships.member_id',
-                    'member_memberships.plan_name',
-                    'member_memberships.end_date',
-                ])
-                ->where('member_memberships.gym_id', $this->gymContext->gymId())
-                ->where('start_date', '<=', $today)
-                ->where('end_date', '>=', $today)
-                ->latest('start_date')
-                ->latest('id')])
-            ->orderByPivot('created_at', 'desc')
-            ->limit(8)
-            ->get()
-            ->map(function (Member $member): array {
-                $membership = $member->memberships->first();
-
-                return [
-                    'id' => $member->getKey(),
-                    'member_number' => $member->member_number,
-                    'name' => $member->name,
-                    'phone' => $member->phone,
-                    'status' => $member->status->value,
-                    'status_label' => $member->status->label(),
-                    'membership' => $membership === null ? null : [
-                        'plan_name' => $membership->plan_name,
-                        'end_date' => $membership->end_date->toDateString(),
-                    ],
-                ];
-            })
-            ->all();
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    private function trainerAttentionMembers(
-        Trainer $trainer,
-        CarbonImmutable $today,
-    ): array {
         return $this->gymContext->gym()->memberPtPackages()
             ->select([
                 'member_pt_packages.id',
@@ -323,9 +253,9 @@ class DashboardSnapshot
             ])
             ->where('trainer_id', $trainer->getKey())
             ->where('status', MemberPtPackageStatus::Active->value)
+            ->where('start_date', '<=', $today)
             ->where(function ($query) use ($today): void {
-                $query->whereNull('expires_at')
-                    ->orWhereDate('expires_at', '>=', $today->toDateString());
+                $query->whereNull('expires_at')->orWhere('expires_at', '>=', $today);
             })
             ->with([
                 'member:id,member_number,name',
@@ -335,13 +265,14 @@ class DashboardSnapshot
                 'sessions as scheduled_sessions_count' => fn ($query) => $query
                     ->where('status', PtSessionStatus::Scheduled->value),
             ])
-            ->latest('id')
-            ->limit(30)
+            ->latest('member_pt_packages.id')
+            ->limit(8)
             ->get()
             ->map(function (MemberPtPackage $memberPtPackage): array {
-                $scheduled = (int) $memberPtPackage->getAttribute('scheduled_sessions_count');
+                $scheduledSessions = (int) $memberPtPackage->getAttribute('scheduled_sessions_count');
 
                 return [
+                    'id' => $memberPtPackage->getKey(),
                     'member' => [
                         'id' => $memberPtPackage->member->getKey(),
                         'member_number' => $memberPtPackage->member->member_number,
@@ -352,37 +283,78 @@ class DashboardSnapshot
                         0,
                         $memberPtPackage->total_sessions - $memberPtPackage->used_sessions,
                     ),
-                    'available_sessions' => $memberPtPackage->availableSessions($scheduled),
+                    'available_sessions' => $memberPtPackage->availableSessions($scheduledSessions),
                     'expires_at' => $memberPtPackage->expires_at?->toDateString(),
                 ];
             })
-            ->filter(fn (array $item): bool => $item['remaining_sessions'] <= 1)
-            ->take(5)
-            ->values()
             ->all();
     }
 
-    /** @return array{0: string, 1: string} */
-    private function revenueMetrics(
-        CarbonImmutable $monthStartUtc,
-        CarbonImmutable $todayStartUtc,
-        CarbonImmutable $tomorrowStartUtc,
+    /** @return array{0: string, 1: string, 2: array<int, array{date: string, amount: string}>} */
+    private function ownerRevenueMetrics(
+        CarbonImmutable $monthStart,
+        CarbonImmutable $today,
+        CarbonImmutable $tomorrow,
     ): array {
+        $trendStart = $today->subDays(6);
+        $queryStart = $monthStart->lessThan($trendStart) ? $monthStart : $trendStart;
+        $selects = [
+            'COALESCE(SUM(CASE WHEN paid_at >= ? THEN amount ELSE 0 END), 0) AS revenue_today',
+            'COALESCE(SUM(CASE WHEN paid_at >= ? THEN amount ELSE 0 END), 0) AS revenue_month',
+        ];
+        $bindings = [$today->utc(), $monthStart->utc()];
+        /** @var array<int, array{date: string, alias: string}> $trendDays */
+        $trendDays = [];
+
+        for ($index = 0; $index < 7; $index++) {
+            $dayStart = $trendStart->addDays($index);
+            $dayEnd = $dayStart->addDay();
+            $alias = 'revenue_day_'.$index;
+            $selects[] = "COALESCE(SUM(CASE WHEN paid_at >= ? AND paid_at < ? THEN amount ELSE 0 END), 0) AS {$alias}";
+            $bindings[] = $dayStart->utc();
+            $bindings[] = $dayEnd->utc();
+            $trendDays[] = [
+                'date' => $dayStart->toDateString(),
+                'alias' => $alias,
+            ];
+        }
+
         $metrics = $this->gymContext->gym()->payments()
             ->where('status', PaymentStatus::Paid->value)
-            ->where('paid_at', '>=', $monthStartUtc)
-            ->where('paid_at', '<', $tomorrowStartUtc)
+            ->where('paid_at', '>=', $queryStart->utc())
+            ->where('paid_at', '<', $tomorrow->utc())
             ->toBase()
-            ->selectRaw(
-                'COALESCE(SUM(CASE WHEN paid_at >= ? THEN amount ELSE 0 END), 0) AS revenue_today, '
-                .'COALESCE(SUM(amount), 0) AS revenue_month',
-                [$todayStartUtc],
-            )
+            ->selectRaw(implode(', ', $selects), $bindings)
             ->first();
+        $revenueTrend = [];
+
+        foreach ($trendDays as $day) {
+            $alias = $day['alias'];
+            $revenueTrend[] = [
+                'date' => $day['date'],
+                'amount' => $this->decimalString($metrics->{$alias} ?? 0),
+            ];
+        }
 
         return [
             $this->decimalString($metrics->revenue_today ?? 0),
             $this->decimalString($metrics->revenue_month ?? 0),
+            $revenueTrend,
+        ];
+    }
+
+    /** @return array{0: int, 1: string} */
+    private function pendingPaymentMetrics(): array
+    {
+        $metrics = $this->gymContext->gym()->payments()
+            ->where('status', PaymentStatus::Pending->value)
+            ->toBase()
+            ->selectRaw('COUNT(*) AS payment_count, COALESCE(SUM(amount), 0) AS amount')
+            ->first();
+
+        return [
+            (int) ($metrics->payment_count ?? 0),
+            $this->decimalString($metrics->amount ?? 0),
         ];
     }
 

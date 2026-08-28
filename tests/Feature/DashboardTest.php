@@ -83,7 +83,7 @@ test('owner dashboard returns tenant scoped operational and revenue metrics', fu
             'start_date' => '2026-08-01',
             'end_date' => '2026-08-28',
         ]);
-    MemberMembership::factory()
+    $expiredMembership = MemberMembership::factory()
         ->for($gym)
         ->for($expiredMember)
         ->for($plan, 'membershipPlan')
@@ -111,6 +111,11 @@ test('owner dashboard returns tenant scoped operational and revenue metrics', fu
         'method' => PaymentMethod::Cash,
         'paid_at' => '2026-08-25 02:30:00',
         'received_by_id' => $owner->getKey(),
+    ]);
+    Payment::factory()->for($gym)->create([
+        'member_id' => $expiredMember->getKey(),
+        'member_membership_id' => $expiredMembership->getKey(),
+        'amount' => '50000.00',
     ]);
     Payment::factory()->for($gym)->paid()->create([
         'member_id' => $expiringMember->getKey(),
@@ -141,6 +146,7 @@ test('owner dashboard returns tenant scoped operational and revenue metrics', fu
         'amount' => '999000.00',
         'paid_at' => '2026-08-25 02:00:00',
     ]);
+    Payment::factory()->for($foreignGym)->create(['amount' => '888000.00']);
 
     $this->actingAs($owner)
         ->withSession(['current_gym_id' => $gym->getKey()])
@@ -156,8 +162,56 @@ test('owner dashboard returns tenant scoped operational and revenue metrics', fu
                 ->where('snapshot.metrics.check_ins_today', 2)
                 ->where('snapshot.metrics.revenue_today', '100000.00')
                 ->where('snapshot.metrics.revenue_this_month', '300000.00')
+                ->where('snapshot.metrics.pending_payments_count', 1)
+                ->where('snapshot.metrics.pending_payments_amount', '50000.00')
+                ->has('snapshot.revenue_trend', 7)
+                ->where('snapshot.revenue_trend.0.date', '2026-08-19')
+                ->where('snapshot.revenue_trend.0.amount', '0.00')
+                ->where('snapshot.revenue_trend.6.date', '2026-08-25')
+                ->where('snapshot.revenue_trend.6.amount', '100000.00')
                 ->has('snapshot.recent_check_ins', 2)
-                ->has('snapshot.recent_payments', 2)));
+                ->has('snapshot.recent_payments', 3)));
+});
+
+test('front office dashboard returns operational data without owner revenue', function () {
+    $this->travelTo('2026-08-25 05:00:00');
+
+    $gym = Gym::factory()->create(['timezone' => 'Asia/Jakarta']);
+    $frontOffice = User::factory()->create();
+    attachDashboardUser($gym, $frontOffice, GymRole::Admin);
+    $plan = MembershipPlan::factory()->for($gym)->create();
+    $member = Member::factory()->for($gym)->create();
+    $membership = MemberMembership::factory()
+        ->for($gym)
+        ->for($member)
+        ->for($plan, 'membershipPlan')
+        ->create([
+            'start_date' => '2026-08-01',
+            'end_date' => '2026-09-30',
+        ]);
+
+    Payment::factory()->for($gym)->paid()->create([
+        'member_id' => $member->getKey(),
+        'member_membership_id' => $membership->getKey(),
+        'amount' => '150000.00',
+        'paid_at' => '2026-08-25 02:00:00',
+        'received_by_id' => $frontOffice->getKey(),
+    ]);
+
+    $this->actingAs($frontOffice)
+        ->withSession(['current_gym_id' => $gym->getKey()])
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('auth.role', GymRole::Admin->value)
+            ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
+                ->where('snapshot.metrics.active_members', 1)
+                ->where('snapshot.metrics.revenue_today', null)
+                ->where('snapshot.metrics.revenue_this_month', null)
+                ->where('snapshot.metrics.pending_payments_count', 0)
+                ->where('snapshot.metrics.pending_payments_amount', '0.00')
+                ->where('snapshot.revenue_trend', null)
+                ->where('snapshot.trainer_workspace', null)
+                ->has('snapshot.recent_payments', 1)));
 });
 
 test('trainer dashboard omits financial and identifiable operational activity', function () {
@@ -173,6 +227,8 @@ test('trainer dashboard omits financial and identifiable operational activity', 
             ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
                 ->where('snapshot.metrics.revenue_today', null)
                 ->where('snapshot.metrics.revenue_this_month', null)
+                ->where('snapshot.metrics.pending_payments_count', null)
+                ->where('snapshot.revenue_trend', null)
                 ->has('snapshot.recent_check_ins', 0)
                 ->has('snapshot.recent_payments', 0)));
 });

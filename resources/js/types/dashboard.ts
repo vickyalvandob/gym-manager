@@ -9,6 +9,13 @@ export type DashboardMetrics = {
     check_ins_today: number;
     revenue_today: string | null;
     revenue_this_month: string | null;
+    pending_payments_count: number | null;
+    pending_payments_amount: string | null;
+};
+
+export type DashboardRevenuePoint = {
+    date: string;
+    amount: string;
 };
 
 export type DashboardRecentCheckIn = {
@@ -47,12 +54,9 @@ export type TrainerDashboardWorkspace = {
         specialization: string | null;
     } | null;
     assigned_members_count: number;
-    active_members_count: number;
     today_sessions_count: number;
     upcoming_sessions_count: number;
     active_pt_clients_count: number;
-    expiring_soon_count: number;
-    check_ins_today: number;
     today_sessions: Array<{
         id: number;
         scheduled_at: string;
@@ -62,29 +66,19 @@ export type TrainerDashboardWorkspace = {
         member: { id: number; member_number: string; name: string };
         pt_package_name: string;
     }>;
-    attention_members: Array<{
+    session_members: Array<{
+        id: number;
         member: { id: number; member_number: string; name: string };
         pt_package_name: string;
         remaining_sessions: number;
         available_sessions: number;
         expires_at: string | null;
     }>;
-    assigned_members: Array<{
-        id: number;
-        member_number: string;
-        name: string;
-        phone: string;
-        status: 'active' | 'inactive';
-        status_label: string;
-        membership: {
-            plan_name: string;
-            end_date: string;
-        } | null;
-    }>;
 };
 
 export type DashboardSnapshot = {
     metrics: DashboardMetrics;
+    revenue_trend: DashboardRevenuePoint[] | null;
     recent_check_ins: DashboardRecentCheckIn[];
     recent_payments: DashboardRecentPayment[];
     trainer_workspace: TrainerDashboardWorkspace | null;

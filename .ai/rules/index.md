@@ -11,5 +11,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/**, app/Http/Controllers/MemberController.php | .ai/rules/controllers.md |
 | app/Actions/Members/** | .ai/rules/members.md |
 | app/{Models,Http,Actions,Policies,Support}/** | .ai/rules/models-http-actions-policies-support.md |
+| resources/js/pages/dashboard.tsx | .ai/rules/pages.md |
 | resources/js/pages/payments/** | .ai/rules/payments.md |
 | database/seeders/** | .ai/rules/seeders.md |

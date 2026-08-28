@@ -134,7 +134,7 @@ export function AppSidebar() {
                   },
               ]
             : []),
-            
+
         ...(auth.permissions.operate_front_desk
             ? [
                   {
