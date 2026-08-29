@@ -27,6 +27,7 @@ class GymFactory extends Factory
             'status' => GymStatus::Active,
             'timezone' => 'Asia/Jakarta',
             'currency' => 'IDR',
+            'onboarding_completed_at' => now(),
             'membership_expiry_warning_days' => 7,
         ];
     }

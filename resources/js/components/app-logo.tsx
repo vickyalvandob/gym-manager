@@ -22,7 +22,10 @@ export default function AppLogo() {
             <div className="ml-1 grid min-w-0 flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{name}</span>
                 <span className="truncate text-xs text-sidebar-foreground/60">
-                    {auth.currentGym?.name ?? 'Gym management'}
+                    {auth.currentGym?.name ??
+                        (auth.isPlatformAdmin
+                            ? 'Platform administration'
+                            : 'Gym management')}
                 </span>
             </div>
         </>

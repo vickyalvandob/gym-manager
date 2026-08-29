@@ -36,15 +36,19 @@ class SetCurrentGym
                 'gyms.status',
                 'gyms.timezone',
                 'gyms.currency',
+                'gyms.onboarding_completed_at',
                 'gyms.phone',
                 'gyms.email',
                 'gyms.address',
                 'gyms.membership_expiry_warning_days',
                 'gyms.count_pt_no_show_as_used_session',
             ])
-            ->where('gyms.status', GymStatus::Active->value)
             ->wherePivot('status', GymUserStatus::Active->value)
             ->oldest('gym_user.created_at');
+
+        if ($mode !== 'billing') {
+            $availableGyms->where('gyms.status', GymStatus::Active->value);
+        }
 
         $selectedGymId = (int) $request->session()->get('current_gym_id', 0);
         $gym = $selectedGymId > 0
@@ -65,6 +69,10 @@ class SetCurrentGym
 
         $pivot = $gym->getRelation('pivot');
         $role = GymRole::from((string) $pivot->getAttribute('role'));
+
+        if ($mode === 'billing') {
+            abort_unless($role === GymRole::Owner, Response::HTTP_FORBIDDEN);
+        }
 
         $this->gymContext->set($gym, $role);
         $request->session()->put('current_gym_id', $gym->getKey());

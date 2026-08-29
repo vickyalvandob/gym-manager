@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
+ * @property bool $is_platform_admin
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -69,6 +70,12 @@ class User extends Authenticatable
         return $this->hasMany(Trainer::class);
     }
 
+    /** @return HasMany<PlatformActivityLog, $this> */
+    public function platformActivityLogs(): HasMany
+    {
+        return $this->hasMany(PlatformActivityLog::class, 'actor_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -79,6 +86,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_platform_admin' => 'boolean',
         ];
     }
 }

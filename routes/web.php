@@ -14,7 +14,12 @@ use App\Http\Controllers\MarkPtSessionNoShowController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MembershipPlanController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformDashboardController;
+use App\Http\Controllers\PlatformGymController;
+use App\Http\Controllers\PlatformGymStatusController;
+use App\Http\Controllers\PlatformSubscriptionController;
 use App\Http\Controllers\PtPackageController;
 use App\Http\Controllers\PtSessionController;
 use App\Http\Controllers\PurchaseMemberPtPackageController;
@@ -22,6 +27,8 @@ use App\Http\Controllers\RemoveTrainerMemberController;
 use App\Http\Controllers\RenewMemberMembershipController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReschedulePtSessionController;
+use App\Http\Controllers\SaasPlanController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\TrainerMemberController;
 use App\Http\Controllers\UpdateMembershipPlanStatusController;
@@ -30,7 +37,39 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
 
+Route::middleware(['auth', 'verified', 'platform_admin'])
+    ->prefix('platform')
+    ->name('platform.')
+    ->group(function () {
+        Route::get('/', PlatformDashboardController::class)->name('dashboard');
+        Route::get('gyms', [PlatformGymController::class, 'index'])->name('gyms.index');
+        Route::get('gyms/{gym}', [PlatformGymController::class, 'show'])
+            ->whereNumber('gym')
+            ->name('gyms.show');
+        Route::patch('gyms/{gym}/status', PlatformGymStatusController::class)
+            ->whereNumber('gym')
+            ->name('gyms.status.update');
+        Route::put('gyms/{gym}/subscription', [PlatformSubscriptionController::class, 'update'])
+            ->whereNumber('gym')
+            ->name('gyms.subscription.update');
+        Route::patch('saas-plans/{saas_plan}/status', [SaasPlanController::class, 'updateStatus'])
+            ->whereNumber('saas_plan')
+            ->name('saas-plans.status.update');
+        Route::resource('saas-plans', SaasPlanController::class)
+            ->except(['show', 'destroy'])
+            ->whereNumber('saas_plan');
+    });
+
 Route::middleware(['auth', 'verified', 'gym'])->group(function () {
+    Route::get('onboarding', [OnboardingController::class, 'edit'])->name('onboarding.edit');
+    Route::put('onboarding', [OnboardingController::class, 'update'])->name('onboarding.update');
+});
+
+Route::middleware(['auth', 'verified', 'gym:billing'])->group(function () {
+    Route::get('subscription', SubscriptionController::class)->name('subscription.show');
+});
+
+Route::middleware(['auth', 'verified', 'gym', 'onboarded', 'subscription_active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('reports', ReportController::class)->name('reports.index');
 

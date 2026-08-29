@@ -60,6 +60,7 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'user' => $request->user(),
+            'isPlatformAdmin' => $request->user()?->is_platform_admin === true,
             'currentGym' => $currentGym === null ? null : [
                 'id' => $currentGym->getKey(),
                 'name' => $currentGym->name,

@@ -6,11 +6,13 @@ export type User = {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    is_platform_admin: boolean;
     [key: string]: unknown;
 };
 
 export type Auth = {
     user: User | null;
+    isPlatformAdmin: boolean;
     currentGym: Gym | null;
     role: GymRole | null;
     roleLabel: string | null;

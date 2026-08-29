@@ -27,8 +27,16 @@ export function AppSidebarHeader({
                         </p>
                     </div>
                     <span
-                        className="size-2 shrink-0 rounded-full bg-emerald-500"
-                        aria-label="Gym aktif"
+                        className={
+                            auth.currentGym.status === 'active'
+                                ? 'size-2 shrink-0 rounded-full bg-emerald-500'
+                                : 'size-2 shrink-0 rounded-full bg-red-500'
+                        }
+                        aria-label={
+                            auth.currentGym.status === 'active'
+                                ? 'Gym aktif'
+                                : 'Gym ditangguhkan'
+                        }
                     />
                 </div>
             )}

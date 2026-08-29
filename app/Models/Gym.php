@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -19,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property GymStatus $status
  * @property string $timezone
  * @property string $currency
+ * @property Carbon|null $onboarding_completed_at
  * @property string|null $phone
  * @property string|null $email
  * @property string|null $address
@@ -137,6 +139,12 @@ class Gym extends Model
         return $this->hasMany(PtSession::class);
     }
 
+    /** @return HasOne<Subscription, $this> */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
     /**
      * @return array<string, string>
      */
@@ -144,6 +152,7 @@ class Gym extends Model
     {
         return [
             'status' => GymStatus::class,
+            'onboarding_completed_at' => 'datetime',
             'membership_expiry_warning_days' => 'integer',
             'count_pt_no_show_as_used_session' => 'boolean',
             'next_member_sequence' => 'integer',

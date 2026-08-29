@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureOnboardingCompleted;
+use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetCurrentGym;
@@ -20,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'gym' => SetCurrentGym::class,
+            'onboarded' => EnsureOnboardingCompleted::class,
+            'platform_admin' => EnsurePlatformAdmin::class,
+            'subscription_active' => EnsureSubscriptionActive::class,
         ]);
 
         $middleware->web(append: [

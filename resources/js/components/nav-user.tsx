@@ -36,7 +36,12 @@ export function NavUser() {
                         >
                             <UserInfo
                                 user={auth.user}
-                                subtitle={auth.roleLabel}
+                                subtitle={
+                                    auth.roleLabel ??
+                                    (auth.isPlatformAdmin
+                                        ? 'Platform Super Admin'
+                                        : null)
+                                }
                             />
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>

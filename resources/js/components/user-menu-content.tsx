@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
+import { LogOut, Settings, ShieldCheck } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -9,6 +10,7 @@ import {
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/routes';
+import { dashboard as platformDashboard } from '@/routes/platform';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -17,6 +19,7 @@ type Props = {
 };
 
 export function UserMenuContent({ user }: Props) {
+    const { auth } = usePage().props;
     const cleanup = useMobileNavigation();
 
     const handleLogout = () => {
@@ -33,6 +36,19 @@ export function UserMenuContent({ user }: Props) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+                {auth.isPlatformAdmin && (
+                    <DropdownMenuItem asChild>
+                        <Link
+                            className="block w-full cursor-pointer"
+                            href={platformDashboard()}
+                            prefetch
+                            onClick={cleanup}
+                        >
+                            <ShieldCheck className="mr-2" />
+                            Platform Admin
+                        </Link>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                     <Link
                         className="block w-full cursor-pointer"

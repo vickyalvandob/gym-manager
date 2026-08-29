@@ -13,6 +13,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\PtSessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Enums\TrainerStatus;
 use App\Models\CheckIn;
 use App\Models\Gym;
@@ -23,6 +24,7 @@ use App\Models\MembershipPlan;
 use App\Models\Payment;
 use App\Models\PtPackage;
 use App\Models\PtSession;
+use App\Models\SaasPlan;
 use App\Models\Trainer;
 use App\Models\TrainerMember;
 use App\Models\User;
@@ -39,6 +41,8 @@ class DemoGymSeeder extends Seeder
             return;
         }
 
+        $this->call(SaasPlanSeeder::class);
+
         $gym = Gym::query()->updateOrCreate(
             ['slug' => 'gymflow-demo'],
             [
@@ -46,7 +50,33 @@ class DemoGymSeeder extends Seeder
                 'status' => GymStatus::Active,
                 'timezone' => 'Asia/Jakarta',
                 'currency' => 'IDR',
+                'onboarding_completed_at' => now(),
                 'membership_expiry_warning_days' => 7,
+            ],
+        );
+
+        $platformAdmin = User::query()->updateOrCreate(
+            ['email' => 'platform@gym.test'],
+            [
+                'name' => 'Platform Admin GymFlow',
+                'email_verified_at' => now(),
+                'password' => 'password',
+            ],
+        );
+        $platformAdmin->forceFill(['is_platform_admin' => true])->save();
+
+        $starterPlan = SaasPlan::query()->where('slug', 'starter')->firstOrFail();
+        $gym->subscription()->updateOrCreate(
+            ['gym_id' => $gym->getKey()],
+            [
+                'saas_plan_id' => $starterPlan->getKey(),
+                'status' => SubscriptionStatus::Active,
+                'started_at' => now()->subMonth(),
+                'trial_ends_at' => null,
+                'current_period_starts_at' => now()->startOfMonth(),
+                'current_period_ends_at' => now()->addMonth(),
+                'suspended_at' => null,
+                'cancelled_at' => null,
             ],
         );
 

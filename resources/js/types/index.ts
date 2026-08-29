@@ -3,6 +3,7 @@ export type * from './check-in';
 export type * from './dashboard';
 export type * from './member';
 export type * from './membership-plan';
+export type * from './saas';
 export type * from './navigation';
 export type * from './payment';
 export type * from './personal-training';

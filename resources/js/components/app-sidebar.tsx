@@ -10,6 +10,9 @@ import {
     Tickets,
     UserRoundCog,
     UsersRound,
+    Building2,
+    ShieldCheck,
+    WalletCards,
 } from 'lucide-react';
 import CheckInController from '@/actions/App/Http/Controllers/CheckInController';
 import GymSettingsController from '@/actions/App/Http/Controllers/GymSettingsController';
@@ -29,16 +32,44 @@ import {
 import { dashboard } from '@/routes';
 import { index as membersIndex } from '@/routes/members';
 import { index as membershipPlansIndex } from '@/routes/membership-plans';
+import { dashboard as platformDashboard } from '@/routes/platform';
+import { index as platformGymsIndex } from '@/routes/platform/gyms';
+import { index as saasPlansIndex } from '@/routes/platform/saas-plans';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as ptPackagesIndex } from '@/routes/pt-packages';
 import { index as ptSessionsIndex } from '@/routes/pt-sessions';
 import { index as reportsIndex } from '@/routes/reports';
+import { show as subscriptionShow } from '@/routes/subscription';
 import { index as trainerMembersIndex } from '@/routes/trainer-members';
 import { index as trainersIndex } from '@/routes/trainers';
 import type { NavSection } from '@/types';
 
 export function AppSidebar() {
     const { auth } = usePage().props;
+    const isPlatformWorkspace =
+        auth.isPlatformAdmin && auth.currentGym === null;
+    const platformNavSections: NavSection[] = [
+        {
+            title: 'Platform',
+            items: [
+                {
+                    title: 'Ringkasan',
+                    href: platformDashboard(),
+                    icon: ShieldCheck,
+                },
+                {
+                    title: 'Tenant Gym',
+                    href: platformGymsIndex(),
+                    icon: Building2,
+                },
+                {
+                    title: 'Paket SaaS',
+                    href: saasPlansIndex(),
+                    icon: WalletCards,
+                },
+            ],
+        },
+    ];
     const trainerNavSections: NavSection[] = [
         {
             title: 'Hari ini',
@@ -177,13 +208,22 @@ export function AppSidebar() {
                               href: GymSettingsController.edit(),
                               icon: Settings2,
                           },
+                          {
+                              title: 'Subscription',
+                              href: subscriptionShow(),
+                              icon: WalletCards,
+                          },
                       ],
                   },
               ]
             : []),
     ];
-    const mainNavSections =
-        auth.role === 'trainer' ? trainerNavSections : managementNavSections;
+    const mainNavSections = isPlatformWorkspace
+        ? platformNavSections
+        : auth.role === 'trainer'
+          ? trainerNavSections
+          : managementNavSections;
+    const homeHref = isPlatformWorkspace ? platformDashboard() : dashboard();
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">
@@ -191,7 +231,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={homeHref} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

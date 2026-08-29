@@ -1,6 +1,6 @@
 # GymFlow
 
-> Aplikasi manajemen operasional gym multi-tenant untuk mengelola member, membership, pembayaran, check-in, trainer, dan Personal Training dalam satu alur kerja.
+> Platform SaaS manajemen gym multi-tenant untuk mengelola tenant, paket berlangganan, member, membership, pembayaran, check-in, trainer, dan Personal Training dalam satu aplikasi.
 
 GymFlow dibangun sebagai studi kasus aplikasi bisnis berbasis web yang tidak berhenti pada CRUD. Setiap modul mengikuti proses operasional nyata, menerapkan pembatasan akses berbasis peran, menjaga konsistensi transaksi, dan mengisolasi data setiap gym di sisi backend.
 
@@ -10,11 +10,11 @@ GymFlow dibangun sebagai studi kasus aplikasi bisnis berbasis web yang tidak ber
 | ----------------- | ------------------------------------------------------------- |
 | Kategori          | SaaS / Gym Management System                                  |
 | Arsitektur tenant | Shared database, shared schema, isolasi melalui `gym_id`      |
-| Peran pengguna    | Owner, Front Desk, Trainer                                    |
+| Peran pengguna    | Platform Super Admin, Owner, Front Desk, Trainer              |
 | Backend           | PHP 8.4, Laravel 13, MySQL                                    |
 | Frontend          | Inertia.js 3, React 19, TypeScript, Tailwind CSS 4            |
 | Quality tools     | Pest, PHPStan, Laravel Pint, ESLint, Prettier, GitHub Actions |
-| Status            | Fitur operasional utama telah diimplementasikan dan diuji     |
+| Status            | Core operasional dan SaaS foundation telah diterapkan         |
 
 ## Masalah yang Diselesaikan
 
@@ -99,7 +99,28 @@ GymFlow menyatukan proses tersebut sehingga:
 - Filter laporan: hari ini, kemarin, minggu ini, bulan ini, bulan lalu, atau rentang kustom maksimal 366 hari.
 - Snapshot dashboard dan laporan dimuat secara deferred dengan state loading, empty, error, dan retry.
 
+### 9. SaaS foundation
+
+- Satu codebase dan satu deployment melayani banyak gym dengan shared database serta isolasi data menggunakan `gym_id`.
+- Platform Super Admin berada di luar role operasional gym dan memiliki workspace khusus untuk memantau tenant.
+- Super Admin dapat membuat, mengubah, mengaktifkan, dan menonaktifkan paket SaaS.
+- Registrasi Owner memilih paket lalu membuat akun, gym, trial/subscription, dan audit platform secara atomik.
+- Onboarding memandu Owner melengkapi profil gym sebelum masuk ke fitur operasional.
+- Status trial dan subscription mengendalikan akses tenant; Owner tetap dapat membuka halaman subscription ketika akses operasional berakhir.
+- Super Admin dapat memperbarui status subscription serta mengaktifkan atau menangguhkan gym.
+- Perubahan penting platform disimpan pada activity log terpisah dari activity log operasional tenant.
+
 ## Matriks Hak Akses
+
+Platform Super Admin merupakan identitas platform pada tabel `users`, bukan role pada relasi `gym_user`. Karena itu akses platform tidak mewarisi data operasional tenant.
+
+| Kapabilitas platform                      | Super Admin |
+| ----------------------------------------- | :---------: |
+| Melihat ringkasan seluruh tenant          |      ✓      |
+| Mengelola paket SaaS                      |      ✓      |
+| Mengubah status subscription tenant       |      ✓      |
+| Mengaktifkan atau menangguhkan gym        |      ✓      |
+| Mengakses operasional gym secara otomatis |      —      |
 
 | Kapabilitas                    | Owner | Front Desk |    Trainer     |
 | ------------------------------ | :---: | :--------: | :------------: |
@@ -151,14 +172,29 @@ flowchart LR
 
 ### Workflow Owner
 
-1. Mendaftarkan gym dan melengkapi profil operasional.
+1. Memilih paket SaaS, mendaftarkan gym, dan menyelesaikan onboarding profil operasional.
 2. Menyiapkan paket membership, trainer, dan paket Personal Training.
 3. Memantau member aktif, membership segera berakhir, pembayaran tertunda, check-in, dan revenue.
 4. Membuka laporan berdasarkan periode untuk evaluasi operasional dan bisnis.
 
+### Workflow SaaS
+
+```mermaid
+flowchart LR
+    A[Owner memilih paket dan registrasi] --> B[Gym dan trial dibuat]
+    B --> C[Owner menyelesaikan onboarding]
+    C --> D[Operasional gym aktif]
+    D --> E{Status subscription}
+    E -->|Trial atau aktif| D
+    E -->|Berakhir atau suspended| F[Akses operasional dibatasi]
+    F --> G[Owner membuka informasi subscription]
+    H[Platform Super Admin] --> I[Kelola paket dan tenant]
+    I --> E
+```
+
 ## Arsitektur Aplikasi
 
-GymFlow menggunakan pola monolith modern: Laravel menangani routing, autentikasi, otorisasi, validasi, dan domain logic; React menangani pengalaman SPA; Inertia menjadi penghubung tanpa REST API terpisah.
+GymFlow menggunakan satu project monolith modern untuk seluruh tenant dan workspace platform. Laravel menangani routing, autentikasi, otorisasi, validasi, dan domain logic; React menangani pengalaman SPA; Inertia menjadi penghubung tanpa REST API terpisah. Domain atau subdomain per gym dapat ditambahkan pada deployment tanpa menggandakan source code.
 
 ```mermaid
 flowchart TB
@@ -214,6 +250,9 @@ gym relation / gym_id-scoped operational queries
 erDiagram
     USERS ||--o{ GYM_USER : memiliki_akses
     GYMS ||--o{ GYM_USER : memiliki_user
+    SAAS_PLANS ||--o{ SUBSCRIPTIONS : dipilih_dalam
+    GYMS ||--o| SUBSCRIPTIONS : berlangganan
+    USERS ||--o{ PLATFORM_ACTIVITY_LOGS : melakukan
     GYMS ||--o{ MEMBERS : memiliki
     GYMS ||--o{ MEMBERSHIP_PLANS : menawarkan
     MEMBERS ||--o{ MEMBER_MEMBERSHIPS : memiliki
@@ -247,6 +286,8 @@ erDiagram
 - Kuota PT aman terhadap sesi paralel melalui penguncian paket member dan validasi jadwal.
 - Foto member dan logo gym disimpan pada private storage serta dilayani melalui endpoint terotorisasi.
 - Aktivitas penting seperti pembuatan, perubahan status, pembayaran, assignment, dan sesi PT dicatat pada audit log.
+- Identitas Super Admin platform tidak disimpan sebagai role tenant dan tidak otomatis memperoleh akses operasional gym.
+- Perubahan status paket, subscription, serta gym dikunci dan dijalankan dalam transaction sebelum dicatat pada audit platform.
 
 ## UI/UX
 
@@ -307,6 +348,7 @@ tests/
 Test suite memverifikasi workflow bisnis, bukan hanya respons halaman. Cakupannya meliputi:
 
 - autentikasi, registration transaction, dan rate limiting;
+- akses Super Admin, lifecycle paket SaaS, onboarding, trial/subscription, dan suspension;
 - isolasi cross-tenant serta pembatasan Owner/Front Desk/Trainer;
 - sequence nomor pada request bersamaan dan audit trail;
 - lifecycle membership, invoice, pembayaran, dan check-in;
@@ -325,7 +367,7 @@ npm run build
 
 Snapshot verifikasi lokal saat dokumentasi diperbarui:
 
-- 95 test passed, 3 skipped, dan 1.087 assertions;
+- 102 test passed, 3 skipped, dan 1.160 assertions;
 - Pint, Prettier, ESLint, TypeScript, dan PHPStan passed;
 - production frontend build passed;
 - seluruh migration aktif berstatus `Ran` pada MySQL.
@@ -357,11 +399,12 @@ Pada Linux/macOS, gunakan `cp .env.example .env` sebagai pengganti `copy`. Sesua
 
 Seeder demo hanya dapat berjalan pada environment `local` atau `testing`. Password seluruh akun demo adalah `password`.
 
-| Peran      | Email                |
-| ---------- | -------------------- |
-| Owner      | `owner@gym.test`     |
-| Front Desk | `frontdesk@gym.test` |
-| Trainer    | `trainer@gym.test`   |
+| Peran       | Email                |
+| ----------- | -------------------- |
+| Super Admin | `platform@gym.test`  |
+| Owner       | `owner@gym.test`     |
+| Front Desk  | `frontdesk@gym.test` |
+| Trainer     | `trainer@gym.test`   |
 
 Jangan menjalankan demo seeder atau menggunakan credential tersebut di production.
 
@@ -370,6 +413,7 @@ Jangan menjalankan demo seeder atau menggunakan credential tersebut di productio
 Project ini mendemonstrasikan kemampuan membangun aplikasi bisnis end-to-end, khususnya:
 
 - merancang arsitektur multi-tenant dengan shared schema yang aman;
+- memisahkan control plane SaaS dari role dan data operasional setiap tenant;
 - menerjemahkan proses bisnis menjadi transaction-safe domain actions;
 - memisahkan otorisasi backend dari visibilitas UI;
 - menangani uang, timezone, periode membership, sequence, dan kuota tanpa bergantung pada perhitungan frontend;
@@ -382,5 +426,5 @@ Project ini mendemonstrasikan kemampuan membangun aplikasi bisnis end-to-end, kh
 - UI pemilih gym untuk user yang memiliki akses ke beberapa tenant belum tersedia; middleware memakai gym session yang valid atau gym aktif pertama.
 - Belum ada partial payment, refund, pembatalan invoice, atau rekonsiliasi payment gateway.
 - Belum ada modul workout plan, inventory, payroll/komisi trainer, dan booking kelas grup.
-- Belum ada platform-level Super Admin dan subscription billing untuk model SaaS komersial.
+- Subscription masih dikelola manual oleh Super Admin; belum ada payment gateway SaaS, webhook, invoice langganan, proration, atau renewal otomatis.
 - Dokumentasi visual dapat dilengkapi dengan screenshot dashboard setiap role, alur pembayaran, check-in, dan jadwal PT saat project dipublikasikan.
