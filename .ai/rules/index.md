@@ -5,6 +5,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Applies to | Rule file |
 | --- | --- |
 | app/{Actions,Http,Models,Policies,Support}/** | .ai/rules/actions-http-models-policies-support.md |
+| app/{Actions,Http,Models,Support}/** | .ai/rules/actions-http-models-support.md |
 | app/{Actions,Http}/** | .ai/rules/actions-http.md |
 | app/{Actions,Models,Http,Policies,Support}/** | .ai/rules/actions-models-http-policies-support.md |
 | app/{Actions,Models,Http,Policies}/** | .ai/rules/actions-models-http-policies.md |

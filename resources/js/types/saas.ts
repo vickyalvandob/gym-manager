@@ -8,6 +8,7 @@ export type SaasPlan = {
     billing_interval: 'monthly' | 'yearly';
     billing_interval_label: string;
     trial_days: number;
+    max_gyms: number | null;
     max_members: number | null;
     max_staff: number | null;
     is_active: boolean;
@@ -49,6 +50,52 @@ export type PlatformGym = {
 
 export type PaginatedPlatformGyms = {
     data: PlatformGym[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    links: Array<{ url: string | null; label: string; active: boolean }>;
+};
+
+export type PlatformUser = {
+    id: number;
+    name: string;
+    email: string;
+    is_platform_admin: boolean;
+    is_active: boolean;
+    account_type: 'platform_admin' | 'subscriber' | 'staff';
+    account_type_label: string;
+    gyms_count: number;
+    owned_gyms_count: number;
+    created_at: string;
+    email_verified_at?: string | null;
+    can_update_status?: boolean;
+    subscription:
+        | (PlatformSubscription & {
+              usage?: { gyms: number; members: number; staff: number };
+              limits?: {
+                  gyms: number | null;
+                  members: number | null;
+                  staff: number | null;
+              };
+          })
+        | null;
+    gyms?: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        status: string;
+        status_label: string;
+        role: string;
+        role_label: string;
+        access_status: string;
+    }>;
+};
+
+export type PaginatedPlatformUsers = {
+    data: PlatformUser[];
     current_page: number;
     last_page: number;
     per_page: number;

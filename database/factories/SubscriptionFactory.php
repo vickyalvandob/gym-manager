@@ -3,9 +3,9 @@
 namespace Database\Factories;
 
 use App\Enums\SubscriptionStatus;
-use App\Models\Gym;
 use App\Models\SaasPlan;
 use App\Models\Subscription;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,7 +21,7 @@ class SubscriptionFactory extends Factory
     public function definition(): array
     {
         return [
-            'gym_id' => Gym::factory(),
+            'subscriber_id' => User::factory(),
             'saas_plan_id' => SaasPlan::factory(),
             'status' => SubscriptionStatus::Active,
             'started_at' => now()->subMonth(),

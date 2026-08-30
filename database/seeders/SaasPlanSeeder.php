@@ -15,6 +15,20 @@ class SaasPlanSeeder extends Seeder
     {
         $plans = [
             [
+                'name' => 'Free',
+                'slug' => 'free',
+                'description' => 'Paket gratis untuk memulai satu gym dengan operasional dasar.',
+                'price' => '0.00',
+                'currency' => 'IDR',
+                'billing_interval' => SaasPlanInterval::Monthly,
+                'trial_days' => 0,
+                'max_gyms' => 1,
+                'max_members' => 20,
+                'max_staff' => 5,
+                'is_active' => true,
+                'sort_order' => 0,
+            ],
+            [
                 'name' => 'Starter',
                 'slug' => 'starter',
                 'description' => 'Fondasi operasional untuk gym yang baru beralih dari pencatatan manual.',
@@ -22,6 +36,7 @@ class SaasPlanSeeder extends Seeder
                 'currency' => 'IDR',
                 'billing_interval' => SaasPlanInterval::Monthly,
                 'trial_days' => 14,
+                'max_gyms' => 1,
                 'max_members' => 500,
                 'max_staff' => 10,
                 'is_active' => true,
@@ -35,6 +50,7 @@ class SaasPlanSeeder extends Seeder
                 'currency' => 'IDR',
                 'billing_interval' => SaasPlanInterval::Monthly,
                 'trial_days' => 14,
+                'max_gyms' => 3,
                 'max_members' => 2000,
                 'max_staff' => 30,
                 'is_active' => true,
@@ -48,6 +64,7 @@ class SaasPlanSeeder extends Seeder
                 'currency' => 'IDR',
                 'billing_interval' => SaasPlanInterval::Monthly,
                 'trial_days' => 14,
+                'max_gyms' => null,
                 'max_members' => null,
                 'max_staff' => null,
                 'is_active' => true,
@@ -56,7 +73,7 @@ class SaasPlanSeeder extends Seeder
         ];
 
         foreach ($plans as $plan) {
-            SaasPlan::query()->firstOrCreate(['slug' => $plan['slug']], $plan);
+            SaasPlan::query()->updateOrCreate(['slug' => $plan['slug']], $plan);
         }
     }
 }

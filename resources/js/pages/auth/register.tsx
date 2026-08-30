@@ -20,6 +20,7 @@ type Props = {
         currency: string;
         billing_interval_label: string;
         trial_days: number;
+        max_gyms: number | null;
         max_members: number | null;
         max_staff: number | null;
     }>;
@@ -125,6 +126,20 @@ export default function Register({ passwordRules, saasPlans }: Props) {
                                                             ? `Uji coba ${plan.trial_days} hari. `
                                                             : ''}
                                                         {plan.description}
+                                                    </span>
+                                                    <span className="mt-1 block text-xs text-muted-foreground">
+                                                        {plan.max_gyms === null
+                                                            ? 'Multi-gym tanpa batas'
+                                                            : `${plan.max_gyms} gym`}{' '}
+                                                        -{' '}
+                                                        {plan.max_members ===
+                                                        null
+                                                            ? 'Member tanpa batas'
+                                                            : `${plan.max_members} member`}{' '}
+                                                        -{' '}
+                                                        {plan.max_staff === null
+                                                            ? 'Staf tanpa batas'
+                                                            : `${plan.max_staff} staf`}
                                                     </span>
                                                 </span>
                                             </label>

@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int $gym_id
+ * @property int $subscriber_id
  * @property int $saas_plan_id
  * @property SubscriptionStatus $status
  * @property Carbon $started_at
@@ -23,11 +24,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $cancelled_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Gym $gym
+ * @property-read User $subscriber
  * @property-read SaasPlan $plan
  */
 #[Fillable([
-    'gym_id',
+    'subscriber_id',
     'saas_plan_id',
     'status',
     'started_at',
@@ -47,10 +48,16 @@ class Subscription extends Model
         'status' => SubscriptionStatus::Trialing->value,
     ];
 
-    /** @return BelongsTo<Gym, $this> */
-    public function gym(): BelongsTo
+    /** @return BelongsTo<User, $this> */
+    public function subscriber(): BelongsTo
     {
-        return $this->belongsTo(Gym::class);
+        return $this->belongsTo(User::class, 'subscriber_id');
+    }
+
+    /** @return HasMany<Gym, $this> */
+    public function gyms(): HasMany
+    {
+        return $this->hasMany(Gym::class);
     }
 
     /** @return BelongsTo<SaasPlan, $this> */

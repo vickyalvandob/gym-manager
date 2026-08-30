@@ -20,9 +20,9 @@ class PlatformGymController extends Controller
         $subscriptionStatus = $request->validated('subscription_status');
 
         $gyms = Gym::query()
-            ->select(['id', 'name', 'slug', 'status', 'onboarding_completed_at', 'created_at'])
+            ->select(['id', 'subscription_id', 'name', 'slug', 'status', 'onboarding_completed_at', 'created_at'])
             ->withCount('users')
-            ->with(['subscription:id,gym_id,saas_plan_id,status,trial_ends_at,current_period_ends_at', 'subscription.plan:id,name'])
+            ->with(['subscription:id,saas_plan_id,status,trial_ends_at,current_period_ends_at', 'subscription.plan:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', "%{$search}%")

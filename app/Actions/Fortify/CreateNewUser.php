@@ -66,7 +66,8 @@ class CreateNewUser implements CreatesNewUsers
 
             $startedAt = now();
             $isTrial = $plan->trial_days > 0;
-            $gym->subscription()->create([
+            $isFreePlan = (float) $plan->price === 0.0;
+            $subscription = $user->subscription()->create([
                 'saas_plan_id' => $plan->getKey(),
                 'status' => $isTrial ? SubscriptionStatus::Trialing : SubscriptionStatus::Active,
                 'started_at' => $startedAt,
@@ -74,11 +75,12 @@ class CreateNewUser implements CreatesNewUsers
                 'current_period_starts_at' => $isTrial ? null : $startedAt,
                 'current_period_ends_at' => $isTrial
                     ? null
-                    : match ($plan->billing_interval) {
+                    : ($isFreePlan ? null : match ($plan->billing_interval) {
                         SaasPlanInterval::Monthly => $startedAt->copy()->addMonthNoOverflow(),
                         SaasPlanInterval::Yearly => $startedAt->copy()->addYearNoOverflow(),
-                    },
+                    }),
             ]);
+            $gym->forceFill(['subscription_id' => $subscription->getKey()])->save();
 
             ActivityLog::create([
                 'gym_id' => $gym->getKey(),

@@ -6,8 +6,10 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse as PlatformAwareLoginResponse;
 use App\Models\SaasPlan;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -44,6 +46,17 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+        Fortify::authenticateUsing(function (Request $request): ?User {
+            $user = User::query()
+                ->where('email', (string) $request->input('email'))
+                ->first();
+
+            if ($user?->is_active !== true || ! Hash::check((string) $request->input('password'), $user->password)) {
+                return null;
+            }
+
+            return $user;
+        });
     }
 
     /**
@@ -72,7 +85,7 @@ class FortifyServiceProvider extends ServiceProvider
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('id')
-                ->get(['id', 'name', 'description', 'price', 'currency', 'billing_interval', 'trial_days', 'max_members', 'max_staff'])
+                ->get(['id', 'name', 'description', 'price', 'currency', 'billing_interval', 'trial_days', 'max_gyms', 'max_members', 'max_staff'])
                 ->map(fn (SaasPlan $plan): array => [
                     'id' => $plan->getKey(),
                     'name' => $plan->name,
@@ -82,6 +95,7 @@ class FortifyServiceProvider extends ServiceProvider
                     'billing_interval' => $plan->billing_interval->value,
                     'billing_interval_label' => $plan->billing_interval->label(),
                     'trial_days' => $plan->trial_days,
+                    'max_gyms' => $plan->max_gyms,
                     'max_members' => $plan->max_members,
                     'max_staff' => $plan->max_staff,
                 ]),

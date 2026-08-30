@@ -25,6 +25,7 @@ use App\Models\Payment;
 use App\Models\PtPackage;
 use App\Models\PtSession;
 use App\Models\SaasPlan;
+use App\Models\Subscription;
 use App\Models\Trainer;
 use App\Models\TrainerMember;
 use App\Models\User;
@@ -65,21 +66,6 @@ class DemoGymSeeder extends Seeder
         );
         $platformAdmin->forceFill(['is_platform_admin' => true])->save();
 
-        $starterPlan = SaasPlan::query()->where('slug', 'starter')->firstOrFail();
-        $gym->subscription()->updateOrCreate(
-            ['gym_id' => $gym->getKey()],
-            [
-                'saas_plan_id' => $starterPlan->getKey(),
-                'status' => SubscriptionStatus::Active,
-                'started_at' => now()->subMonth(),
-                'trial_ends_at' => null,
-                'current_period_starts_at' => now()->startOfMonth(),
-                'current_period_ends_at' => now()->addMonth(),
-                'suspended_at' => null,
-                'cancelled_at' => null,
-            ],
-        );
-
         $accounts = [
             ['name' => 'Owner GymFlow', 'email' => 'owner@gym.test', 'role' => GymRole::Owner],
             ['name' => 'Front Desk GymFlow', 'email' => 'frontdesk@gym.test', 'role' => GymRole::Admin],
@@ -105,6 +91,23 @@ class DemoGymSeeder extends Seeder
                 ],
             ]);
         }
+
+        $owner = User::query()->where('email', 'owner@gym.test')->firstOrFail();
+        $starterPlan = SaasPlan::query()->where('slug', 'starter')->firstOrFail();
+        $subscription = Subscription::query()->updateOrCreate(
+            ['subscriber_id' => $owner->getKey()],
+            [
+                'saas_plan_id' => $starterPlan->getKey(),
+                'status' => SubscriptionStatus::Active,
+                'started_at' => now()->subMonth(),
+                'trial_ends_at' => null,
+                'current_period_starts_at' => now()->startOfMonth(),
+                'current_period_ends_at' => now()->addMonth(),
+                'suspended_at' => null,
+                'cancelled_at' => null,
+            ],
+        );
+        $gym->forceFill(['subscription_id' => $subscription->getKey()])->save();
 
         $members = [
             ['name' => 'Aditya Pratama', 'phone' => '081234560001', 'email' => 'aditya@example.test', 'gender' => MemberGender::Male, 'status' => MemberStatus::Active],
@@ -137,7 +140,6 @@ class DemoGymSeeder extends Seeder
             'next_member_sequence' => max($gym->next_member_sequence, count($members) + 1),
         ])->save();
 
-        $owner = User::query()->where('email', 'owner@gym.test')->firstOrFail();
         $trainerProfiles = [
             [
                 'trainer_code' => 'TRN-000001',

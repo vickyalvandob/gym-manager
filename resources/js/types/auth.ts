@@ -7,6 +7,7 @@ export type User = {
     created_at: string;
     updated_at: string;
     is_platform_admin: boolean;
+    is_active: boolean;
     [key: string]: unknown;
 };
 
@@ -17,6 +18,12 @@ export type Auth = {
     role: GymRole | null;
     roleLabel: string | null;
     permissions: Partial<Record<GymPermission, boolean>>;
+    availableGyms: Array<{
+        id: number;
+        name: string;
+        status: 'active' | 'suspended';
+        role: GymRole;
+    }>;
 };
 
 export type GymRole = 'owner' | 'admin' | 'trainer';

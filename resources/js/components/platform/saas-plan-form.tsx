@@ -120,6 +120,18 @@ export function SaasPlanForm({
                                 <InputError message={errors.sort_order} />
                             </div>
                             <div className="grid gap-2">
+                                <Label htmlFor="max_gyms">Batas gym</Label>
+                                <Input
+                                    id="max_gyms"
+                                    name="max_gyms"
+                                    type="number"
+                                    defaultValue={plan?.max_gyms ?? ''}
+                                    min={1}
+                                    placeholder="Kosong berarti tanpa batas"
+                                />
+                                <InputError message={errors.max_gyms} />
+                            </div>
+                            <div className="grid gap-2">
                                 <Label htmlFor="max_members">
                                     Batas member
                                 </Label>

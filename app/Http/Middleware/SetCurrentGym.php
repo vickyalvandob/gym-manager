@@ -30,6 +30,7 @@ class SetCurrentGym
         $availableGyms = $user->gyms()
             ->select([
                 'gyms.id',
+                'gyms.subscription_id',
                 'gyms.name',
                 'gyms.slug',
                 'gyms.logo',

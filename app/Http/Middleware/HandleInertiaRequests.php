@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\GymUserStatus;
 use App\Support\GymContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -80,6 +81,17 @@ class HandleInertiaRequests extends Middleware
             'role' => $role?->value,
             'roleLabel' => $role?->label(),
             'permissions' => $role?->permissions() ?? [],
+            'availableGyms' => $request->user() === null ? [] : $request->user()->gyms()
+                ->select(['gyms.id', 'gyms.name', 'gyms.status'])
+                ->wherePivot('status', GymUserStatus::Active->value)
+                ->oldest('gym_user.created_at')
+                ->get()
+                ->map(fn ($gym): array => [
+                    'id' => $gym->getKey(),
+                    'name' => $gym->name,
+                    'status' => $gym->status->value,
+                    'role' => (string) $gym->getRelation('pivot')->getAttribute('role'),
+                ]),
         ];
     }
 }

@@ -6,10 +6,12 @@ use App\Enums\GymRole;
 use App\Enums\GymUserStatus;
 use App\Enums\TrainerStatus;
 use App\Models\Gym;
+use App\Models\Subscription;
 use App\Models\Trainer;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\GymContext;
+use App\Support\SubscriptionQuota;
 use Illuminate\Support\Facades\DB;
 
 class CreateTrainer
@@ -17,12 +19,24 @@ class CreateTrainer
     public function __construct(
         private readonly GymContext $gymContext,
         private readonly ActivityLogger $activityLogger,
+        private readonly SubscriptionQuota $subscriptionQuota,
     ) {}
 
     /** @param array<string, mixed> $attributes */
     public function handle(array $attributes): Trainer
     {
         return DB::transaction(function () use ($attributes): Trainer {
+            $subscriptionId = $this->gymContext->gym()->subscription_id;
+
+            if ($subscriptionId !== null) {
+                $subscription = Subscription::query()
+                    ->whereKey($subscriptionId)
+                    ->with('plan')
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $this->subscriptionQuota->ensureCanCreateStaff($subscription);
+            }
+
             $lockedGym = Gym::query()
                 ->whereKey($this->gymContext->gymId())
                 ->lockForUpdate()

@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $currency
  * @property SaasPlanInterval $billing_interval
  * @property int $trial_days
+ * @property int|null $max_gyms
  * @property int|null $max_members
  * @property int|null $max_staff
  * @property bool $is_active
@@ -34,6 +35,7 @@ use Illuminate\Support\Carbon;
     'currency',
     'billing_interval',
     'trial_days',
+    'max_gyms',
     'max_members',
     'max_staff',
     'is_active',
@@ -66,6 +68,7 @@ class SaasPlan extends Model
             'price' => 'decimal:2',
             'billing_interval' => SaasPlanInterval::class,
             'trial_days' => 'integer',
+            'max_gyms' => 'integer',
             'max_members' => 'integer',
             'max_staff' => 'integer',
             'is_active' => 'boolean',

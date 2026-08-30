@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { formatDate, formatCurrency } from '@/lib/formatters';
 import { index } from '@/routes/platform/gyms';
+import { show as userShow } from '@/routes/platform/users';
 import type { PlatformGym, SelectOption } from '@/types';
 
 type PlanOption = {
@@ -275,9 +276,12 @@ export default function PlatformGymShow({
                                 className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between"
                             >
                                 <div>
-                                    <p className="text-sm font-medium">
+                                    <Link
+                                        href={userShow(user.id)}
+                                        className="text-sm font-medium hover:text-primary"
+                                    >
                                         {user.name}
-                                    </p>
+                                    </Link>
                                     <p className="text-xs text-muted-foreground">
                                         {user.email}
                                     </p>

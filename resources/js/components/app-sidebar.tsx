@@ -18,6 +18,7 @@ import CheckInController from '@/actions/App/Http/Controllers/CheckInController'
 import GymSettingsController from '@/actions/App/Http/Controllers/GymSettingsController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import AppLogo from '@/components/app-logo';
+import { GymSwitcher } from '@/components/gym-switcher';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -35,10 +36,12 @@ import { index as membershipPlansIndex } from '@/routes/membership-plans';
 import { dashboard as platformDashboard } from '@/routes/platform';
 import { index as platformGymsIndex } from '@/routes/platform/gyms';
 import { index as saasPlansIndex } from '@/routes/platform/saas-plans';
+import { index as platformUsersIndex } from '@/routes/platform/users';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as ptPackagesIndex } from '@/routes/pt-packages';
 import { index as ptSessionsIndex } from '@/routes/pt-sessions';
 import { index as reportsIndex } from '@/routes/reports';
+import { index as staffIndex } from '@/routes/staff';
 import { show as subscriptionShow } from '@/routes/subscription';
 import { index as trainerMembersIndex } from '@/routes/trainer-members';
 import { index as trainersIndex } from '@/routes/trainers';
@@ -61,6 +64,11 @@ export function AppSidebar() {
                     title: 'Tenant Gym',
                     href: platformGymsIndex(),
                     icon: Building2,
+                },
+                {
+                    title: 'Pengguna',
+                    href: platformUsersIndex(),
+                    icon: UsersRound,
                 },
                 {
                     title: 'Paket SaaS',
@@ -204,6 +212,11 @@ export function AppSidebar() {
                       title: 'Pengaturan',
                       items: [
                           {
+                              title: 'Staf Gym',
+                              href: staffIndex(),
+                              icon: UserRoundCog,
+                          },
+                          {
                               title: 'Profil Gym',
                               href: GymSettingsController.edit(),
                               icon: Settings2,
@@ -236,6 +249,7 @@ export function AppSidebar() {
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+                    {!isPlatformWorkspace && auth.currentGym && <GymSwitcher />}
                 </SidebarMenu>
             </SidebarHeader>
 

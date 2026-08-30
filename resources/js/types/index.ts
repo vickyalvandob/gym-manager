@@ -8,5 +8,6 @@ export type * from './navigation';
 export type * from './payment';
 export type * from './personal-training';
 export type * from './report';
+export type * from './staff';
 export type * from './trainer';
 export type * from './ui';

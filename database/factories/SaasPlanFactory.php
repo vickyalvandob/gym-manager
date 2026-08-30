@@ -29,6 +29,7 @@ class SaasPlanFactory extends Factory
             'currency' => 'IDR',
             'billing_interval' => SaasPlanInterval::Monthly,
             'trial_days' => 14,
+            'max_gyms' => 1,
             'max_members' => 500,
             'max_staff' => 10,
             'is_active' => true,

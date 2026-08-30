@@ -4,8 +4,10 @@ namespace App\Actions\Members;
 
 use App\Models\Gym;
 use App\Models\Member;
+use App\Models\Subscription;
 use App\Support\ActivityLogger;
 use App\Support\GymContext;
+use App\Support\SubscriptionQuota;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +19,7 @@ class CreateMember
     public function __construct(
         private readonly GymContext $gymContext,
         private readonly ActivityLogger $activityLogger,
+        private readonly SubscriptionQuota $subscriptionQuota,
     ) {}
 
     /**
@@ -32,6 +35,17 @@ class CreateMember
 
         try {
             return DB::transaction(function () use ($attributes, $photoPath): Member {
+                $subscriptionId = $this->gymContext->gym()->subscription_id;
+
+                if ($subscriptionId !== null) {
+                    $subscription = Subscription::query()
+                        ->whereKey($subscriptionId)
+                        ->with('plan')
+                        ->lockForUpdate()
+                        ->firstOrFail();
+                    $this->subscriptionQuota->ensureCanCreateMember($subscription);
+                }
+
                 $gym = Gym::query()
                     ->whereKey($this->gymContext->gymId())
                     ->lockForUpdate()

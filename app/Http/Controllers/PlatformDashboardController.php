@@ -8,6 +8,7 @@ use App\Models\Gym;
 use App\Models\PlatformActivityLog;
 use App\Models\SaasPlan;
 use App\Models\Subscription;
+use App\Models\User;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,6 +24,8 @@ class PlatformDashboardController extends Controller
         return Inertia::render('platform/dashboard', [
             'metrics' => [
                 'gyms_total' => Gym::query()->count(),
+                'users_total' => User::query()->where('is_platform_admin', false)->count(),
+                'subscribers_total' => Subscription::query()->count(),
                 'gyms_active' => Gym::query()->where('status', GymStatus::Active)->count(),
                 'gyms_suspended' => Gym::query()->where('status', GymStatus::Suspended)->count(),
                 'plans_active' => SaasPlan::query()->where('is_active', true)->count(),
@@ -36,8 +39,8 @@ class PlatformDashboardController extends Controller
                 ])->sum(fn (SubscriptionStatus $status): int => (int) ($subscriptionCounts[$status->value] ?? 0)),
             ],
             'recentGyms' => Gym::query()
-                ->select(['id', 'name', 'slug', 'status', 'created_at'])
-                ->with(['subscription:id,gym_id,saas_plan_id,status,trial_ends_at,current_period_ends_at', 'subscription.plan:id,name'])
+                ->select(['id', 'subscription_id', 'name', 'slug', 'status', 'created_at'])
+                ->with(['subscription:id,saas_plan_id,status,trial_ends_at,current_period_ends_at', 'subscription.plan:id,name'])
                 ->latest('id')
                 ->limit(6)
                 ->get()

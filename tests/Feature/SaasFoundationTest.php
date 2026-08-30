@@ -30,6 +30,7 @@ function validSaasPlanPayload(array $overrides = []): array
         'currency' => 'IDR',
         'billing_interval' => 'monthly',
         'trial_days' => 14,
+        'max_gyms' => 3,
         'max_members' => 2000,
         'max_staff' => 30,
         'is_active' => true,
@@ -77,6 +78,7 @@ test('platform admin can create update and deactivate SaaS plans with audit trai
     $plan->refresh();
     expect($plan->name)->toBe('Business Pro')
         ->and($plan->price)->toBe('699000.00')
+        ->and($plan->max_gyms)->toBe(3)
         ->and($plan->is_active)->toBeFalse()
         ->and(PlatformActivityLog::query()->where('event', 'saas_plan.created')->count())->toBe(1)
         ->and(PlatformActivityLog::query()->where('event', 'saas_plan.updated')->count())->toBe(1)
@@ -88,7 +90,12 @@ test('owner completes onboarding before entering the operational workspace', fun
     $owner = User::factory()->create();
     $plan = SaasPlan::factory()->create();
     attachSaasUser($gym, $owner, GymRole::Owner);
-    Subscription::factory()->trialing()->for($gym)->for($plan, 'plan')->create();
+    $subscription = Subscription::factory()
+        ->trialing()
+        ->for($owner, 'subscriber')
+        ->for($plan, 'plan')
+        ->create();
+    $gym->forceFill(['subscription_id' => $subscription->getKey()])->save();
 
     $this->actingAs($owner)
         ->withSession(['current_gym_id' => $gym->getKey()])
@@ -124,12 +131,13 @@ test('expired trial blocks operations while owner can inspect subscription statu
     $plan = SaasPlan::factory()->create();
     attachSaasUser($gym, $owner, GymRole::Owner);
     attachSaasUser($gym, $frontDesk, GymRole::Admin);
-    Subscription::factory()->for($gym)->for($plan, 'plan')->create([
+    $subscription = Subscription::factory()->for($owner, 'subscriber')->for($plan, 'plan')->create([
         'status' => SubscriptionStatus::Trialing,
         'trial_ends_at' => now()->subMinute(),
         'current_period_starts_at' => null,
         'current_period_ends_at' => null,
     ]);
+    $gym->forceFill(['subscription_id' => $subscription->getKey()])->save();
 
     $this->actingAs($owner)
         ->withSession(['current_gym_id' => $gym->getKey()])
@@ -165,7 +173,7 @@ test('platform admin assigns subscriptions and can suspend tenant access', funct
         ])
         ->assertRedirect();
 
-    $subscription = $gym->subscription()->firstOrFail();
+    $subscription = $gym->refresh()->subscription()->firstOrFail();
     expect($subscription->status)->toBe(SubscriptionStatus::Active)
         ->and($subscription->saas_plan_id)->toBe($plan->getKey());
 
@@ -198,8 +206,11 @@ test('platform admin promotion command and SaaS plan seeder are idempotent', fun
     $this->seed(SaasPlanSeeder::class);
 
     expect($user->refresh()->is_platform_admin)->toBeTrue()
-        ->and(SaasPlan::query()->count())->toBe(3)
-        ->and(SaasPlan::query()->where('is_active', true)->count())->toBe(3);
+        ->and(SaasPlan::query()->count())->toBe(4)
+        ->and(SaasPlan::query()->where('is_active', true)->count())->toBe(4)
+        ->and(SaasPlan::query()->where('slug', 'free')->value('max_members'))->toBe(20)
+        ->and(SaasPlan::query()->where('slug', 'free')->value('max_staff'))->toBe(5)
+        ->and(SaasPlan::query()->where('slug', 'free')->value('max_gyms'))->toBe(1);
 });
 
 test('suspended gym owner is redirected to subscription after login', function () {

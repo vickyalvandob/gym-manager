@@ -79,7 +79,15 @@ export default function SaasPlanIndex({ plans }: { plans: SaasPlan[] }) {
                                     {plan.billing_interval_label.toLowerCase()}{' '}
                                     · trial {plan.trial_days} hari
                                 </p>
-                                <dl className="mt-5 grid grid-cols-2 gap-3 border-y py-4 text-sm">
+                                <dl className="mt-5 grid grid-cols-3 gap-3 border-y py-4 text-sm">
+                                    <div>
+                                        <dt className="text-muted-foreground">
+                                            Gym
+                                        </dt>
+                                        <dd className="mt-1 font-medium">
+                                            {plan.max_gyms ?? 'Tanpa batas'}
+                                        </dd>
+                                    </div>
                                     <div>
                                         <dt className="text-muted-foreground">
                                             Member

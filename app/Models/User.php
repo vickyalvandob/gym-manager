@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -20,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property bool $is_platform_admin
+ * @property bool $is_active
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -33,6 +35,11 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'is_active' => true,
+    ];
 
     /**
      * @return BelongsToMany<Gym, $this>
@@ -76,6 +83,12 @@ class User extends Authenticatable
         return $this->hasMany(PlatformActivityLog::class, 'actor_id');
     }
 
+    /** @return HasOne<Subscription, $this> */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class, 'subscriber_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -87,6 +100,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_platform_admin' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 }

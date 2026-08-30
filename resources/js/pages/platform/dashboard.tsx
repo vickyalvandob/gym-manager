@@ -1,11 +1,18 @@
 import { Head, Link } from '@inertiajs/react';
-import { Activity, Building2, CircleAlert, WalletCards } from 'lucide-react';
+import {
+    Activity,
+    Building2,
+    CircleAlert,
+    UsersRound,
+    WalletCards,
+} from 'lucide-react';
 import { PlatformStatusBadge } from '@/components/platform/status-badge';
 import { Button } from '@/components/ui/button';
 import { formatDateTime } from '@/lib/formatters';
 import { dashboard } from '@/routes/platform';
 import { index as gymsIndex, show as gymShow } from '@/routes/platform/gyms';
 import { index as plansIndex } from '@/routes/platform/saas-plans';
+import { index as usersIndex } from '@/routes/platform/users';
 
 type Props = {
     metrics: Record<string, number>;
@@ -50,11 +57,21 @@ export default function PlatformDashboard({
                     </p>
                 </div>
 
-                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                    <Metric
+                        label="Pengguna"
+                        value={metrics.users_total}
+                        icon={UsersRound}
+                    />
                     <Metric
                         label="Total gym"
                         value={metrics.gyms_total}
                         icon={Building2}
+                    />
+                    <Metric
+                        label="Subscriber"
+                        value={metrics.subscribers_total}
+                        icon={WalletCards}
                     />
                     <Metric
                         label="Subscription aktif"
@@ -155,7 +172,10 @@ export default function PlatformDashboard({
                     </section>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href={usersIndex()}>Kelola pengguna</Link>
+                    </Button>
                     <Button variant="outline" asChild>
                         <Link href={plansIndex()}>Kelola paket SaaS</Link>
                     </Button>
@@ -191,6 +211,7 @@ function eventLabel(event: string): string {
             'gym.registered': 'Gym baru mendaftar',
             'gym.status_changed': 'Status gym diperbarui',
             'subscription.updated': 'Subscription diperbarui',
+            'user.access_updated': 'Akses pengguna diperbarui',
             'saas_plan.created': 'Paket SaaS dibuat',
             'saas_plan.updated': 'Paket SaaS diperbarui',
             'saas_plan.status_changed': 'Status paket diperbarui',

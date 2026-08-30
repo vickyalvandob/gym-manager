@@ -50,8 +50,37 @@ test('new users can register', function () {
         ->and($gym->onboarding_completed_at)->toBeNull()
         ->and($gym->subscription?->status)->toBe(SubscriptionStatus::Trialing)
         ->and($gym->subscription?->saas_plan_id)->toBe($this->saasPlan->getKey())
+        ->and($gym->subscription?->subscriber_id)->toBe($user->getKey())
         ->and($gym->subscription?->trial_ends_at?->isFuture())->toBeTrue()
         ->and($platformLog->subject_id)->toBe($gym->getKey());
+});
+
+test('free registration creates an active non expiring single gym subscription', function () {
+    $freePlan = SaasPlan::factory()->create([
+        'name' => 'Free',
+        'price' => '0.00',
+        'trial_days' => 0,
+        'max_gyms' => 1,
+        'max_members' => 20,
+        'max_staff' => 5,
+    ]);
+
+    $this->post(route('register.store'), [
+        'name' => 'Free User',
+        'gym_name' => 'Gym Free',
+        'saas_plan_id' => $freePlan->getKey(),
+        'email' => 'free@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertRedirect(route('dashboard', absolute: false));
+
+    $user = User::query()->where('email', 'free@example.com')->firstOrFail();
+    $subscription = $user->subscription()->firstOrFail();
+
+    expect($subscription->status)->toBe(SubscriptionStatus::Active)
+        ->and($subscription->trial_ends_at)->toBeNull()
+        ->and($subscription->current_period_ends_at)->toBeNull()
+        ->and($subscription->gyms()->count())->toBe(1);
 });
 
 test('gym name is required and registration does not create partial data', function () {

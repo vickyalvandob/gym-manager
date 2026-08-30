@@ -23,7 +23,7 @@ class SaasPlanController extends Controller
 
         return Inertia::render('platform/saas-plans/index', [
             'plans' => SaasPlan::query()
-                ->select(['id', 'name', 'slug', 'description', 'price', 'currency', 'billing_interval', 'trial_days', 'max_members', 'max_staff', 'is_active', 'sort_order'])
+                ->select(['id', 'name', 'slug', 'description', 'price', 'currency', 'billing_interval', 'trial_days', 'max_gyms', 'max_members', 'max_staff', 'is_active', 'sort_order'])
                 ->withCount('subscriptions')
                 ->orderBy('sort_order')
                 ->orderBy('id')
@@ -102,6 +102,7 @@ class SaasPlanController extends Controller
             'billing_interval' => $plan->billing_interval->value,
             'billing_interval_label' => $plan->billing_interval->label(),
             'trial_days' => $plan->trial_days,
+            'max_gyms' => $plan->max_gyms,
             'max_members' => $plan->max_members,
             'max_staff' => $plan->max_staff,
             'is_active' => $plan->is_active,

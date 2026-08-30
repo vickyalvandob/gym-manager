@@ -18,6 +18,7 @@ trait SaasPlanValidationRules
             'currency' => ['required', 'string', 'size:3'],
             'billing_interval' => ['required', Rule::enum(SaasPlanInterval::class)],
             'trial_days' => ['required', 'integer', 'min:0', 'max:365'],
+            'max_gyms' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'max_members' => ['nullable', 'integer', 'min:1', 'max:10000000'],
             'max_staff' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'is_active' => ['required', 'boolean'],

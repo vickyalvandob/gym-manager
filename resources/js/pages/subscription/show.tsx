@@ -1,7 +1,15 @@
-import { Head } from '@inertiajs/react';
-import { CalendarClock, CircleAlert, WalletCards } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import {
+    Building2,
+    CalendarClock,
+    CircleAlert,
+    UsersRound,
+    WalletCards,
+} from 'lucide-react';
 import { PlatformStatusBadge } from '@/components/platform/status-badge';
+import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/formatters';
+import { index as gymsIndex } from '@/routes/gyms';
 import { show } from '@/routes/subscription';
 
 type Props = {
@@ -19,6 +27,12 @@ type Props = {
         price: string;
         currency: string;
         billing_interval_label: string;
+        usage: { gyms: number; members: number; staff: number };
+        limits: {
+            gyms: number | null;
+            members: number | null;
+            staff: number | null;
+        };
         trial_ends_at: string | null;
         current_period_starts_at: string | null;
         current_period_ends_at: string | null;
@@ -108,6 +122,33 @@ export default function SubscriptionShow({ gym, subscription }: Props) {
                                 )}
                             />
                         </dl>
+                        <div className="grid gap-3 border-t p-5 sm:grid-cols-3">
+                            <Capacity
+                                icon={Building2}
+                                label="Gym"
+                                usage={subscription.usage.gyms}
+                                limit={subscription.limits.gyms}
+                            />
+                            <Capacity
+                                icon={UsersRound}
+                                label="Member"
+                                usage={subscription.usage.members}
+                                limit={subscription.limits.members}
+                            />
+                            <Capacity
+                                icon={UsersRound}
+                                label="Staf"
+                                usage={subscription.usage.staff}
+                                limit={subscription.limits.staff}
+                            />
+                        </div>
+                        <div className="flex justify-end border-t p-5">
+                            <Button variant="outline" asChild>
+                                <Link href={gymsIndex()}>
+                                    <Building2 /> Kelola multi-gym
+                                </Link>
+                            </Button>
+                        </div>
                     </section>
                 )}
 
@@ -127,6 +168,29 @@ export default function SubscriptionShow({ gym, subscription }: Props) {
                 </div>
             </div>
         </>
+    );
+}
+
+function Capacity({
+    icon: Icon,
+    label,
+    usage,
+    limit,
+}: {
+    icon: typeof Building2;
+    label: string;
+    usage: number;
+    limit: number | null;
+}) {
+    return (
+        <div className="rounded-lg bg-muted/40 p-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Icon className="size-4" /> {label}
+            </div>
+            <p className="mt-2 font-medium tabular-nums">
+                {usage} / {limit ?? 'tanpa batas'}
+            </p>
+        </div>
     );
 }
 

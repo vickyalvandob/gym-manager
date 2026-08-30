@@ -7,13 +7,14 @@ use Database\Factories\GymFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int|null $subscription_id
  * @property string $name
  * @property string $slug
  * @property string|null $logo
@@ -139,10 +140,10 @@ class Gym extends Model
         return $this->hasMany(PtSession::class);
     }
 
-    /** @return HasOne<Subscription, $this> */
-    public function subscription(): HasOne
+    /** @return BelongsTo<Subscription, $this> */
+    public function subscription(): BelongsTo
     {
-        return $this->hasOne(Subscription::class);
+        return $this->belongsTo(Subscription::class);
     }
 
     /**
