@@ -61,6 +61,12 @@ class SaasPlan extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    /** @return HasMany<SubscriptionPayment, $this> */
+    public function subscriptionPayments(): HasMany
+    {
+        return $this->hasMany(SubscriptionPayment::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

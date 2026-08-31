@@ -29,6 +29,6 @@ class EnsureSubscriptionActive
             return to_route('subscription.show');
         }
 
-        abort(Response::HTTP_FORBIDDEN, 'Subscription gym tidak aktif. Hubungi Owner gym.');
+        abort(Response::HTTP_FORBIDDEN, 'Subscription akun Owner tidak aktif. Hubungi Owner gym.');
     }
 }

@@ -1,5 +1,13 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { Building2, ShieldCheck, WalletCards } from 'lucide-react';
+import {
+    Building2,
+    CreditCard,
+    FileCheck2,
+    ShieldCheck,
+    UsersRound,
+    WalletCards,
+} from 'lucide-react';
+import PlatformSubscriptionPaymentController from '@/actions/App/Http/Controllers/PlatformSubscriptionPaymentController';
 import PlatformUserStatusController from '@/actions/App/Http/Controllers/PlatformUserStatusController';
 import PlatformUserSubscriptionController from '@/actions/App/Http/Controllers/PlatformUserSubscriptionController';
 import InputError from '@/components/input-error';
@@ -8,8 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
-import { show as gymShow } from '@/routes/platform/gyms';
 import { index } from '@/routes/platform/users';
+import { proof as paymentProof } from '@/routes/subscription-payments';
 import type { PlatformUser, SelectOption } from '@/types';
 
 type PlanOption = {
@@ -33,6 +41,7 @@ export default function PlatformUserShow({
     subscriptionStatusOptions: SelectOption[];
 }) {
     const subscription = managedUser.subscription;
+    const subscriptionPayments = subscription?.payments ?? [];
 
     return (
         <>
@@ -147,7 +156,8 @@ export default function PlatformUserShow({
                         <h2 className="font-semibold">
                             Subscription subscriber
                         </h2>
-                        {subscription ? (
+                        {subscription &&
+                        subscription.pending_payments_count === 0 ? (
                             <Form
                                 {...PlatformUserSubscriptionController.update.form(
                                     managedUser.id,
@@ -256,6 +266,12 @@ export default function PlatformUserShow({
                                     </>
                                 )}
                             </Form>
+                        ) : subscription ? (
+                            <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                                Ada pembayaran yang menunggu approval. Review
+                                pembayaran di bawah sebelum mengubah paket,
+                                status, atau periode subscription.
+                            </p>
                         ) : (
                             <p className="mt-4 rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
                                 Akun ini adalah staf gym dan tidak memiliki
@@ -289,6 +305,168 @@ export default function PlatformUserShow({
                     </section>
                 )}
 
+                {subscription && (
+                    <section className="overflow-hidden rounded-xl border">
+                        <div className="flex items-start gap-3 border-b p-5">
+                            <CreditCard className="mt-0.5 size-5 text-muted-foreground" />
+                            <div>
+                                <h2 className="font-semibold">
+                                    Pembayaran subscription
+                                </h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Verifikasi bukti transfer subscriber. Hanya
+                                    approval yang akan mengaktifkan dan
+                                    memperpanjang periode paket.
+                                </p>
+                            </div>
+                        </div>
+                        {subscriptionPayments.length === 0 ? (
+                            <p className="p-5 text-sm text-muted-foreground">
+                                Belum ada pembayaran subscription.
+                            </p>
+                        ) : (
+                            <div className="divide-y">
+                                {subscriptionPayments.map((payment) => (
+                                    <div
+                                        key={payment.id}
+                                        className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="font-medium">
+                                                    {formatCurrency(
+                                                        payment.amount,
+                                                        payment.currency,
+                                                    )}
+                                                </p>
+                                                <PlatformStatusBadge
+                                                    status={payment.status}
+                                                    label={payment.status_label}
+                                                />
+                                            </div>
+                                            <p className="mt-2 text-sm text-muted-foreground">
+                                                {payment.plan_name} ·{' '}
+                                                {payment.reference_number}
+                                            </p>
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                Dikirim{' '}
+                                                {formatDateTime(
+                                                    payment.submitted_at,
+                                                )}
+                                                {payment.reviewer_name
+                                                    ? ` · Ditinjau ${payment.reviewer_name}`
+                                                    : ''}
+                                            </p>
+                                            {payment.review_notes && (
+                                                <p className="mt-3 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                                                    {payment.review_notes}
+                                                </p>
+                                            )}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="mt-4"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={paymentProof(
+                                                        payment.id,
+                                                    )}
+                                                >
+                                                    <FileCheck2 /> Lihat bukti
+                                                </Link>
+                                            </Button>
+                                        </div>
+
+                                        {payment.status === 'pending' ? (
+                                            <Form
+                                                {...PlatformSubscriptionPaymentController.form(
+                                                    payment.id,
+                                                )}
+                                                options={{
+                                                    preserveScroll: true,
+                                                }}
+                                                className="grid content-start gap-3 rounded-lg bg-muted/40 p-4"
+                                            >
+                                                {({ errors, processing }) => (
+                                                    <>
+                                                        <div className="grid gap-2">
+                                                            <Label
+                                                                htmlFor={`decision-${payment.id}`}
+                                                            >
+                                                                Keputusan
+                                                            </Label>
+                                                            <select
+                                                                id={`decision-${payment.id}`}
+                                                                name="decision"
+                                                                defaultValue="approved"
+                                                                className={
+                                                                    controlClassName
+                                                                }
+                                                            >
+                                                                <option value="approved">
+                                                                    Setujui
+                                                                    pembayaran
+                                                                </option>
+                                                                <option value="rejected">
+                                                                    Tolak
+                                                                    pembayaran
+                                                                </option>
+                                                            </select>
+                                                            <InputError
+                                                                message={
+                                                                    errors.decision
+                                                                }
+                                                            />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label
+                                                                htmlFor={`review_notes-${payment.id}`}
+                                                            >
+                                                                Catatan review
+                                                            </Label>
+                                                            <textarea
+                                                                id={`review_notes-${payment.id}`}
+                                                                name="review_notes"
+                                                                rows={3}
+                                                                maxLength={1000}
+                                                                placeholder="Wajib diisi jika pembayaran ditolak."
+                                                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
+                                                            />
+                                                            <InputError
+                                                                message={
+                                                                    errors.review_notes
+                                                                }
+                                                            />
+                                                        </div>
+                                                        <Button
+                                                            type="submit"
+                                                            disabled={
+                                                                processing
+                                                            }
+                                                            className="justify-self-start"
+                                                        >
+                                                            {processing
+                                                                ? 'Memproses...'
+                                                                : 'Simpan keputusan'}
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </Form>
+                                        ) : (
+                                            <div className="rounded-lg bg-muted/40 p-4 text-sm text-muted-foreground">
+                                                {payment.period_ends_at
+                                                    ? `Akses diperpanjang sampai ${formatDate(payment.period_ends_at)}.`
+                                                    : 'Pembayaran sudah selesai ditinjau.'}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                )}
+
                 <section className="rounded-xl border">
                     <div className="border-b p-5">
                         <h2 className="font-semibold">Gym & role</h2>
@@ -304,10 +482,9 @@ export default function PlatformUserShow({
                     ) : (
                         <div className="divide-y">
                             {(managedUser.gyms ?? []).map((gym) => (
-                                <Link
+                                <div
                                     key={gym.id}
-                                    href={gymShow(gym.id)}
-                                    className="flex flex-col gap-2 p-4 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
+                                    className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
                                 >
                                     <div>
                                         <p className="text-sm font-medium">
@@ -317,7 +494,12 @@ export default function PlatformUserShow({
                                             {gym.slug} · {gym.role_label}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                            <UsersRound className="size-3.5" />
+                                            {gym.members_count} member ·{' '}
+                                            {gym.staff_count} staf
+                                        </span>
                                         <Badge variant="outline">
                                             {gym.access_status === 'active'
                                                 ? 'Akses aktif'
@@ -328,7 +510,7 @@ export default function PlatformUserShow({
                                             label={gym.status_label}
                                         />
                                     </div>
-                                </Link>
+                                </div>
                             ))}
                         </div>
                     )}

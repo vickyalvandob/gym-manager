@@ -18,6 +18,13 @@ export type Auth = {
     role: GymRole | null;
     roleLabel: string | null;
     permissions: Partial<Record<GymPermission, boolean>>;
+    subscription: {
+        status: string;
+        status_label: string;
+        grants_access: boolean;
+        is_subscriber: boolean;
+        has_pending_payment: boolean;
+    } | null;
     availableGyms: Array<{
         id: number;
         name: string;

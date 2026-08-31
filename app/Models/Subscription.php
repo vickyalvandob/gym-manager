@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\SubscriptionStatus;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,6 +27,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read User $subscriber
  * @property-read SaasPlan $plan
+ * @property-read Collection<int, SubscriptionPayment> $payments
  */
 #[Fillable([
     'subscriber_id',
@@ -66,6 +68,12 @@ class Subscription extends Model
         return $this->belongsTo(SaasPlan::class, 'saas_plan_id');
     }
 
+    /** @return HasMany<SubscriptionPayment, $this> */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(SubscriptionPayment::class);
+    }
+
     public function grantsAccess(): bool
     {
         return match ($this->status) {
@@ -75,6 +83,22 @@ class Subscription extends Model
                 || $this->current_period_ends_at->isFuture(),
             default => false,
         };
+    }
+
+    public function effectiveStatus(): SubscriptionStatus
+    {
+        if ($this->status === SubscriptionStatus::Trialing
+            && ($this->trial_ends_at === null || ! $this->trial_ends_at->isFuture())) {
+            return SubscriptionStatus::Expired;
+        }
+
+        if ($this->status === SubscriptionStatus::Active
+            && $this->current_period_ends_at !== null
+            && ! $this->current_period_ends_at->isFuture()) {
+            return SubscriptionStatus::Expired;
+        }
+
+        return $this->status;
     }
 
     /** @return array<string, string> */

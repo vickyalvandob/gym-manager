@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\GymStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Models\Gym;
 use App\Models\PlatformActivityLog;
 use App\Models\SaasPlan;
 use App\Models\Subscription;
+use App\Models\SubscriptionPayment;
 use App\Models\User;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,10 +39,17 @@ class PlatformDashboardController extends Controller
                     SubscriptionStatus::Cancelled,
                     SubscriptionStatus::Expired,
                 ])->sum(fn (SubscriptionStatus $status): int => (int) ($subscriptionCounts[$status->value] ?? 0)),
+                'subscription_payments_pending' => SubscriptionPayment::query()
+                    ->where('status', SubscriptionPaymentStatus::Pending)
+                    ->count(),
             ],
             'recentGyms' => Gym::query()
                 ->select(['id', 'subscription_id', 'name', 'slug', 'status', 'created_at'])
-                ->with(['subscription:id,saas_plan_id,status,trial_ends_at,current_period_ends_at', 'subscription.plan:id,name'])
+                ->with([
+                    'subscription:id,subscriber_id,saas_plan_id,status,trial_ends_at,current_period_ends_at',
+                    'subscription.plan:id,name',
+                    'subscription.subscriber:id,name',
+                ])
                 ->latest('id')
                 ->limit(6)
                 ->get()
@@ -50,9 +59,11 @@ class PlatformDashboardController extends Controller
                     'slug' => $gym->slug,
                     'status' => $gym->status->value,
                     'status_label' => $gym->status->label(),
-                    'subscription_status' => $gym->subscription?->status->value,
-                    'subscription_status_label' => $gym->subscription?->status->label(),
-                    'plan_name' => $gym->subscription->plan->name,
+                    'subscription_status' => $gym->subscription?->effectiveStatus()->value,
+                    'subscription_status_label' => $gym->subscription?->effectiveStatus()->label(),
+                    'plan_name' => $gym->subscription?->plan?->name,
+                    'subscriber_id' => $gym->subscription?->subscriber_id,
+                    'subscriber_name' => $gym->subscription?->subscriber?->name,
                     'created_at' => $gym->created_at?->toIso8601String(),
                 ]),
             'recentActivity' => PlatformActivityLog::query()

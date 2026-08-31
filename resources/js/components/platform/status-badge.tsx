@@ -13,11 +13,11 @@ export function PlatformStatusBadge({
             variant="outline"
             className={cn(
                 'font-normal',
-                ['active', 'trialing'].includes(status) &&
+                ['active', 'trialing', 'approved'].includes(status) &&
                     'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300',
-                ['past_due', 'expired'].includes(status) &&
+                ['past_due', 'expired', 'pending'].includes(status) &&
                     'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
-                ['suspended', 'cancelled'].includes(status) &&
+                ['suspended', 'cancelled', 'rejected'].includes(status) &&
                     'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300',
             )}
         >

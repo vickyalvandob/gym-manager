@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Building2, Check, ChevronsUpDown, Settings2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Settings2 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -51,7 +51,7 @@ export function GymSwitcher() {
                                 as="button"
                                 className="w-full"
                             >
-                                <span className="min-w-0 flex-1 text-left truncate">
+                                <span className="min-w-0 flex-1 truncate text-left">
                                     {gym.name}
                                 </span>
                                 {gym.id === auth.currentGym?.id && (

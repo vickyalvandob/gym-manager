@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\GymUserStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Support\GymContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -58,6 +59,15 @@ class HandleInertiaRequests extends Middleware
         $role = $this->gymContext->hasGym()
             ? $this->gymContext->role()
             : null;
+        $subscription = $currentGym?->subscription()
+            ->select([
+                'id',
+                'subscriber_id',
+                'status',
+                'trial_ends_at',
+                'current_period_ends_at',
+            ])
+            ->first();
 
         return [
             'user' => $request->user(),
@@ -81,6 +91,15 @@ class HandleInertiaRequests extends Middleware
             'role' => $role?->value,
             'roleLabel' => $role?->label(),
             'permissions' => $role?->permissions() ?? [],
+            'subscription' => $subscription === null ? null : [
+                'status' => $subscription->effectiveStatus()->value,
+                'status_label' => $subscription->effectiveStatus()->label(),
+                'grants_access' => $subscription->grantsAccess(),
+                'is_subscriber' => $subscription->subscriber_id === $request->user()?->getKey(),
+                'has_pending_payment' => $subscription->payments()
+                    ->where('status', SubscriptionPaymentStatus::Pending)
+                    ->exists(),
+            ],
             'availableGyms' => $request->user() === null ? [] : $request->user()->gyms()
                 ->select(['gyms.id', 'gyms.name', 'gyms.status'])
                 ->wherePivot('status', GymUserStatus::Active->value)

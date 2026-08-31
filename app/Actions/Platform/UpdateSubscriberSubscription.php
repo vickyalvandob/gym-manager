@@ -2,6 +2,7 @@
 
 namespace App\Actions\Platform;
 
+use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Models\SaasPlan;
 use App\Models\Subscription;
@@ -9,6 +10,7 @@ use App\Models\User;
 use App\Support\PlatformActivityLogger;
 use App\Support\SubscriptionQuota;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class UpdateSubscriberSubscription
 {
@@ -27,6 +29,14 @@ class UpdateSubscriberSubscription
                 ->firstOrFail();
             $previousStatus = $subscription->status;
             $status = SubscriptionStatus::from((string) $attributes['status']);
+
+            if ($subscription->payments()
+                ->where('status', SubscriptionPaymentStatus::Pending)
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Review pembayaran pending untuk mengubah status dan periode subscription.',
+                ]);
+            }
 
             $this->subscriptionQuota->ensurePlanCoversUsage($subscription, $plan);
 

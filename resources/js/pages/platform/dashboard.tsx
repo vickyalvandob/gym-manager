@@ -10,9 +10,8 @@ import { PlatformStatusBadge } from '@/components/platform/status-badge';
 import { Button } from '@/components/ui/button';
 import { formatDateTime } from '@/lib/formatters';
 import { dashboard } from '@/routes/platform';
-import { index as gymsIndex, show as gymShow } from '@/routes/platform/gyms';
 import { index as plansIndex } from '@/routes/platform/saas-plans';
-import { index as usersIndex } from '@/routes/platform/users';
+import { index as usersIndex, show as userShow } from '@/routes/platform/users';
 
 type Props = {
     metrics: Record<string, number>;
@@ -25,6 +24,8 @@ type Props = {
         subscription_status: string | null;
         subscription_status_label: string | null;
         plan_name: string | null;
+        subscriber_id: number | null;
+        subscriber_name: string | null;
         created_at: string;
     }>;
     recentActivity: Array<{
@@ -57,7 +58,7 @@ export default function PlatformDashboard({
                     </p>
                 </div>
 
-                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
                     <Metric
                         label="Pengguna"
                         value={metrics.users_total}
@@ -88,19 +89,28 @@ export default function PlatformDashboard({
                         value={metrics.subscriptions_attention}
                         icon={CircleAlert}
                     />
+                    <Metric
+                        label="Menunggu approval"
+                        value={metrics.subscription_payments_pending}
+                        icon={CircleAlert}
+                    />
                 </section>
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
                     <section className="rounded-xl border">
                         <div className="flex items-center justify-between gap-3 border-b p-4">
                             <div>
-                                <h2 className="font-semibold">Gym terbaru</h2>
+                                <h2 className="font-semibold">
+                                    Subscriber & gym terbaru
+                                </h2>
                                 <p className="text-xs text-muted-foreground">
-                                    Onboarding tenant terbaru.
+                                    Akun subscriber dan gym yang baru terdaftar.
                                 </p>
                             </div>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href={gymsIndex()}>Lihat semua</Link>
+                                <Link href={usersIndex()}>
+                                    Lihat subscriber
+                                </Link>
                             </Button>
                         </div>
                         <div className="divide-y">
@@ -112,12 +122,17 @@ export default function PlatformDashboard({
                                 recentGyms.map((gym) => (
                                     <Link
                                         key={gym.id}
-                                        href={gymShow(gym.id)}
+                                        href={
+                                            gym.subscriber_id
+                                                ? userShow(gym.subscriber_id)
+                                                : usersIndex()
+                                        }
                                         className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-muted/40"
                                     >
                                         <div className="min-w-0">
                                             <p className="truncate text-sm font-medium">
-                                                {gym.name}
+                                                {gym.subscriber_name ??
+                                                    gym.name}
                                             </p>
                                             <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                                 {gym.plan_name ??

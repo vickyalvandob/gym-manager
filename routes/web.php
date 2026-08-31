@@ -16,10 +16,12 @@ use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MembershipPlanController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformBillingController;
 use App\Http\Controllers\PlatformDashboardController;
 use App\Http\Controllers\PlatformGymController;
 use App\Http\Controllers\PlatformGymStatusController;
 use App\Http\Controllers\PlatformSubscriptionController;
+use App\Http\Controllers\PlatformSubscriptionPaymentController;
 use App\Http\Controllers\PlatformUserController;
 use App\Http\Controllers\PlatformUserStatusController;
 use App\Http\Controllers\PlatformUserSubscriptionController;
@@ -34,6 +36,8 @@ use App\Http\Controllers\SaasPlanController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\SubscribedGymController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\SubscriptionPaymentController;
+use App\Http\Controllers\SubscriptionPaymentProofController;
 use App\Http\Controllers\SwitchCurrentGymController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\TrainerMemberController;
@@ -48,6 +52,8 @@ Route::middleware(['auth', 'verified', 'platform_admin'])
     ->name('platform.')
     ->group(function () {
         Route::get('/', PlatformDashboardController::class)->name('dashboard');
+        Route::get('billing', [PlatformBillingController::class, 'index'])->name('billing.index');
+        Route::patch('billing', [PlatformBillingController::class, 'update'])->name('billing.update');
         Route::get('gyms', [PlatformGymController::class, 'index'])->name('gyms.index');
         Route::get('gyms/{gym}', [PlatformGymController::class, 'show'])
             ->whereNumber('gym')
@@ -68,6 +74,9 @@ Route::middleware(['auth', 'verified', 'platform_admin'])
         Route::put('users/{user}/subscription', [PlatformUserSubscriptionController::class, 'update'])
             ->whereNumber('user')
             ->name('users.subscription.update');
+        Route::patch('subscription-payments/{subscription_payment}', PlatformSubscriptionPaymentController::class)
+            ->whereNumber('subscription_payment')
+            ->name('subscription-payments.update');
         Route::patch('saas-plans/{saas_plan}/status', [SaasPlanController::class, 'updateStatus'])
             ->whereNumber('saas_plan')
             ->name('saas-plans.status.update');
@@ -83,9 +92,16 @@ Route::middleware(['auth', 'verified', 'gym'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'gym:billing'])->group(function () {
     Route::get('subscription', SubscriptionController::class)->name('subscription.show');
+    Route::post('subscription/payments', [SubscriptionPaymentController::class, 'store'])
+        ->name('subscription.payments.store');
     Route::get('gyms', [SubscribedGymController::class, 'index'])->name('gyms.index');
     Route::post('gyms', [SubscribedGymController::class, 'store'])->name('gyms.store');
 });
+
+Route::middleware(['auth', 'verified'])
+    ->get('subscription-payments/{subscription_payment}/proof', SubscriptionPaymentProofController::class)
+    ->whereNumber('subscription_payment')
+    ->name('subscription-payments.proof');
 
 Route::middleware(['auth', 'verified'])
     ->put('gyms/{gym}/switch', SwitchCurrentGymController::class)

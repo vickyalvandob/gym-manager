@@ -7,27 +7,35 @@ use App\Models\ActivityLog;
 use App\Models\PlatformActivityLog;
 use App\Models\SaasPlan;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
     $this->skipUnlessFortifyHas(Features::registration());
     $this->saasPlan = SaasPlan::factory()->create([
-        'name' => 'Starter',
-        'trial_days' => 14,
+        'name' => 'Free',
+        'slug' => 'free',
+        'price' => '0.00',
+        'trial_days' => 0,
+        'max_gyms' => 1,
+        'max_members' => 20,
+        'max_staff' => 5,
     ]);
 });
 
 test('registration screen can be rendered', function () {
     $response = $this->get(route('register'));
 
-    $response->assertOk();
+    $response->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('auth/register')
+            ->missing('saasPlans'));
 });
 
 test('new users can register', function () {
     $response = $this->post(route('register.store'), [
         'name' => 'Test User',
         'gym_name' => 'Gym Test Jakarta',
-        'saas_plan_id' => $this->saasPlan->getKey(),
         'email' => 'test@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -48,27 +56,25 @@ test('new users can register', function () {
         ->and($activityLog->subject_type)->toBe(User::class)
         ->and($activityLog->subject_id)->toBe($user->getKey())
         ->and($gym->onboarding_completed_at)->toBeNull()
-        ->and($gym->subscription?->status)->toBe(SubscriptionStatus::Trialing)
+        ->and($gym->subscription?->status)->toBe(SubscriptionStatus::Active)
         ->and($gym->subscription?->saas_plan_id)->toBe($this->saasPlan->getKey())
         ->and($gym->subscription?->subscriber_id)->toBe($user->getKey())
-        ->and($gym->subscription?->trial_ends_at?->isFuture())->toBeTrue()
+        ->and($gym->subscription?->trial_ends_at)->toBeNull()
+        ->and($gym->subscription?->current_period_ends_at)->toBeNull()
         ->and($platformLog->subject_id)->toBe($gym->getKey());
 });
 
-test('free registration creates an active non expiring single gym subscription', function () {
-    $freePlan = SaasPlan::factory()->create([
-        'name' => 'Free',
-        'price' => '0.00',
-        'trial_days' => 0,
-        'max_gyms' => 1,
-        'max_members' => 20,
-        'max_staff' => 5,
+test('registration ignores submitted paid plan and always starts on free', function () {
+    $paidPlan = SaasPlan::factory()->create([
+        'name' => 'Growth',
+        'slug' => 'growth',
+        'price' => '299000.00',
     ]);
 
     $this->post(route('register.store'), [
         'name' => 'Free User',
         'gym_name' => 'Gym Free',
-        'saas_plan_id' => $freePlan->getKey(),
+        'saas_plan_id' => $paidPlan->getKey(),
         'email' => 'free@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -78,6 +84,7 @@ test('free registration creates an active non expiring single gym subscription',
     $subscription = $user->subscription()->firstOrFail();
 
     expect($subscription->status)->toBe(SubscriptionStatus::Active)
+        ->and($subscription->saas_plan_id)->toBe($this->saasPlan->getKey())
         ->and($subscription->trial_ends_at)->toBeNull()
         ->and($subscription->current_period_ends_at)->toBeNull()
         ->and($subscription->gyms()->count())->toBe(1);
@@ -86,7 +93,6 @@ test('free registration creates an active non expiring single gym subscription',
 test('gym name is required and registration does not create partial data', function () {
     $response = $this->post(route('register.store'), [
         'name' => 'Test User',
-        'saas_plan_id' => $this->saasPlan->getKey(),
         'email' => 'test@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',

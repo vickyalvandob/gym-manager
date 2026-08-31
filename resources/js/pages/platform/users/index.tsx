@@ -15,6 +15,7 @@ type Filters = {
     account_type: string;
     status: string;
     plan_id: string;
+    billing_status: string;
     per_page: number;
 };
 
@@ -34,7 +35,8 @@ export default function PlatformUsersIndex({
         filters.search !== '' ||
         filters.account_type !== '' ||
         filters.status !== '' ||
-        filters.plan_id !== '';
+        filters.plan_id !== '' ||
+        filters.billing_status !== '';
 
     return (
         <>
@@ -56,7 +58,7 @@ export default function PlatformUsersIndex({
                 <Form
                     {...PlatformUserController.index.form()}
                     options={{ preserveState: true, preserveScroll: true }}
-                    className="grid gap-3 border-y py-4 md:grid-cols-[minmax(220px,1fr)_11rem_10rem_11rem_auto]"
+                    className="grid gap-3 border-y py-4 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_11rem_10rem_11rem_12rem_auto]"
                 >
                     {({ processing }) => (
                         <>
@@ -104,6 +106,17 @@ export default function PlatformUsersIndex({
                                         {plan.name}
                                     </option>
                                 ))}
+                            </select>
+                            <select
+                                name="billing_status"
+                                defaultValue={filters.billing_status}
+                                className={selectClassName}
+                                aria-label="Status pembayaran"
+                            >
+                                <option value="">Semua pembayaran</option>
+                                <option value="pending">
+                                    Menunggu approval
+                                </option>
                             </select>
                             <div className="flex gap-2">
                                 <Button
@@ -178,6 +191,13 @@ export default function PlatformUsersIndex({
                                                             .status_label
                                                     }
                                                 </p>
+                                                {user.subscription
+                                                    .pending_payments_count >
+                                                    0 && (
+                                                    <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                                        Menunggu approval
+                                                    </p>
+                                                )}
                                             </>
                                         ) : (
                                             <span className="text-muted-foreground">

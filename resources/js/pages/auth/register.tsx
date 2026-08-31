@@ -6,27 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { formatCurrency } from '@/lib/formatters';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 type Props = {
     passwordRules: string;
-    saasPlans: Array<{
-        id: number;
-        name: string;
-        description: string | null;
-        price: string;
-        currency: string;
-        billing_interval_label: string;
-        trial_days: number;
-        max_gyms: number | null;
-        max_members: number | null;
-        max_staff: number | null;
-    }>;
 };
 
-export default function Register({ passwordRules, saasPlans }: Props) {
+export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title="Daftar" />
@@ -85,69 +72,16 @@ export default function Register({ passwordRules, saasPlans }: Props) {
                                 <InputError message={errors.email} />
                             </div>
 
-                            <fieldset className="grid gap-3">
-                                <legend className="text-sm font-medium">
-                                    Pilih paket SaaS
-                                </legend>
-                                {saasPlans.length === 0 ? (
-                                    <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                                        Belum ada paket pendaftaran aktif.
-                                        Hubungi administrator GymFlow.
-                                    </p>
-                                ) : (
-                                    <div className="grid gap-2">
-                                        {saasPlans.map((plan, index) => (
-                                            <label
-                                                key={plan.id}
-                                                className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-checked:border-primary has-checked:bg-primary/5"
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="saas_plan_id"
-                                                    value={plan.id}
-                                                    defaultChecked={index === 0}
-                                                    required
-                                                    className="mt-1"
-                                                />
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="flex flex-wrap items-baseline justify-between gap-2 text-sm font-medium">
-                                                        <span>{plan.name}</span>
-                                                        <span>
-                                                            {formatCurrency(
-                                                                plan.price,
-                                                                plan.currency,
-                                                            )}{' '}
-                                                            /{' '}
-                                                            {plan.billing_interval_label.toLowerCase()}
-                                                        </span>
-                                                    </span>
-                                                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                                                        {plan.trial_days > 0
-                                                            ? `Uji coba ${plan.trial_days} hari. `
-                                                            : ''}
-                                                        {plan.description}
-                                                    </span>
-                                                    <span className="mt-1 block text-xs text-muted-foreground">
-                                                        {plan.max_gyms === null
-                                                            ? 'Multi-gym tanpa batas'
-                                                            : `${plan.max_gyms} gym`}{' '}
-                                                        -{' '}
-                                                        {plan.max_members ===
-                                                        null
-                                                            ? 'Member tanpa batas'
-                                                            : `${plan.max_members} member`}{' '}
-                                                        -{' '}
-                                                        {plan.max_staff === null
-                                                            ? 'Staf tanpa batas'
-                                                            : `${plan.max_staff} staf`}
-                                                    </span>
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                                <InputError message={errors.saas_plan_id} />
-                            </fieldset>
+                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                                <p className="text-sm font-medium">
+                                    Langsung mulai dengan paket Free
+                                </p>
+                                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                    Termasuk 1 gym, 20 member, dan 5 staf. Anda
+                                    bisa upgrade kapan saja dari menu
+                                    Subscription.
+                                </p>
+                            </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Kata sandi</Label>
@@ -186,7 +120,6 @@ export default function Register({ passwordRules, saasPlans }: Props) {
                                 className="mt-2 w-full"
                                 tabIndex={6}
                                 data-test="register-user-button"
-                                disabled={saasPlans.length === 0}
                             >
                                 {processing && <Spinner />}
                                 Buat workspace

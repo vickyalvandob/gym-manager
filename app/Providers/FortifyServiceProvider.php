@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse as PlatformAwareLoginResponse;
-use App\Models\SaasPlan;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -81,26 +80,7 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::registerView(fn () => Inertia::render('auth/register', [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
-            'saasPlans' => SaasPlan::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('id')
-                ->get(['id', 'name', 'description', 'price', 'currency', 'billing_interval', 'trial_days', 'max_gyms', 'max_members', 'max_staff'])
-                ->map(fn (SaasPlan $plan): array => [
-                    'id' => $plan->getKey(),
-                    'name' => $plan->name,
-                    'description' => $plan->description,
-                    'price' => $plan->price,
-                    'currency' => $plan->currency,
-                    'billing_interval' => $plan->billing_interval->value,
-                    'billing_interval_label' => $plan->billing_interval->label(),
-                    'trial_days' => $plan->trial_days,
-                    'max_gyms' => $plan->max_gyms,
-                    'max_members' => $plan->max_members,
-                    'max_staff' => $plan->max_staff,
-                ]),
         ]));
-
     }
 
     /**

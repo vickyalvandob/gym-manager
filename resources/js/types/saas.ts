@@ -26,6 +26,24 @@ export type PlatformSubscription = {
     current_period_starts_at: string | null;
     current_period_ends_at: string | null;
     grants_access: boolean;
+    pending_payments_count: number;
+};
+
+export type SubscriptionPayment = {
+    id: number;
+    plan_name: string;
+    amount: string;
+    currency: string;
+    billing_interval_label: string;
+    reference_number: string;
+    status: 'pending' | 'approved' | 'rejected';
+    status_label: string;
+    submitted_at: string;
+    reviewed_at: string | null;
+    reviewer_name: string | null;
+    review_notes: string | null;
+    period_starts_at: string | null;
+    period_ends_at: string | null;
 };
 
 export type PlatformGym = {
@@ -80,6 +98,7 @@ export type PlatformUser = {
                   members: number | null;
                   staff: number | null;
               };
+              payments?: SubscriptionPayment[];
           })
         | null;
     gyms?: Array<{
@@ -91,6 +110,8 @@ export type PlatformUser = {
         role: string;
         role_label: string;
         access_status: string;
+        members_count: number;
+        staff_count: number;
     }>;
 };
 

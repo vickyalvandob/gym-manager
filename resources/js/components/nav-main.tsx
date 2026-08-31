@@ -22,20 +22,37 @@ export function NavMain({ sections = [] }: { sections: NavSection[] }) {
                     <SidebarMenu>
                         {section.items.map((item) => (
                             <SidebarMenuItem key={item.title}>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={isCurrentOrParentUrl(item.href)}
-                                    tooltip={{ children: item.title }}
-                                >
-                                    <Link
-                                        href={item.href}
-                                        prefetch
-                                        onClick={() => setOpenMobile(false)}
+                                {item.disabled ? (
+                                    <SidebarMenuButton
+                                        disabled
+                                        aria-disabled="true"
+                                        tooltip={{
+                                            children:
+                                                item.disabledReason ??
+                                                item.title,
+                                        }}
                                     >
                                         {item.icon && <item.icon />}
                                         <span>{item.title}</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                    </SidebarMenuButton>
+                                ) : (
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={isCurrentOrParentUrl(
+                                            item.href,
+                                        )}
+                                        tooltip={{ children: item.title }}
+                                    >
+                                        <Link
+                                            href={item.href}
+                                            prefetch
+                                            onClick={() => setOpenMobile(false)}
+                                        >
+                                            {item.icon && <item.icon />}
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                )}
                             </SidebarMenuItem>
                         ))}
                     </SidebarMenu>

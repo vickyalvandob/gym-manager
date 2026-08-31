@@ -6,7 +6,6 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\GymRole;
 use App\Enums\GymUserStatus;
-use App\Enums\SaasPlanInterval;
 use App\Enums\SubscriptionStatus;
 use App\Models\ActivityLog;
 use App\Models\Gym;
@@ -17,7 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -36,18 +35,22 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             ...$this->profileRules(),
             'gym_name' => ['required', 'string', 'max:120'],
-            'saas_plan_id' => [
-                'required',
-                'integer',
-                Rule::exists(SaasPlan::class, 'id')->where('is_active', true),
-            ],
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return DB::transaction(function () use ($input): User {
-            $plan = SaasPlan::query()
-                ->where('is_active', true)
-                ->findOrFail((int) $input['saas_plan_id']);
+        $freePlan = SaasPlan::query()
+            ->where('slug', 'free')
+            ->where('is_active', true)
+            ->where('price', 0)
+            ->first();
+
+        if ($freePlan === null) {
+            throw ValidationException::withMessages([
+                'gym_name' => 'Pendaftaran sementara tidak tersedia. Paket Free belum dikonfigurasi.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($input, $freePlan): User {
             $user = User::create([
                 'name' => $input['name'],
                 'email' => $input['email'],
@@ -65,20 +68,13 @@ class CreateNewUser implements CreatesNewUsers
             ]);
 
             $startedAt = now();
-            $isTrial = $plan->trial_days > 0;
-            $isFreePlan = (float) $plan->price === 0.0;
             $subscription = $user->subscription()->create([
-                'saas_plan_id' => $plan->getKey(),
-                'status' => $isTrial ? SubscriptionStatus::Trialing : SubscriptionStatus::Active,
+                'saas_plan_id' => $freePlan->getKey(),
+                'status' => SubscriptionStatus::Active,
                 'started_at' => $startedAt,
-                'trial_ends_at' => $isTrial ? $startedAt->copy()->addDays($plan->trial_days) : null,
-                'current_period_starts_at' => $isTrial ? null : $startedAt,
-                'current_period_ends_at' => $isTrial
-                    ? null
-                    : ($isFreePlan ? null : match ($plan->billing_interval) {
-                        SaasPlanInterval::Monthly => $startedAt->copy()->addMonthNoOverflow(),
-                        SaasPlanInterval::Yearly => $startedAt->copy()->addYearNoOverflow(),
-                    }),
+                'trial_ends_at' => null,
+                'current_period_starts_at' => $startedAt,
+                'current_period_ends_at' => null,
             ]);
             $gym->forceFill(['subscription_id' => $subscription->getKey()])->save();
 
@@ -99,8 +95,8 @@ class CreateNewUser implements CreatesNewUsers
                 'subject_id' => $gym->getKey(),
                 'properties' => [
                     'source' => 'self_service_registration',
-                    'plan' => $plan->name,
-                    'trial_days' => $plan->trial_days,
+                    'plan' => $freePlan->name,
+                    'trial_days' => 0,
                 ],
                 'ip_address' => $this->request->ip(),
             ]);

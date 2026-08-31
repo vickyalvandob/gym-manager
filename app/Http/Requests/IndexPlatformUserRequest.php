@@ -29,6 +29,7 @@ class IndexPlatformUserRequest extends FormRequest
             'account_type' => ['nullable', Rule::in(['subscriber', 'staff', 'platform_admin'])],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
             'plan_id' => ['nullable', 'integer', Rule::exists(SaasPlan::class, 'id')],
+            'billing_status' => ['nullable', Rule::in(['pending'])],
             'per_page' => ['nullable', 'integer', Rule::in([15, 30, 50])],
         ];
     }

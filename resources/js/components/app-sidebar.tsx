@@ -5,12 +5,12 @@ import {
     CircleDollarSign,
     Dumbbell,
     LayoutDashboard,
+    Landmark,
     LogIn,
     Settings2,
     Tickets,
     UserRoundCog,
     UsersRound,
-    Building2,
     ShieldCheck,
     WalletCards,
 } from 'lucide-react';
@@ -34,7 +34,7 @@ import { dashboard } from '@/routes';
 import { index as membersIndex } from '@/routes/members';
 import { index as membershipPlansIndex } from '@/routes/membership-plans';
 import { dashboard as platformDashboard } from '@/routes/platform';
-import { index as platformGymsIndex } from '@/routes/platform/gyms';
+import { index as platformBillingIndex } from '@/routes/platform/billing';
 import { index as saasPlansIndex } from '@/routes/platform/saas-plans';
 import { index as platformUsersIndex } from '@/routes/platform/users';
 import { edit as profileEdit } from '@/routes/profile';
@@ -51,6 +51,11 @@ export function AppSidebar() {
     const { auth } = usePage().props;
     const isPlatformWorkspace =
         auth.isPlatformAdmin && auth.currentGym === null;
+    const hasSubscriptionAccess =
+        auth.subscription === null || auth.subscription.grants_access;
+    const subscriptionBlockedReason = auth.subscription?.has_pending_payment
+        ? 'Pembayaran subscription sedang menunggu persetujuan.'
+        : 'Subscription berakhir. Selesaikan pembayaran untuk membuka menu ini.';
     const platformNavSections: NavSection[] = [
         {
             title: 'Platform',
@@ -61,11 +66,6 @@ export function AppSidebar() {
                     icon: ShieldCheck,
                 },
                 {
-                    title: 'Tenant Gym',
-                    href: platformGymsIndex(),
-                    icon: Building2,
-                },
-                {
                     title: 'Pengguna',
                     href: platformUsersIndex(),
                     icon: UsersRound,
@@ -74,6 +74,11 @@ export function AppSidebar() {
                     title: 'Paket SaaS',
                     href: saasPlansIndex(),
                     icon: WalletCards,
+                },
+                {
+                    title: 'Billing Subscription',
+                    href: platformBillingIndex(),
+                    icon: Landmark,
                 },
             ],
         },
@@ -222,7 +227,11 @@ export function AppSidebar() {
                               icon: Settings2,
                           },
                           {
-                              title: 'Subscription',
+                              title: hasSubscriptionAccess
+                                  ? 'Subscription'
+                                  : auth.subscription?.has_pending_payment
+                                    ? 'Menunggu Approval'
+                                    : 'Bayar Subscription',
                               href: subscriptionShow(),
                               icon: WalletCards,
                           },
@@ -231,12 +240,37 @@ export function AppSidebar() {
               ]
             : []),
     ];
+    const disableOperationalSections = (sections: NavSection[]): NavSection[] =>
+        sections.map((section) => ({
+            ...section,
+            items: section.items.map((item) =>
+                [
+                    'Subscription',
+                    'Menunggu Approval',
+                    'Bayar Subscription',
+                ].includes(item.title)
+                    ? item
+                    : {
+                          ...item,
+                          disabled: true,
+                          disabledReason: subscriptionBlockedReason,
+                      },
+            ),
+        }));
+    const gymNavSections =
+        auth.role === 'trainer' ? trainerNavSections : managementNavSections;
     const mainNavSections = isPlatformWorkspace
         ? platformNavSections
-        : auth.role === 'trainer'
-          ? trainerNavSections
-          : managementNavSections;
-    const homeHref = isPlatformWorkspace ? platformDashboard() : dashboard();
+        : hasSubscriptionAccess
+          ? gymNavSections
+          : disableOperationalSections(gymNavSections);
+    const homeHref = isPlatformWorkspace
+        ? platformDashboard()
+        : !hasSubscriptionAccess
+          ? auth.role === 'owner'
+              ? subscriptionShow()
+              : profileEdit()
+          : dashboard();
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">

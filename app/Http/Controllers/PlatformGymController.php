@@ -95,8 +95,8 @@ class PlatformGymController extends Controller
             'created_at' => $gym->created_at?->toIso8601String(),
             'subscription' => $gym->subscription === null ? null : [
                 'id' => $gym->subscription->getKey(),
-                'status' => $gym->subscription->status->value,
-                'status_label' => $gym->subscription->status->label(),
+                'status' => $gym->subscription->effectiveStatus()->value,
+                'status_label' => $gym->subscription->effectiveStatus()->label(),
                 'plan_id' => $gym->subscription->saas_plan_id,
                 'plan_name' => $gym->subscription->plan->name,
                 'trial_ends_at' => $gym->subscription->trial_ends_at?->toIso8601String(),
