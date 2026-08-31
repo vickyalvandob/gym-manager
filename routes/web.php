@@ -45,7 +45,7 @@ use App\Http\Controllers\UpdateMembershipPlanStatusController;
 use App\Http\Controllers\UpdateMemberStatusController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login')->name('home');
+Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified', 'platform_admin'])
     ->prefix('platform')

@@ -248,6 +248,10 @@ test('development seeder creates idempotent membership plan examples', function 
         ->toBe('250000.00');
 });
 
-test('root redirects to login', function () {
-    $this->get('/')->assertRedirect(route('login'));
+test('root remains publicly accessible', function () {
+    $this->get('/')
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('welcome')
+        );
 });

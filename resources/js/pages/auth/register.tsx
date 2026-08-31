@@ -71,18 +71,7 @@ export default function Register({ passwordRules }: Props) {
                                 />
                                 <InputError message={errors.email} />
                             </div>
-
-                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-                                <p className="text-sm font-medium">
-                                    Langsung mulai dengan paket Free
-                                </p>
-                                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                    Termasuk 1 gym, 20 member, dan 5 staf. Anda
-                                    bisa upgrade kapan saja dari menu
-                                    Subscription.
-                                </p>
-                            </div>
-
+                            
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Kata sandi</Label>
                                 <PasswordInput
