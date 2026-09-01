@@ -11,18 +11,18 @@ export function AppSidebarHeader({
     const { auth } = usePage().props;
 
     return (
-        <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-sidebar-border/70 bg-background px-4 md:px-6">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-sidebar-border/70 bg-background px-4 md:h-16 md:px-6">
             <div className="flex min-w-0 items-center gap-2">
-                <SidebarTrigger className="-ml-1" />
+                <SidebarTrigger className="-ml-1 size-8 rounded-md border shadow-none" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             {auth.currentGym && (
-                <div className="flex min-w-0 items-center gap-3 text-sm">
+                <div className="flex min-w-0 items-center gap-2.5 text-sm">
                     <div className="min-w-0 text-right">
                         <p className="truncate font-medium">
                             {auth.currentGym.name}
                         </p>
-                        <p className="hidden text-xs text-muted-foreground sm:block">
+                        <p className="hidden text-[11px] text-muted-foreground sm:block">
                             {auth.roleLabel}
                         </p>
                     </div>

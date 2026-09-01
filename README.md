@@ -1,8 +1,8 @@
-# GymFlow
+# Gymlo
 
 > Platform SaaS manajemen gym multi-tenant untuk mengelola tenant, paket berlangganan, member, membership, pembayaran, check-in, trainer, dan Personal Training dalam satu aplikasi.
 
-GymFlow dibangun sebagai studi kasus aplikasi bisnis berbasis web yang tidak berhenti pada CRUD. Setiap modul mengikuti proses operasional nyata, menerapkan pembatasan akses berbasis peran, menjaga konsistensi transaksi, dan mengisolasi data setiap gym di sisi backend.
+Gymlo dibangun sebagai studi kasus aplikasi bisnis berbasis web yang tidak berhenti pada CRUD. Setiap modul mengikuti proses operasional nyata, menerapkan pembatasan akses berbasis peran, menjaga konsistensi transaksi, dan mengisolasi data setiap gym di sisi backend.
 
 ## Ringkasan Project
 
@@ -20,7 +20,7 @@ GymFlow dibangun sebagai studi kasus aplikasi bisnis berbasis web yang tidak ber
 
 Operasional gym sering tersebar di spreadsheet, chat, dan pencatatan manual. Kondisi tersebut menyulitkan staf untuk mengetahui member yang masih aktif, pembayaran yang belum selesai, validitas kunjungan, sisa sesi Personal Training, dan jadwal trainer.
 
-GymFlow menyatukan proses tersebut sehingga:
+Gymlo menyatukan proses tersebut sehingga:
 
 - Front Desk dapat melayani pendaftaran, pembayaran, dan check-in dari data yang sama.
 - Owner memperoleh ringkasan bisnis dan laporan berbasis transaksi yang benar-benar sudah dibayar.
@@ -194,7 +194,7 @@ flowchart LR
 
 ## Arsitektur Aplikasi
 
-GymFlow menggunakan satu project monolith modern untuk seluruh tenant dan workspace platform. Laravel menangani routing, autentikasi, otorisasi, validasi, dan domain logic; React menangani pengalaman SPA; Inertia menjadi penghubung tanpa REST API terpisah. Domain atau subdomain per gym dapat ditambahkan pada deployment tanpa menggandakan source code.
+Gymlo menggunakan satu project monolith modern untuk seluruh tenant dan workspace platform. Laravel menangani routing, autentikasi, otorisasi, validasi, dan domain logic; React menangani pengalaman SPA; Inertia menjadi penghubung tanpa REST API terpisah. Domain atau subdomain per gym dapat ditambahkan pada deployment tanpa menggandakan source code.
 
 ```mermaid
 flowchart TB

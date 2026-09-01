@@ -148,7 +148,7 @@ export default function GymIndex({ gyms, subscription }: Props) {
                                                 name="name"
                                                 required
                                                 maxLength={120}
-                                                placeholder="Contoh: GymFlow Bandung"
+                                                placeholder="Contoh: Gymlo Bandung"
                                             />
                                             <InputError message={errors.name} />
                                         </div>

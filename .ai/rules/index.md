@@ -13,6 +13,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Actions/Fortify/**,app/Actions/Subscriptions/**,app/Http/Controllers/PlatformBillingController.php,resources/js/pages/{auth/register.tsx,subscription/**,platform/billing/**} | .ai/rules/billing.md |
 | app/{Actions,Http,Models,Support}/**, resources/js/{components,pages}/** | .ai/rules/componentspages.md |
 | app/Http/Controllers/**, app/Http/Controllers/MemberController.php | .ai/rules/controllers.md |
+| **/* | .ai/rules/general.md |
 | app/Actions/Members/** | .ai/rules/members.md |
 | app/Http/Middleware/** | .ai/rules/middleware.md |
 | app/{Models,Http,Actions,Policies,Support}/** | .ai/rules/models-http-actions-policies-support.md |

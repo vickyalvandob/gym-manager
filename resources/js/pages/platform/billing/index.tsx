@@ -189,7 +189,7 @@ function BillingSettings({ settings }: { settings: Props['settings'] }) {
                                     defaultValue={settings.account_name ?? ''}
                                     required
                                     maxLength={120}
-                                    placeholder="Contoh: PT GymFlow Indonesia"
+                                    placeholder="Contoh: PT Gymlo Indonesia"
                                 />
                                 <InputError message={errors.account_name} />
                             </div>

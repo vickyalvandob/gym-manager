@@ -268,7 +268,7 @@ test('development seeder creates idempotent member examples and advances the seq
     $this->seed(DemoGymSeeder::class);
     $this->seed(DemoGymSeeder::class);
 
-    $gym = Gym::query()->where('slug', 'gymflow-demo')->firstOrFail();
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
 
     expect($gym->members()->count())->toBe(8)
         ->and($gym->members()->where('status', MemberStatus::Inactive->value)->count())->toBe(2)

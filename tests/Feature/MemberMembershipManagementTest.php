@@ -267,7 +267,7 @@ test('development seeder creates idempotent membership history examples', functi
     $this->seed(DemoGymSeeder::class);
     $this->seed(DemoGymSeeder::class);
 
-    $gym = Gym::query()->where('slug', 'gymflow-demo')->firstOrFail();
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
 
     expect($gym->memberMemberships()->count())->toBe(5)
         ->and($gym->memberMemberships()->whereNotNull('renewed_from_id')->count())->toBe(1);

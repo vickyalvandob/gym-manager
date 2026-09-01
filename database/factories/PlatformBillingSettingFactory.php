@@ -19,7 +19,7 @@ class PlatformBillingSettingFactory extends Factory
     {
         return [
             'bank_name' => 'Bank Central Asia',
-            'account_name' => 'PT GymFlow Indonesia',
+            'account_name' => 'PT Gymlo Indonesia',
             'account_number' => fake()->numerify('##########'),
             'instructions' => 'Cantumkan nama subscriber pada berita transfer.',
         ];

@@ -319,7 +319,7 @@ test('development seeder creates idempotent trainers and assignments', function 
     $this->seed(DemoGymSeeder::class);
     $this->seed(DemoGymSeeder::class);
 
-    $gym = Gym::query()->where('slug', 'gymflow-demo')->firstOrFail();
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
     $trainerAccount = User::query()->where('email', 'andi@gym.test')->firstOrFail();
     $linkedTrainer = $gym->trainers()->where('user_id', $trainerAccount->getKey())->firstOrFail();
 

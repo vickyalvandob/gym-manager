@@ -273,11 +273,19 @@ export function AppSidebar() {
           : dashboard();
 
     return (
-        <Sidebar collapsible="icon" variant="sidebar">
-            <SidebarHeader className="border-b border-sidebar-border/70 p-3">
-                <SidebarMenu>
+        <Sidebar
+            collapsible="icon"
+            variant="sidebar"
+            className="border-sidebar-border/80"
+        >
+            <SidebarHeader className="border-b border-sidebar-border/70 p-2.5">
+                <SidebarMenu className="gap-2">
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            className="h-11 rounded-lg px-2 hover:bg-transparent active:bg-transparent"
+                            asChild
+                        >
                             <Link href={homeHref} prefetch>
                                 <AppLogo />
                             </Link>
@@ -287,11 +295,11 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="py-1">
                 <NavMain sections={mainNavSections} />
             </SidebarContent>
 
-            <SidebarFooter className="border-t border-sidebar-border/70 p-3">
+            <SidebarFooter className="border-t border-sidebar-border/70 p-2.5">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

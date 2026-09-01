@@ -14,7 +14,7 @@ function validGymSettingsPayload(array $overrides = []): array
     return [
         'name' => 'Gym Flow Jakarta',
         'phone' => '+62 812 3456 7890',
-        'email' => 'halo@gymflow.test',
+        'email' => 'halo@gymlo.test',
         'address' => 'Jl. Kebugaran No. 10, Jakarta',
         'membership_expiry_warning_days' => 10,
         ...$overrides,
@@ -77,7 +77,7 @@ test('owner updates editable settings while regional defaults stay fixed', funct
             'gym_id' => $foreignGym->getKey(),
             'name' => '  Gym   Flow   Surabaya  ',
             'phone' => '  +62 811 2222 3333  ',
-            'email' => '  ADMIN@GYMFLOW.TEST ',
+            'email' => '  ADMIN@GYMLO.TEST ',
             'address' => "  Jl. Sehat No. 9\nSurabaya  ",
             'timezone' => 'Asia/Makassar',
             'currency' => 'USD',
@@ -92,7 +92,7 @@ test('owner updates editable settings while regional defaults stay fixed', funct
 
     expect($gym->name)->toBe('Gym Flow Surabaya')
         ->and($gym->phone)->toBe('+62 811 2222 3333')
-        ->and($gym->email)->toBe('admin@gymflow.test')
+        ->and($gym->email)->toBe('admin@gymlo.test')
         ->and($gym->address)->toBe("Jl. Sehat No. 9\nSurabaya")
         ->and($gym->timezone)->toBe('Asia/Jakarta')
         ->and($gym->currency)->toBe('IDR')
@@ -118,7 +118,7 @@ test('owner updates editable settings while regional defaults stay fixed', funct
             ->where('auth.currentGym.timezone', 'Asia/Jakarta')
             ->where('auth.currentGym.currency', 'IDR')
             ->where('auth.currentGym.membership_expiry_warning_days', 14)
-            ->where('gym.email', 'admin@gymflow.test'));
+            ->where('gym.email', 'admin@gymlo.test'));
 });
 
 test('gym settings reject invalid editable profile warning and logo data', function () {

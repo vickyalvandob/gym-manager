@@ -59,7 +59,7 @@ test('gym policy prevents cross tenant access and enforces roles', function () {
 test('development seeder creates the role based demo accounts', function () {
     $this->seed(DemoGymSeeder::class);
 
-    $gym = Gym::query()->where('slug', 'gymflow-demo')->firstOrFail();
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
     $roles = $gym->users()
         ->orderBy('gym_user.role')
         ->pluck('gym_user.role', 'users.email');
@@ -70,4 +70,19 @@ test('development seeder creates the role based demo accounts', function () {
         ->and($roles->get('andi@gym.test'))->toBe(GymRole::Trainer->value)
         ->and($roles->get('budi@gym.test'))->toBe(GymRole::Trainer->value)
         ->and($roles->get('rina@gym.test'))->toBe(GymRole::Trainer->value);
+});
+
+test('development seeder rebrands the existing legacy demo gym', function () {
+    $legacyGym = Gym::factory()->create([
+        'slug' => 'gymflow-demo',
+        'name' => 'GymFlow Demo',
+    ]);
+
+    $this->seed(DemoGymSeeder::class);
+
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
+
+    expect($gym->is($legacyGym))->toBeTrue()
+        ->and($gym->name)->toBe('Gymlo Demo')
+        ->and(Gym::query()->where('slug', 'gymflow-demo')->exists())->toBeFalse();
 });

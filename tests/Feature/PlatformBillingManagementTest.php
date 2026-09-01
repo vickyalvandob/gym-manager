@@ -27,7 +27,7 @@ test('platform admin configures the payment account from the billing workspace',
 
     $this->patch(route('platform.billing.update'), [
         'bank_name' => 'BCA',
-        'account_name' => 'PT GymFlow Indonesia',
+        'account_name' => 'PT Gymlo Indonesia',
         'account_number' => '1234567890',
         'instructions' => 'Cantumkan nama subscriber.',
     ])->assertSessionHasNoErrors()

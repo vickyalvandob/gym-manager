@@ -253,7 +253,7 @@ test('development seeder creates idempotent check-in history', function () {
     $this->seed(DemoGymSeeder::class);
     $this->seed(DemoGymSeeder::class);
 
-    $gym = Gym::query()->where('slug', 'gymflow-demo')->firstOrFail();
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
 
     expect($gym->checkIns()->count())->toBe(3);
 });

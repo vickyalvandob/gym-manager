@@ -44,22 +44,24 @@ class DemoGymSeeder extends Seeder
 
         $this->call(SaasPlanSeeder::class);
 
-        $gym = Gym::query()->updateOrCreate(
-            ['slug' => 'gymflow-demo'],
-            [
-                'name' => 'GymFlow Demo',
-                'status' => GymStatus::Active,
-                'timezone' => 'Asia/Jakarta',
-                'currency' => 'IDR',
-                'onboarding_completed_at' => now(),
-                'membership_expiry_warning_days' => 7,
-            ],
-        );
+        $gym = Gym::query()->where('slug', 'gymlo-demo')->first()
+            ?? Gym::query()->where('slug', 'gymflow-demo')->first()
+            ?? new Gym;
+
+        $gym->forceFill([
+            'slug' => 'gymlo-demo',
+            'name' => 'Gymlo Demo',
+            'status' => GymStatus::Active,
+            'timezone' => 'Asia/Jakarta',
+            'currency' => 'IDR',
+            'onboarding_completed_at' => now(),
+            'membership_expiry_warning_days' => 7,
+        ])->save();
 
         $platformAdmin = User::query()->updateOrCreate(
             ['email' => 'platform@gym.test'],
             [
-                'name' => 'Platform Admin GymFlow',
+                'name' => 'Platform Admin Gymlo',
                 'email_verified_at' => now(),
                 'password' => 'password',
             ],
@@ -67,8 +69,8 @@ class DemoGymSeeder extends Seeder
         $platformAdmin->forceFill(['is_platform_admin' => true])->save();
 
         $accounts = [
-            ['name' => 'Owner GymFlow', 'email' => 'owner@gym.test', 'role' => GymRole::Owner],
-            ['name' => 'Front Desk GymFlow', 'email' => 'frontdesk@gym.test', 'role' => GymRole::Admin],
+            ['name' => 'Owner Gymlo', 'email' => 'owner@gym.test', 'role' => GymRole::Owner],
+            ['name' => 'Front Desk Gymlo', 'email' => 'frontdesk@gym.test', 'role' => GymRole::Admin],
             ['name' => 'Andi Pratama', 'email' => 'andi@gym.test', 'role' => GymRole::Trainer],
             ['name' => 'Budi Santoso', 'email' => 'budi@gym.test', 'role' => GymRole::Trainer],
             ['name' => 'Rina Maharani', 'email' => 'rina@gym.test', 'role' => GymRole::Trainer],

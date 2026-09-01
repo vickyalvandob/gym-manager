@@ -322,7 +322,7 @@ test('development seeder creates idempotent payment history and advances invoice
     $this->seed(DemoGymSeeder::class);
     $this->seed(DemoGymSeeder::class);
 
-    $gym = Gym::query()->where('slug', 'gymflow-demo')->firstOrFail();
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
 
     expect($gym->payments()->count())->toBe(8)
         ->and($gym->payments()->where('status', PaymentStatus::Paid)->count())->toBe(6)

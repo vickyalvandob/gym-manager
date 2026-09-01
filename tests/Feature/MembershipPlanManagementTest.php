@@ -240,7 +240,7 @@ test('development seeder creates idempotent membership plan examples', function 
     $this->seed(DemoGymSeeder::class);
     $this->seed(DemoGymSeeder::class);
 
-    $gym = Gym::query()->where('slug', 'gymflow-demo')->firstOrFail();
+    $gym = Gym::query()->where('slug', 'gymlo-demo')->firstOrFail();
 
     expect($gym->membershipPlans()->count())->toBe(5)
         ->and($gym->membershipPlans()->where('is_active', false)->count())->toBe(1)

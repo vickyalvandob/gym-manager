@@ -50,7 +50,7 @@ export default function PlatformDashboard({
                         Control plane
                     </p>
                     <h1 className="mt-1 text-2xl font-semibold">
-                        Ringkasan GymFlow
+                        Ringkasan Gymlo
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Pantau tenant, trial, dan subscription tanpa masuk ke

@@ -62,16 +62,16 @@ export default function Dashboard({ snapshot }: DashboardProps) {
         <>
             <Head title="Dashboard" />
 
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div className="mx-auto flex w-full max-w-[90rem] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-9">
+                <header className="flex flex-col justify-between gap-5 border-b pb-6 sm:flex-row sm:items-end lg:pb-7">
                     <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-primary">
+                        <p className="truncate text-[11px] font-semibold tracking-[0.16em] text-primary uppercase">
                             {auth.currentGym?.name} · {headerCopy.roleLabel}
                         </p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">
+                        <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
                             {headerCopy.title}
                         </h1>
-                        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                             {headerCopy.description}
                         </p>
                     </div>
@@ -131,13 +131,18 @@ function DashboardHeaderActions({
     if (role === 'trainer') {
         return (
             <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" asChild>
+                <Button
+                    className="shadow-none"
+                    variant="outline"
+                    size="sm"
+                    asChild
+                >
                     <Link href={trainerMembersIndex()} prefetch>
                         <UsersRound />
                         Member saya
                     </Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button className="shadow-none" size="sm" asChild>
                     <Link
                         href={PtSessionController.index({
                             query: { scope: 'today' },
@@ -156,7 +161,12 @@ function DashboardHeaderActions({
         return (
             <div className="flex flex-wrap gap-2">
                 {canOperateFrontDesk && (
-                    <Button variant="outline" size="sm" asChild>
+                    <Button
+                        className="shadow-none"
+                        variant="outline"
+                        size="sm"
+                        asChild
+                    >
                         <Link href={membersIndex()} prefetch>
                             <UsersRound />
                             Kelola member
@@ -164,7 +174,7 @@ function DashboardHeaderActions({
                     </Button>
                 )}
                 {canViewReports && (
-                    <Button size="sm" asChild>
+                    <Button className="shadow-none" size="sm" asChild>
                         <Link href={reportsIndex()} prefetch>
                             <ChartNoAxesCombined />
                             Buka laporan
@@ -181,13 +191,13 @@ function DashboardHeaderActions({
 
     return (
         <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" asChild>
+            <Button className="shadow-none" variant="outline" size="sm" asChild>
                 <Link href={createMember()} prefetch>
                     <Plus />
                     Tambah member
                 </Link>
             </Button>
-            <Button size="sm" asChild>
+            <Button className="shadow-none" size="sm" asChild>
                 <Link href={CheckInController.index()} prefetch>
                     <LogIn />
                     Proses check-in
@@ -265,17 +275,17 @@ function ManagementWorkspace({
     return (
         <div
             className={cn(
-                'space-y-6 transition-opacity',
+                'space-y-8 transition-opacity',
                 reloading && 'opacity-60',
             )}
             aria-busy={reloading}
         >
             <section aria-labelledby="dashboard-focus-heading">
-                <div className="mb-4 flex items-end justify-between gap-4">
+                <div className="mb-5 flex items-end justify-between gap-4">
                     <div>
                         <h2
                             id="dashboard-focus-heading"
-                            className="text-base font-semibold"
+                            className="text-sm font-semibold tracking-[0.08em] uppercase"
                         >
                             {isOwner ? 'Ringkasan bisnis' : 'Fokus hari ini'}
                         </h2>
@@ -305,7 +315,7 @@ function ManagementWorkspace({
             </section>
 
             <section
-                className="grid items-start gap-4 border-t pt-6 xl:grid-cols-2"
+                className="grid items-start gap-4 border-t pt-8 xl:grid-cols-2"
                 aria-label="Aktivitas terbaru"
             >
                 <RecentCheckIns checkIns={checkIns} timezone={timezone} />
@@ -334,8 +344,8 @@ function OwnerOverview({
 }) {
     return (
         <div className="space-y-4">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.65fr)]">
-                <article className="rounded-xl border bg-card p-5 shadow-xs sm:p-6">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(19rem,0.6fr)]">
+                <article className="rounded-lg border bg-background p-5 sm:p-6">
                     <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
                             <p className="text-xs font-medium text-muted-foreground">
@@ -348,7 +358,7 @@ function OwnerOverview({
                                 )}
                             </p>
                         </div>
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border text-primary">
                             <ChartNoAxesCombined
                                 className="size-4.5"
                                 aria-hidden
@@ -394,7 +404,7 @@ function OwnerOverview({
                     </div>
                 </article>
 
-                <section className="rounded-xl border bg-card p-5 shadow-xs">
+                <section className="rounded-lg border bg-background p-5">
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <h3 className="text-sm font-semibold">
@@ -428,7 +438,7 @@ function OwnerOverview({
                     <Button
                         variant="outline"
                         size="sm"
-                        className="mt-4 w-full"
+                        className="mt-4 w-full shadow-none"
                         asChild
                     >
                         <Link href={membersIndex()} prefetch>
@@ -478,7 +488,7 @@ function RevenueTrendChart({
     return (
         <figure className="mt-3">
             <div
-                className="flex h-36 items-end gap-2 rounded-lg bg-muted/35 px-3 pt-4 pb-2 sm:gap-3"
+                className="flex h-36 items-end gap-2 rounded-md border bg-muted/20 px-3 pt-4 pb-2 sm:gap-3"
                 role="img"
                 aria-label="Grafik pendapatan tujuh hari terakhir"
                 aria-describedby="owner-revenue-chart-description"
@@ -498,7 +508,7 @@ function RevenueTrendChart({
                         >
                             <span
                                 className={cn(
-                                    'w-full max-w-10 rounded-t-md bg-primary/75 transition-[height]',
+                                    'w-full max-w-10 rounded-t-sm bg-primary/80 transition-[height]',
                                     amount === 0 && 'bg-border',
                                 )}
                                 style={{ height: `${height}%` }}
@@ -545,7 +555,7 @@ function FrontOfficeOverview({
 }) {
     return (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)]">
-            <article className="rounded-xl border bg-card p-5 shadow-xs sm:p-6">
+            <article className="rounded-lg border bg-background p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <p className="text-xs font-medium text-muted-foreground">
@@ -558,7 +568,7 @@ function FrontOfficeOverview({
                             Kunjungan berhasil tercatat
                         </p>
                     </div>
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md border text-primary">
                         <UserRoundCheck className="size-5" aria-hidden />
                     </span>
                 </div>
@@ -582,7 +592,11 @@ function FrontOfficeOverview({
                     </div>
                 </div>
 
-                <Button className="mt-5 w-full sm:w-auto" size="sm" asChild>
+                <Button
+                    className="mt-5 w-full shadow-none sm:w-auto"
+                    size="sm"
+                    asChild
+                >
                     <Link href={CheckInController.index()} prefetch>
                         <LogIn />
                         Proses check-in
@@ -590,7 +604,7 @@ function FrontOfficeOverview({
                 </Button>
             </article>
 
-            <section className="rounded-xl border bg-card p-5 shadow-xs">
+            <section className="rounded-lg border bg-background p-5">
                 <div className="flex items-center justify-between gap-3">
                     <div>
                         <h3 className="text-sm font-semibold">
@@ -633,7 +647,7 @@ function FrontOfficeOverview({
                 <Button
                     variant="outline"
                     size="sm"
-                    className="mt-4 w-full"
+                    className="mt-4 w-full shadow-none"
                     asChild
                 >
                     <Link href={PaymentController.index()} prefetch>
@@ -660,7 +674,7 @@ function StatCard({
     tone?: 'default' | 'attention' | 'critical';
 }) {
     return (
-        <article className="rounded-xl border bg-card p-4 shadow-xs">
+        <article className="rounded-lg border bg-background p-4">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground">
@@ -672,11 +686,11 @@ function StatCard({
                 </div>
                 <span
                     className={cn(
-                        'flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground',
+                        'flex size-8 shrink-0 items-center justify-center rounded-md border text-muted-foreground',
                         tone === 'attention' &&
-                            'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+                            'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400',
                         tone === 'critical' &&
-                            'bg-destructive/10 text-destructive',
+                            'border-destructive/30 bg-destructive/5 text-destructive',
                     )}
                 >
                     <Icon className="size-4" aria-hidden />
@@ -735,7 +749,7 @@ function TrainerWorkspace({
         return (
             <div
                 className={cn(
-                    'space-y-4 transition-opacity',
+                    'space-y-5 transition-opacity',
                     reloading && 'opacity-60',
                 )}
                 aria-busy={reloading}
@@ -743,7 +757,7 @@ function TrainerWorkspace({
                 <div className="flex justify-end">
                     <RefreshDashboardButton reloading={reloading} />
                 </div>
-                <section className="flex min-h-72 flex-col items-center justify-center rounded-xl border bg-card px-6 py-12 text-center shadow-xs">
+                <section className="flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed bg-background px-6 py-12 text-center">
                     <Dumbbell className="size-9 text-muted-foreground" />
                     <h2 className="mt-4 text-base font-semibold">
                         Profil trainer belum terhubung
@@ -760,12 +774,12 @@ function TrainerWorkspace({
     return (
         <div
             className={cn(
-                'space-y-6 transition-opacity',
+                'space-y-8 transition-opacity',
                 reloading && 'opacity-60',
             )}
             aria-busy={reloading}
         >
-            <section className="flex flex-col justify-between gap-4 rounded-xl border bg-card p-5 shadow-xs sm:flex-row sm:items-center">
+            <section className="flex flex-col justify-between gap-4 rounded-lg border bg-background p-5 sm:flex-row sm:items-center">
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                         <h2 className="truncate text-base font-semibold">
@@ -785,10 +799,10 @@ function TrainerWorkspace({
             </section>
 
             <section aria-labelledby="trainer-summary-heading">
-                <div className="mb-4">
+                <div className="mb-5">
                     <h2
                         id="trainer-summary-heading"
-                        className="text-base font-semibold"
+                        className="text-sm font-semibold tracking-[0.08em] uppercase"
                     >
                         Ringkasan agenda
                     </h2>
@@ -818,7 +832,7 @@ function TrainerWorkspace({
                 </div>
             </section>
 
-            <section className="border-t pt-6">
+            <section className="border-t pt-8">
                 <TrainerTodaySessions
                     sessions={workspace.today_sessions}
                     timezone={timezone}
@@ -826,7 +840,7 @@ function TrainerWorkspace({
             </section>
 
             <section
-                className="border-t pt-6"
+                className="border-t pt-8"
                 aria-labelledby="trainer-members-heading"
             >
                 <div className="flex items-end justify-between gap-4">
@@ -862,7 +876,7 @@ function TrainerWorkspace({
                                 key={item.id}
                                 href={trainerMemberShow(item.member.id)}
                                 prefetch
-                                className="group rounded-xl border bg-card p-4 shadow-xs transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                className="group rounded-lg border bg-background p-4 transition-colors hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
@@ -906,7 +920,7 @@ function TrainerTodaySessions({
     timezone: string;
 }) {
     return (
-        <section className="rounded-xl border bg-card p-5 shadow-xs">
+        <section className="rounded-lg border bg-background p-5">
             <div className="flex items-end justify-between gap-4">
                 <div>
                     <h2 className="text-base font-semibold">Sesi hari ini</h2>
@@ -975,7 +989,7 @@ function RecentCheckIns({
     timezone: string;
 }) {
     return (
-        <section className="rounded-xl border bg-card p-5 shadow-xs">
+        <section className="rounded-lg border bg-background p-5">
             <div className="flex items-end justify-between gap-4">
                 <div>
                     <h2 className="text-base font-semibold">
@@ -1045,7 +1059,7 @@ function RecentPayments({
     timezone: string;
 }) {
     return (
-        <section className="rounded-xl border bg-card p-5 shadow-xs">
+        <section className="rounded-lg border bg-background p-5">
             <div className="flex items-end justify-between gap-4">
                 <div>
                     <h2 className="text-base font-semibold">
@@ -1130,7 +1144,7 @@ function DashboardEmptyState({
     return (
         <div
             className={cn(
-                'mt-4 flex flex-col items-center justify-center rounded-lg bg-muted/35 px-6 py-8 text-center',
+                'mt-4 flex flex-col items-center justify-center rounded-md border border-dashed bg-muted/15 px-6 py-8 text-center',
                 compact ? 'min-h-40' : 'min-h-48',
             )}
         >
@@ -1188,7 +1202,7 @@ function DashboardFreshness({
 function DashboardSkeleton({ isTrainer }: { isTrainer: boolean }) {
     return (
         <div
-            className="space-y-6"
+            className="space-y-8"
             aria-label={
                 isTrainer
                     ? 'Memuat workspace trainer'
@@ -1198,18 +1212,21 @@ function DashboardSkeleton({ isTrainer }: { isTrainer: boolean }) {
             <span className="sr-only">Memuat data dashboard</span>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {Array.from({ length: 4 }, (_, index) => (
-                    <div key={index} className="rounded-xl border bg-card p-4">
+                    <div
+                        key={index}
+                        className="rounded-lg border bg-background p-4"
+                    >
                         <Skeleton className="h-3 w-24" />
                         <Skeleton className="mt-3 h-8 w-20" />
                         <Skeleton className="mt-3 h-3 w-36 max-w-full" />
                     </div>
                 ))}
             </div>
-            <div className="grid gap-4 border-t pt-6 xl:grid-cols-2">
+            <div className="grid gap-4 border-t pt-8 xl:grid-cols-2">
                 {[0, 1].map((section) => (
                     <div
                         key={section}
-                        className="rounded-xl border bg-card p-5"
+                        className="rounded-lg border bg-background p-5"
                     >
                         <Skeleton className="h-5 w-40" />
                         <Skeleton className="mt-2 h-3 w-52 max-w-full" />
@@ -1227,7 +1244,7 @@ function DashboardSkeleton({ isTrainer }: { isTrainer: boolean }) {
 
 function DashboardError({ reloading }: { reloading: boolean }) {
     return (
-        <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border bg-card px-6 py-12 text-center shadow-xs">
+        <div className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed bg-background px-6 py-12 text-center">
             <Activity className="size-9 text-muted-foreground" />
             <p className="mt-4 text-sm font-medium">
                 Ringkasan belum dapat dimuat
@@ -1239,7 +1256,7 @@ function DashboardError({ reloading }: { reloading: boolean }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="mt-4"
+                className="mt-4 shadow-none"
                 disabled={reloading}
                 onClick={() =>
                     router.reload({
