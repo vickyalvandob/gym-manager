@@ -4,13 +4,18 @@ namespace App\Http\Middleware;
 
 use App\Enums\GymUserStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Models\User;
 use App\Support\GymContext;
+use App\Support\MemberPortalAccess;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    public function __construct(private readonly GymContext $gymContext) {}
+    public function __construct(
+        private readonly GymContext $gymContext,
+        private readonly MemberPortalAccess $memberPortalAccess,
+    ) {}
 
     /**
      * The root template that's loaded on the first page visit.
@@ -53,6 +58,7 @@ class HandleInertiaRequests extends Middleware
      */
     private function authProps(Request $request): array
     {
+        $user = $request->user();
         $currentGym = $this->gymContext->hasGym()
             ? $this->gymContext->gym()
             : null;
@@ -70,8 +76,10 @@ class HandleInertiaRequests extends Middleware
             ->first();
 
         return [
-            'user' => $request->user(),
-            'isPlatformAdmin' => $request->user()?->is_platform_admin === true,
+            'user' => $user,
+            'isPlatformAdmin' => $user?->is_platform_admin === true,
+            'hasMemberPortal' => $user instanceof User
+                && $this->memberPortalAccess->firstProfile($user) !== null,
             'currentGym' => $currentGym === null ? null : [
                 'id' => $currentGym->getKey(),
                 'name' => $currentGym->name,
@@ -95,12 +103,12 @@ class HandleInertiaRequests extends Middleware
                 'status' => $subscription->effectiveStatus()->value,
                 'status_label' => $subscription->effectiveStatus()->label(),
                 'grants_access' => $subscription->grantsAccess(),
-                'is_subscriber' => $subscription->subscriber_id === $request->user()?->getKey(),
+                'is_subscriber' => $subscription->subscriber_id === $user?->getKey(),
                 'has_pending_payment' => $subscription->payments()
                     ->where('status', SubscriptionPaymentStatus::Pending)
                     ->exists(),
             ],
-            'availableGyms' => $request->user() === null ? [] : $request->user()->gyms()
+            'availableGyms' => $user === null ? [] : $user->gyms()
                 ->select(['gyms.id', 'gyms.name', 'gyms.status'])
                 ->wherePivot('status', GymUserStatus::Active->value)
                 ->oldest('gym_user.created_at')

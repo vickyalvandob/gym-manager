@@ -6,10 +6,14 @@ use App\Enums\GymRole;
 use App\Models\Member;
 use App\Models\User;
 use App\Support\GymContext;
+use App\Support\MemberPortalAccess;
 
 class MemberPolicy
 {
-    public function __construct(private readonly GymContext $gymContext) {}
+    public function __construct(
+        private readonly GymContext $gymContext,
+        private readonly MemberPortalAccess $memberPortalAccess,
+    ) {}
 
     public function viewAny(User $user): bool
     {
@@ -71,6 +75,16 @@ class MemberPolicy
     public function assignTrainer(User $user, Member $member): bool
     {
         return $this->belongsToCurrentGym($member) && $this->canManageMembers();
+    }
+
+    public function managePortal(User $user, Member $member): bool
+    {
+        return $this->belongsToCurrentGym($member) && $this->canManageMembers();
+    }
+
+    public function viewPortal(User $user, Member $member): bool
+    {
+        return $this->memberPortalAccess->allows($user, $member);
     }
 
     private function canManageMembers(): bool

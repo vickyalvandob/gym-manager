@@ -1,6 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import { usePage } from '@inertiajs/react';
-import { LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -10,6 +10,7 @@ import {
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/routes';
+import { index as memberPortalIndex } from '@/routes/member-portal';
 import { dashboard as platformDashboard } from '@/routes/platform';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
@@ -46,6 +47,19 @@ export function UserMenuContent({ user }: Props) {
                         >
                             <ShieldCheck className="mr-2" />
                             Platform Admin
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+                {auth.hasMemberPortal && (
+                    <DropdownMenuItem asChild>
+                        <Link
+                            className="block w-full cursor-pointer"
+                            href={memberPortalIndex()}
+                            prefetch
+                            onClick={cleanup}
+                        >
+                            <UserRound className="mr-2" />
+                            Portal Member
                         </Link>
                     </DropdownMenuItem>
                 )}

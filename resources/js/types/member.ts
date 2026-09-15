@@ -64,6 +64,11 @@ export type MemberDetail = MemberSummary & {
     address: string | null;
     emergency_contact: string | null;
     notes: string | null;
+    portal_access: {
+        enabled: boolean;
+        email: string | null;
+        enabled_at: string | null;
+    };
     updated_at: string | null;
 };
 

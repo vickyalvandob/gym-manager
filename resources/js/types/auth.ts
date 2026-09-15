@@ -14,6 +14,7 @@ export type User = {
 export type Auth = {
     user: User | null;
     isPlatformAdmin: boolean;
+    hasMemberPortal: boolean;
     currentGym: Gym | null;
     role: GymRole | null;
     roleLabel: string | null;

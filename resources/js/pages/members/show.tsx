@@ -21,6 +21,7 @@ import { CheckInButton } from '@/components/check-ins/check-in-button';
 import { MemberAvatar } from '@/components/members/member-avatar';
 import { MemberMembershipDialog } from '@/components/members/member-membership-dialog';
 import { MemberMembershipStatusBadge } from '@/components/members/member-membership-status-badge';
+import { MemberPortalAccessDialog } from '@/components/members/member-portal-access-dialog';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { MemberStatusDialog } from '@/components/members/member-status-dialog';
 import { CreateMembershipPaymentButton } from '@/components/payments/create-membership-payment-button';
@@ -60,6 +61,7 @@ type MemberPtSession = {
 
 type ShowMemberProps = {
     member: MemberDetail;
+    passwordRules: string;
     activeMembership: MemberMembership | null;
     upcomingMembership: MemberMembership | null;
     hasMembershipHistory: boolean;
@@ -82,6 +84,7 @@ type ShowMemberProps = {
 
 export default function ShowMember({
     member,
+    passwordRules,
     activeMembership,
     upcomingMembership,
     hasMembershipHistory,
@@ -145,6 +148,13 @@ export default function ShowMember({
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2 pl-14 sm:pl-0">
+                        <MemberPortalAccessDialog
+                            memberId={member.id}
+                            memberName={member.name}
+                            email={member.portal_access.email}
+                            enabled={member.portal_access.enabled}
+                            passwordRules={passwordRules}
+                        />
                         <MemberStatusDialog
                             memberId={member.id}
                             memberName={member.name}

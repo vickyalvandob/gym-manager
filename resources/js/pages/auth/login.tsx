@@ -107,7 +107,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                <span>Masuk ke workspace</span>
+                                <span>Masuk ke Gymlo</span>
                                 {!processing && (
                                     <ArrowRight
                                         className="size-4"
@@ -137,5 +137,5 @@ export default function Login({ status, canResetPassword }: Props) {
 Login.layout = {
     title: 'Selamat datang kembali',
     description:
-        'Masuk untuk melanjutkan pekerjaan Anda dari workspace yang terakhir digunakan.',
+        'Satu halaman masuk untuk Owner, Front Desk, Trainer, dan Member.',
 };

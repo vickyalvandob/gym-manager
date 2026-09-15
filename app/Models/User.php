@@ -77,6 +77,12 @@ class User extends Authenticatable
         return $this->hasMany(Trainer::class);
     }
 
+    /** @return HasMany<Member, $this> */
+    public function memberProfiles(): HasMany
+    {
+        return $this->hasMany(Member::class);
+    }
+
     /** @return HasMany<PlatformActivityLog, $this> */
     public function platformActivityLogs(): HasMany
     {

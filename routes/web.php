@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivateMemberPortalController;
 use App\Http\Controllers\AssignMemberMembershipController;
 use App\Http\Controllers\AssignTrainerMemberController;
 use App\Http\Controllers\CancelPtSessionController;
@@ -13,6 +14,8 @@ use App\Http\Controllers\MarkPaymentPaidController;
 use App\Http\Controllers\MarkPtSessionNoShowController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberPhotoController;
+use App\Http\Controllers\MemberPortalController;
+use App\Http\Controllers\MemberPortalPhotoController;
 use App\Http\Controllers\MembershipPlanController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PaymentController;
@@ -108,6 +111,34 @@ Route::middleware(['auth', 'verified'])
     ->whereNumber('gym')
     ->name('gyms.switch');
 
+Route::middleware(['auth', 'verified'])
+    ->prefix('portal-member')
+    ->name('member-portal.')
+    ->group(function () {
+        Route::get('/', [MemberPortalController::class, 'index'])->name('index');
+        Route::get('{member}', [MemberPortalController::class, 'show'])
+            ->whereNumber('member')
+            ->name('show');
+        Route::get('{member}/check-ins', [MemberPortalController::class, 'checkIns'])
+            ->whereNumber('member')
+            ->name('check-ins');
+        Route::get('{member}/payments', [MemberPortalController::class, 'payments'])
+            ->whereNumber('member')
+            ->name('payments');
+        Route::get('{member}/personal-training', [MemberPortalController::class, 'personalTraining'])
+            ->whereNumber('member')
+            ->name('personal-training');
+        Route::get('{member}/settings', [MemberPortalController::class, 'settings'])
+            ->whereNumber('member')
+            ->name('settings');
+        Route::patch('{member}/contact', [MemberPortalController::class, 'update'])
+            ->whereNumber('member')
+            ->name('contact.update');
+        Route::get('{member}/photo', MemberPortalPhotoController::class)
+            ->whereNumber('member')
+            ->name('photo');
+    });
+
 Route::middleware(['auth', 'verified', 'gym', 'onboarded', 'subscription_active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('reports', ReportController::class)->name('reports.index');
@@ -133,6 +164,10 @@ Route::middleware(['auth', 'verified', 'gym', 'onboarded', 'subscription_active'
     Route::get('members/{member}/photo', MemberPhotoController::class)
         ->whereNumber('member')
         ->name('members.photo');
+    Route::post('members/{member}/portal-access', ActivateMemberPortalController::class)
+        ->middleware('throttle:3,1')
+        ->whereNumber('member')
+        ->name('members.portal-access.store');
     Route::patch('members/{member}/status', UpdateMemberStatusController::class)
         ->whereNumber('member')
         ->name('members.status.update');

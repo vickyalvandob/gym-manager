@@ -30,6 +30,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -185,6 +186,7 @@ class MemberController extends Controller
 
         return Inertia::render('members/show', [
             'member' => $this->detailMemberData($memberModel, $today),
+            'passwordRules' => Password::defaults()->toPasswordRulesString(),
             'activeMembership' => $activeMembership instanceof MemberMembership
                 ? $this->membershipData($activeMembership, $today)
                 : null,
@@ -420,6 +422,8 @@ class MemberController extends Controller
     /** @return array<string, mixed> */
     private function detailMemberData(Member $member, CarbonImmutable $today): array
     {
+        $member->loadMissing('user:id,email');
+
         return [
             ...$this->listMemberData($member, $today),
             'gender' => $member->gender?->value,
@@ -428,6 +432,13 @@ class MemberController extends Controller
             'address' => $member->address,
             'emergency_contact' => $member->emergency_contact,
             'notes' => $member->notes,
+            'portal_access' => [
+                'enabled' => $member->user_id !== null,
+                'email' => $member->user_id !== null
+                    ? $member->user->email
+                    : $member->email,
+                'enabled_at' => $member->portal_enabled_at?->toIso8601String(),
+            ],
             'updated_at' => $member->updated_at?->toIso8601String(),
         ];
     }

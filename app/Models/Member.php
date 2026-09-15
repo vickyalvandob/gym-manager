@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $gym_id
+ * @property int|null $user_id
  * @property string $member_number
  * @property string $name
  * @property string $phone
@@ -28,6 +29,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $emergency_contact
  * @property MemberStatus $status
  * @property string|null $notes
+ * @property string|null $portal_qr_token
+ * @property Carbon|null $portal_enabled_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -62,6 +65,12 @@ class Member extends Model
     public function gym(): BelongsTo
     {
         return $this->belongsTo(Gym::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /** @return HasMany<MemberMembership, $this> */
@@ -145,6 +154,7 @@ class Member extends Model
             'gender' => MemberGender::class,
             'birth_date' => 'date',
             'status' => MemberStatus::class,
+            'portal_enabled_at' => 'datetime',
         ];
     }
 }
