@@ -35,6 +35,7 @@ class MemberPtPackageFactory extends Factory
                 'gym_id' => $attributes['gym_id'],
             ])->getKey(),
             'total_sessions' => 8,
+            'package_name' => fn (array $attributes): string => PtPackage::query()->whereKey($attributes['pt_package_id'])->firstOrFail()->name,
             'used_sessions' => 0,
             'start_date' => today(),
             'expires_at' => today()->addDays(60),

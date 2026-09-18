@@ -65,6 +65,13 @@ class SetCurrentGym
                 return $next($request);
             }
 
+            if ($mode === 'required' && $user->gyms()
+                ->where('gyms.status', GymStatus::Suspended)
+                ->wherePivot('status', GymUserStatus::Active)
+                ->wherePivot('role', GymRole::Owner)->exists()) {
+                return to_route('subscription.show');
+            }
+
             abort(Response::HTTP_FORBIDDEN, 'Akun Anda belum terhubung ke gym aktif.');
         }
 

@@ -27,8 +27,13 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { dashboard, login, register } from '@/routes';
+import { formatCurrency } from '@/lib/formatters';
+import { login, register } from '@/routes';
+import { home as appHome } from '@/routes/app';
+import { show as myHome } from '@/routes/my';
 import { dashboard as platformDashboard } from '@/routes/platform';
+import { show as subscriptionShow } from '@/routes/subscription';
+import { dashboard as trainerHome } from '@/routes/trainer';
 
 type Icon = ComponentType<{
     className?: string;
@@ -54,7 +59,7 @@ const features: Feature[] = [
         number: '02',
         title: 'Check-in tervalidasi',
         description:
-            'Front Desk dapat memeriksa kelayakan membership sebelum kunjungan tercatat.',
+            'Front Office dapat memeriksa kelayakan membership sebelum kunjungan tercatat.',
         icon: ScanLine,
     },
     {
@@ -82,26 +87,51 @@ const features: Feature[] = [
         number: '06',
         title: 'Akses sesuai peran',
         description:
-            'Setiap tim mendapat ruang kerja yang fokus dengan isolasi data gym di backend.',
+            'Owner dan Front Office, Trainer, serta Member memiliki area sesuai kebutuhannya.',
         icon: ShieldCheck,
+    },
+    {
+        number: '07',
+        title: 'My Gymlo untuk member',
+        description:
+            'QR check-in, status membership, invoice, dan sisa sesi PT langsung dari ponsel member.',
+        icon: UsersRound,
+    },
+    {
+        number: '08',
+        title: 'Bertumbuh ke banyak outlet',
+        description:
+            'Tambah outlet sesuai kapasitas paket, dengan data operasional terpisah dan satu langganan Owner.',
+        icon: BarChart3,
     },
 ];
 
 const roles = [
     {
         role: 'Owner',
-        description: 'Bisnis, tim, konfigurasi, dan laporan.',
+        description: 'Kelola bisnis, outlet, tim, dan paket di area manajemen.',
+        area: '/app',
         icon: BarChart3,
     },
     {
-        role: 'Front Desk',
-        description: 'Member, transaksi, dan operasional harian.',
+        role: 'Front Office',
+        description: 'Layani member, pembayaran, QR check-in, dan jadwal PT.',
+        area: '/app',
         icon: UserRoundCheck,
     },
     {
         role: 'Trainer',
-        description: 'Member binaan, jadwal, dan sesi sendiri.',
+        description:
+            'Fokus pada client sendiri, agenda, kuota, dan hasil sesi PT.',
+        area: '/trainer',
         icon: Dumbbell,
+    },
+    {
+        role: 'Member',
+        area: '/my',
+        description:
+            'My Gymlo untuk QR, membership, pembayaran, dan jadwal pribadi.',
+        icon: UsersRound,
     },
 ];
 
@@ -113,11 +143,42 @@ const previewNavigation: Array<[string, boolean]> = [
     ['Laporan', false],
 ];
 
-export default function Welcome() {
+type PricingPlan = {
+    id: number;
+    name: string;
+    description: string | null;
+    price: string;
+    currency: string;
+    billing_interval: 'monthly' | 'yearly';
+    max_gyms: number | null;
+    max_members: number | null;
+    max_staff: number | null;
+    max_trainers: number | null;
+    max_membership_plans: number | null;
+    max_pt_packages: number | null;
+};
+
+type Props = {
+    plans: PricingPlan[];
+    canChoosePlan: boolean;
+    workspace:
+        | 'platform.dashboard'
+        | 'app.home'
+        | 'trainer.dashboard'
+        | 'my.show'
+        | 'subscription.show'
+        | null;
+};
+
+export default function Welcome({ plans, workspace, canChoosePlan }: Props) {
     const { auth, name } = usePage().props;
-    const workspaceRoute = auth.isPlatformAdmin
-        ? platformDashboard()
-        : dashboard();
+    const workspaceRoute = {
+        'platform.dashboard': platformDashboard(),
+        'app.home': appHome(),
+        'trainer.dashboard': trainerHome(),
+        'my.show': myHome(),
+        'subscription.show': subscriptionShow(),
+    }[workspace ?? 'app.home'];
 
     return (
         <>
@@ -351,10 +412,10 @@ export default function Welcome() {
 
                                 <div className="pb-1 lg:pb-3">
                                     <p className="max-w-lg text-base leading-7 text-pretty text-muted-foreground sm:text-lg sm:leading-8">
-                                        Satu workspace untuk member, pembayaran,
-                                        check-in, trainer, Personal Training,
-                                        dan laporan—dibuat agar tim bergerak
-                                        lebih cepat tanpa kehilangan kontrol.
+                                        Kelola member, pembayaran, QR check-in,
+                                        dan Personal Training dalam satu alur.
+                                        Owner, Front Office, Trainer, dan Member
+                                        punya ruang kerja sesuai perannya.
                                     </p>
 
                                     <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
@@ -379,8 +440,8 @@ export default function Welcome() {
                                             className="size-4 text-primary"
                                             aria-hidden
                                         />
-                                        Paket Free aktif otomatis. Tanpa pilih
-                                        paket di awal.
+                                        Mulai dengan Free Plan tanpa batas
+                                        waktu. Upgrade saat kebutuhan bertambah.
                                     </p>
                                 </div>
                             </div>
@@ -400,14 +461,17 @@ export default function Welcome() {
                     >
                         <div className="mx-auto grid max-w-[90rem] divide-y px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8 lg:px-12">
                             <Stat
-                                value="01"
-                                label="Workspace untuk operasional"
+                                value="03"
+                                label="Area dengan alur yang terhubung"
                             />
                             <Stat
-                                value="03"
+                                value="04"
                                 label="Peran dengan fokus berbeda"
                             />
-                            <Stat value="100%" label="Data gym terisolasi" />
+                            <Stat
+                                value="01"
+                                label="Langganan untuk seluruh outlet"
+                            />
                         </div>
                     </section>
 
@@ -481,7 +545,7 @@ export default function Welcome() {
                                 <ProcessStep
                                     number="01"
                                     title="Buat workspace"
-                                    description="Daftarkan akun Owner dan nama gym. Paket Free langsung aktif."
+                                    description="Daftarkan Owner, lengkapi profil gym, dan gunakan Free Plan tanpa masa trial."
                                 />
                                 <ProcessStep
                                     number="02"
@@ -491,7 +555,7 @@ export default function Welcome() {
                                 <ProcessStep
                                     number="03"
                                     title="Jalankan & ukur"
-                                    description="Proses transaksi, check-in, sesi PT, lalu baca laporannya."
+                                    description="Konfirmasi pembayaran, layani check-in, dan kelola sesi PT. Upgrade untuk menambah kapasitas."
                                 />
                             </ol>
                         </div>
@@ -499,55 +563,122 @@ export default function Welcome() {
 
                     <section
                         id="harga"
-                        className="scroll-mt-24 border-y bg-muted/30"
+                        className="scroll-mt-24 border-y bg-muted/30 py-16 sm:py-24"
                     >
-                        <div className="mx-auto grid max-w-[90rem] lg:grid-cols-[0.85fr_1.15fr]">
-                            <div className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-                                <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-                                    Mulai dari Free
-                                </p>
-                                <h2 className="mt-5 max-w-xl text-4xl leading-tight font-semibold tracking-[-0.045em] text-balance sm:text-5xl">
-                                    Validasi alur kerja sebelum bertumbuh.
-                                </h2>
-                                <p className="mt-5 max-w-lg leading-7 text-muted-foreground">
-                                    Registrasi tidak meminta kartu atau pilihan
-                                    paket. Workspace pertama langsung memakai
-                                    paket Free.
-                                </p>
-                            </div>
-
-                            <div className="border-t border-border bg-background px-5 py-16 sm:px-8 sm:py-20 lg:border-t-0 lg:border-l lg:px-12 lg:py-24">
-                                <div className="flex items-end justify-between gap-6 border-b pb-8">
-                                    <div>
-                                        <p className="text-sm font-medium text-muted-foreground">
-                                            Paket Free
-                                        </p>
-                                        <p className="mt-2 text-5xl font-semibold tracking-[-0.055em]">
-                                            Rp0
-                                        </p>
-                                    </div>
-                                    <span className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary">
-                                        Aktif otomatis
-                                    </span>
+                        <div className="mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-12">
+                            <SectionHeading
+                                eyebrow="Paket berlangganan"
+                                title="Kapasitas yang mengikuti pertumbuhan gym."
+                                description="Pilih kapasitas untuk member, tim, dan outlet Anda. Harga berlaku untuk satu akun Owner dengan kuota gabungan seluruh outlet."
+                            />
+                            {plans.length > 0 ? (
+                                <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                                    {plans.map((plan) => (
+                                        <article
+                                            key={plan.id}
+                                            className="flex min-w-0 flex-col rounded-xl border bg-background p-6 sm:p-8"
+                                        >
+                                            <h3 className="text-xl font-semibold">
+                                                {plan.name}
+                                            </h3>
+                                            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                                                {plan.description}
+                                            </p>
+                                            <div className="my-6 border-y py-6">
+                                                <p className="text-3xl font-semibold tracking-tight tabular-nums">
+                                                    {formatCurrency(
+                                                        plan.price,
+                                                        plan.currency,
+                                                    )}
+                                                </p>
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    per{' '}
+                                                    {plan.billing_interval ===
+                                                    'yearly'
+                                                        ? 'tahun'
+                                                        : 'bulan'}
+                                                </p>
+                                            </div>
+                                            <div className="mb-8 grid flex-1 content-start gap-3">
+                                                <PlanItem
+                                                    label={capacityLabel(
+                                                        plan.max_gyms,
+                                                        'outlet',
+                                                    )}
+                                                />
+                                                <PlanItem
+                                                    label={capacityLabel(
+                                                        plan.max_members,
+                                                        'member',
+                                                    )}
+                                                />
+                                                <PlanItem
+                                                    label={capacityLabel(
+                                                        plan.max_staff,
+                                                        'staf, termasuk trainer',
+                                                    )}
+                                                />
+                                                <PlanItem
+                                                    label={capacityLabel(
+                                                    plan.max_trainers === null
+                                                        ? plan.max_staff
+                                                        : plan.max_staff === null
+                                                          ? plan.max_trainers
+                                                          : Math.min(plan.max_trainers, plan.max_staff),
+                                                        'trainer',
+                                                    )}
+                                                />
+                                                <PlanItem
+                                                    label={capacityLabel(
+                                                        plan.max_membership_plans,
+                                                        'paket membership',
+                                                    )}
+                                                />
+                                                <PlanItem
+                                                    label={capacityLabel(
+                                                        plan.max_pt_packages,
+                                                        'paket PT',
+                                                    )}
+                                                />
+                                                <PlanItem label="My Gymlo & laporan Owner" />
+                                            </div>
+                                            <PrimaryLink
+                                                href={
+                                                    !auth.user
+                                                        ? register()
+                                                        : canChoosePlan
+                                                          ? subscriptionShow({
+                                                                query: {
+                                                                    tab: 'payment',
+                                                                    plan_id:
+                                                                        plan.id,
+                                                                },
+                                                            })
+                                                          : workspaceRoute
+                                                }
+                                            >
+                                                {!auth.user
+                                                    ? 'Daftar & lihat paket'
+                                                    : canChoosePlan
+                                                      ? 'Lihat paket'
+                                                      : 'Buka area saya'}
+                                            </PrimaryLink>
+                                        </article>
+                                    ))}
                                 </div>
-
-                                <div className="grid gap-x-8 gap-y-4 py-8 sm:grid-cols-2">
-                                    <PlanItem label="1 gym" />
-                                    <PlanItem label="Hingga 20 member" />
-                                    <PlanItem label="Hingga 5 staf" />
-                                    <PlanItem label="Fitur operasional inti" />
-                                </div>
-
-                                {auth.user ? (
-                                    <PrimaryLink href={workspaceRoute}>
-                                        Buka dashboard
-                                    </PrimaryLink>
-                                ) : (
-                                    <PrimaryLink href={register()}>
-                                        Mulai dengan Free
-                                    </PrimaryLink>
-                                )}
-                            </div>
+                            ) : (
+                                <p className="mt-10 rounded-xl border bg-background p-6 text-muted-foreground">
+                                    Pilihan paket berbayar sedang diperbarui.
+                                    Anda tetap dapat mendaftar dan mulai
+                                    menggunakan Gymlo.
+                                </p>
+                            )}
+                            <p className="mt-6 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                Upgrade dipilih oleh Owner setelah pendaftaran.
+                                Transfer dan unggah bukti dari halaman Paket &
+                                pembayaran; paket aktif setelah pembayaran
+                                disetujui.
+                            </p>
                         </div>
                     </section>
 
@@ -642,7 +773,7 @@ function DashboardPreview() {
                     <span className="text-xs font-medium">Workspace Owner</span>
                 </div>
                 <span className="text-[11px] text-muted-foreground">
-                    gymlo / dashboard
+                    /app / Contoh tampilan
                 </span>
             </div>
 
@@ -883,11 +1014,13 @@ function FeatureRow({ feature }: { feature: Feature }) {
 function RoleRow({
     index,
     role,
+    area,
     description,
     icon: Icon,
 }: {
     index: number;
     role: string;
+    area: string;
     description: string;
     icon: Icon;
 }) {
@@ -900,7 +1033,12 @@ function RoleRow({
                 <Icon className="size-5" aria-hidden />
             </span>
             <div>
-                <h3 className="text-lg font-semibold">{role}</h3>
+                <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="text-lg font-semibold">{role}</h3>
+                    <span className="rounded border border-background/25 px-2 py-0.5 text-xs text-background/75">
+                        {area}
+                    </span>
+                </div>
                 <p className="mt-1 text-sm leading-6 text-background/60 dark:text-muted-foreground">
                     {description}
                 </p>
@@ -942,4 +1080,10 @@ function PlanItem({ label }: { label: string }) {
             {label}
         </span>
     );
+}
+
+function capacityLabel(value: number | null, label: string): string {
+    return value === null
+        ? `${label.charAt(0).toUpperCase()}${label.slice(1)} tanpa batas`
+        : `Hingga ${value.toLocaleString('id-ID')} ${label}`;
 }

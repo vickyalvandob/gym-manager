@@ -110,6 +110,20 @@ class MemberPortalData
     }
 
     /** @return LengthAwarePaginator<int, array<string, mixed>> */
+    public function memberships(Member $member): LengthAwarePaginator
+    {
+        $member->loadMissing('gym');
+        $today = CarbonImmutable::today($member->gym->timezone);
+
+        return $member->memberships()->where('gym_id', $member->gym_id)
+            ->with('payment')->latest('start_date')->latest('id')
+            ->paginate(10)->withQueryString()
+            ->through(fn (MemberMembership $membership): array => $this->membershipData(
+                $membership, $today, $member->gym->membership_expiry_warning_days,
+            ));
+    }
+
+    /** @return LengthAwarePaginator<int, array<string, mixed>> */
     public function checkIns(Member $member): LengthAwarePaginator
     {
         return $member->checkIns()
@@ -196,7 +210,7 @@ class MemberPortalData
     {
         $description = match (true) {
             $payment->member_membership_id !== null => $payment->memberMembership->plan_name,
-            $payment->member_pt_package_id !== null => $payment->memberPtPackage->ptPackage->name,
+            $payment->member_pt_package_id !== null => $payment->memberPtPackage->package_name,
             default => $payment->type->label(),
         };
 
@@ -228,7 +242,7 @@ class MemberPortalData
                 'name' => $session->trainer->name,
                 'specialization' => $session->trainer->specialization,
             ],
-            'pt_package_name' => $session->memberPtPackage->ptPackage->name,
+            'pt_package_name' => $session->memberPtPackage->package_name,
         ];
     }
 
@@ -266,7 +280,7 @@ class MemberPortalData
 
         return [
             'id' => $package->getKey(),
-            'name' => $package->ptPackage->name,
+            'name' => $package->package_name,
             'trainer' => [
                 'name' => $package->trainer->name,
                 'specialization' => $package->trainer->specialization,

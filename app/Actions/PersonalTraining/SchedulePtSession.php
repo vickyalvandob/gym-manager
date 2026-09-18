@@ -38,6 +38,10 @@ class SchedulePtSession
                 ->whereKey($memberPtPackage->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+            $this->gymContext->gym()->members()
+                ->whereKey($lockedPackage->member_id)
+                ->lockForUpdate()
+                ->firstOrFail();
             $trainer = $this->gymContext->gym()->trainers()
                 ->whereKey($lockedPackage->trainer_id)
                 ->lockForUpdate()

@@ -28,7 +28,7 @@ test('current gym is resolved only from active user memberships', function () {
             ->where('auth.currentGym.id', $ownedGym->getKey())
             ->where('auth.currentGym.name', 'Gym Milik User')
             ->where('auth.role', GymRole::Admin->value)
-            ->where('auth.roleLabel', 'Front Desk')
+            ->where('auth.roleLabel', 'Front Office')
             ->where('auth.permissions.manage_gym', false)
             ->where('auth.permissions.operate_front_desk', true));
 });

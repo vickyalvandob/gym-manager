@@ -6,9 +6,11 @@ import {
     Home,
     LogOut,
     Settings,
+    QrCode,
+    Tickets,
+    ShieldCheck,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import MemberPortalController from '@/actions/App/Http/Controllers/MemberPortalController';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { MemberAvatar } from '@/components/members/member-avatar';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
@@ -22,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
+import MemberPortalController from '@/routes/my';
 import type { MemberPortalBaseProps } from '@/types';
 
 type PortalNavigationItem = {
@@ -43,32 +46,50 @@ export default function MemberPortalLayout({
         {
             label: 'Beranda',
             description: 'QR dan membership',
-            href: MemberPortalController.show(member.id).url,
+            href: MemberPortalController.show().url,
             icon: Home,
+        },
+        {
+            label: 'QR Check-in',
+            description: 'Kartu member digital',
+            href: MemberPortalController.qr().url,
+            icon: QrCode,
+        },
+        {
+            label: 'Membership',
+            description: 'Paket dan masa berlaku',
+            href: MemberPortalController.membership().url,
+            icon: Tickets,
         },
         {
             label: 'Riwayat Check-in',
             description: 'Catatan kunjungan',
-            href: MemberPortalController.checkIns(member.id).url,
+            href: MemberPortalController.checkIns().url,
             icon: History,
         },
         {
             label: 'Pembayaran',
             description: 'Invoice dan status',
-            href: MemberPortalController.payments(member.id).url,
+            href: MemberPortalController.payments().url,
             icon: CreditCard,
         },
         {
             label: 'Personal Training',
             description: 'Paket dan jadwal',
-            href: MemberPortalController.personalTraining(member.id).url,
+            href: MemberPortalController.personalTraining().url,
             icon: Dumbbell,
         },
         {
-            label: 'Profil & Keamanan',
-            description: 'Kontak dan kata sandi',
-            href: MemberPortalController.settings(member.id).url,
+            label: 'Profil',
+            description: 'Informasi kontak',
+            href: MemberPortalController.settings().url,
             icon: Settings,
+        },
+        {
+            label: 'Keamanan',
+            description: 'Kata sandi akun',
+            href: MemberPortalController.security().url,
+            icon: ShieldCheck,
         },
     ];
 
@@ -79,7 +100,7 @@ export default function MemberPortalLayout({
             <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
                 <div className="mx-auto flex h-16 max-w-[90rem] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
                     <Link
-                        href={MemberPortalController.show(member.id)}
+                        href={MemberPortalController.show()}
                         className="flex min-w-0 items-center gap-3"
                         prefetch
                     >
@@ -94,7 +115,7 @@ export default function MemberPortalLayout({
                                 {name}
                             </span>
                             <span className="block truncate text-xs text-muted-foreground">
-                                Portal Member · {member.gym.name}
+                                My Gymlo · {member.gym.name}
                             </span>
                         </span>
                     </Link>
@@ -105,9 +126,9 @@ export default function MemberPortalLayout({
                                 value={String(member.id)}
                                 onValueChange={(value) =>
                                     router.visit(
-                                        MemberPortalController.show(
-                                            Number(value),
-                                        ),
+                                        MemberPortalController.show({
+                                            query: { profile: value },
+                                        }),
                                     )
                                 }
                             >
@@ -243,7 +264,8 @@ export default function MemberPortalLayout({
                         </nav>
 
                         <p className="mt-auto px-3 text-xs leading-5 text-muted-foreground">
-                            Butuh bantuan? Hubungi Front Desk {member.gym.name}.
+                            Butuh bantuan? Hubungi Front Office{' '}
+                            {member.gym.name}.
                         </p>
                     </div>
                 </aside>

@@ -46,6 +46,10 @@ class ReschedulePtSession
                 ->whereKey($lockedSession->member_pt_package_id)
                 ->lockForUpdate()
                 ->firstOrFail();
+            $this->gymContext->gym()->members()
+                ->whereKey($memberPtPackage->member_id)
+                ->lockForUpdate()
+                ->firstOrFail();
             $trainer = $this->gymContext->gym()->trainers()
                 ->whereKey($lockedSession->trainer_id)
                 ->lockForUpdate()

@@ -38,6 +38,7 @@ class MemberMembershipFactory extends Factory
             'price' => (string) (fake()->numberBetween(5, 50) * 50000),
             'start_date' => $startDate,
             'end_date' => $startDate->copy()->addMonth()->subDay(),
+            'activated_at' => now(),
         ];
     }
 }

@@ -218,7 +218,7 @@ function EmptyTraining({ message }: { message: string }) {
             <Dumbbell className="mx-auto size-9 text-muted-foreground" />
             <p className="mt-4 text-sm font-semibold">{message}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-                Hubungi Front Desk untuk informasi lebih lanjut.
+                Hubungi Front Office untuk informasi lebih lanjut.
             </p>
         </div>
     );

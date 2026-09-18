@@ -142,7 +142,7 @@ test('owner can activate a member with an initial password and member can login 
     $this->post(route('login.store'), [
         'email' => $portalUser->email,
         'password' => 'initial-password',
-    ])->assertRedirect(route('member-portal.index'));
+    ])->assertRedirect(route('my.show'));
     $this->assertAuthenticatedAs($portalUser);
 });
 
@@ -220,11 +220,11 @@ test('member login is redirected to the member portal', function () {
     $this->post(route('login.store'), [
         'email' => $portalUser->email,
         'password' => 'member-password',
-    ])->assertRedirect(route('member-portal.index'));
+    ])->assertRedirect(route('my.show'));
 
     $this->assertAuthenticatedAs($portalUser);
     $this->get(route('member-portal.index'))
-        ->assertRedirect(route('member-portal.show', $member));
+        ->assertRedirect(route('my.show'));
 });
 
 test('member portal separates overview check-ins payments and personal training data', function () {

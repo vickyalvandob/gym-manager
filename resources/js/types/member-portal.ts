@@ -130,4 +130,5 @@ export type MemberPortalPersonalTrainingProps = MemberPortalBaseProps & {
 
 export type MemberPortalSettingsProps = MemberPortalBaseProps & {
     passwordRules: string;
+    section?: 'profile' | 'security' | 'all';
 };

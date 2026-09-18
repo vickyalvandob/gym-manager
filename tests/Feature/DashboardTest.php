@@ -10,6 +10,7 @@ use App\Models\Member;
 use App\Models\MemberMembership;
 use App\Models\MembershipPlan;
 use App\Models\Payment;
+use App\Models\Trainer;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -218,11 +219,12 @@ test('trainer dashboard omits financial and identifiable operational activity', 
     $gym = Gym::factory()->create();
     $trainer = User::factory()->create();
     attachDashboardUser($gym, $trainer, GymRole::Trainer);
+    Trainer::factory()->for($gym)->create(['user_id' => $trainer->id]);
     Member::factory()->for($gym)->create(['status' => MemberStatus::Inactive]);
 
     $this->actingAs($trainer)
         ->withSession(['current_gym_id' => $gym->getKey()])
-        ->get(route('dashboard'))
+        ->get(route('trainer.dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
                 ->where('snapshot.metrics.revenue_today', null)

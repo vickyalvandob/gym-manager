@@ -79,7 +79,8 @@ class PtSessionPolicy
     public function complete(User $user, PtSession $ptSession): bool
     {
         return $this->belongsToCurrentGym($ptSession)
-            && $this->ownsTrainer($user, $ptSession->trainer_id);
+            && ($this->gymContext->role() === GymRole::Owner
+                || $this->ownsTrainer($user, $ptSession->trainer_id));
     }
 
     public function markNoShow(User $user, PtSession $ptSession): bool

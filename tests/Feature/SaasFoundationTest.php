@@ -29,7 +29,7 @@ function validSaasPlanPayload(array $overrides = []): array
         'price' => '599000.00',
         'currency' => 'IDR',
         'billing_interval' => 'monthly',
-        'trial_days' => 14,
+        'trial_days' => 0,
         'max_gyms' => 3,
         'max_members' => 2000,
         'max_staff' => 30,
@@ -106,7 +106,10 @@ test('owner completes onboarding before entering the operational workspace', fun
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('onboarding/edit')
-            ->where('subscription.plan_name', $plan->name));
+            ->where('gym.name', $gym->name)
+            ->missing('subscription')
+            ->missing('currencyOptions')
+            ->missing('gym.currency'));
 
     $this->put(route('onboarding.update'), [
         'name' => ' Gym   Baru Jakarta ',
@@ -188,7 +191,7 @@ test('platform admin assigns subscriptions and can suspend tenant access', funct
     $this->actingAs($owner)
         ->withSession(['current_gym_id' => $gym->getKey()])
         ->get(route('dashboard'))
-        ->assertForbidden();
+        ->assertRedirect(route('subscription.show'));
 
     $this->withSession(['current_gym_id' => $gym->getKey()])
         ->get(route('subscription.show'))

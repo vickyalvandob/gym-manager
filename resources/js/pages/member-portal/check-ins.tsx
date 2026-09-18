@@ -21,7 +21,7 @@ export default function MemberPortalCheckIns({
             <PortalPageHeader
                 eyebrow="Aktivitas"
                 title="Riwayat check-in"
-                description="Semua kunjungan yang berhasil dicatat oleh Front Desk tersimpan di halaman ini."
+                description="Semua kunjungan yang berhasil dicatat oleh Front Office tersimpan di halaman ini."
             />
 
             <Deferred

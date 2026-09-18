@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SubscriptionStatus;
+use Carbon\CarbonInterface;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -81,8 +82,15 @@ class Subscription extends Model
                 && $this->trial_ends_at->isFuture(),
             SubscriptionStatus::Active => $this->current_period_ends_at === null
                 || $this->current_period_ends_at->isFuture(),
+            SubscriptionStatus::PastDue => $this->graceEndsAt()?->isFuture() === true,
+            SubscriptionStatus::Cancelled => $this->current_period_ends_at?->isFuture() === true,
             default => false,
         };
+    }
+
+    public function graceEndsAt(): ?CarbonInterface
+    {
+        return $this->current_period_ends_at?->copy()->addDays(max(0, (int) config('subscriptions.grace_days')));
     }
 
     public function effectiveStatus(): SubscriptionStatus
@@ -95,6 +103,11 @@ class Subscription extends Model
         if ($this->status === SubscriptionStatus::Active
             && $this->current_period_ends_at !== null
             && ! $this->current_period_ends_at->isFuture()) {
+            return SubscriptionStatus::Expired;
+        }
+
+        if (in_array($this->status, [SubscriptionStatus::PastDue, SubscriptionStatus::Cancelled], true)
+            && ! $this->grantsAccess()) {
             return SubscriptionStatus::Expired;
         }
 

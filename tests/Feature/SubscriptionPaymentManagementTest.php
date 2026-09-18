@@ -168,6 +168,15 @@ test('platform approval activates and extends the subscriber subscription', func
 
     expect($subscription->refresh()->status)->toBe(SubscriptionStatus::Expired);
 
+    $this->put(route('platform.gyms.subscription.update', $gym), [
+        'saas_plan_id' => $plan->getKey(),
+        'status' => SubscriptionStatus::Active->value,
+        'current_period_starts_at' => now()->toDateTimeString(),
+        'current_period_ends_at' => now()->addMonth()->toDateTimeString(),
+    ])->assertSessionHasErrors('status');
+
+    expect($subscription->refresh()->status)->toBe(SubscriptionStatus::Expired);
+
     $this
         ->patch(route('platform.subscription-payments.update', $payment), [
             'decision' => SubscriptionPaymentStatus::Approved->value,

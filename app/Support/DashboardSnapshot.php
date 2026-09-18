@@ -41,8 +41,8 @@ class DashboardSnapshot
         $membershipMetrics = $gym->memberMemberships()
             ->toBase()
             ->selectRaw(
-                'COUNT(DISTINCT CASE WHEN start_date <= ? AND end_date >= ? THEN member_id END) AS active_members, '
-                .'COUNT(DISTINCT CASE WHEN start_date <= ? AND end_date BETWEEN ? AND ? THEN member_id END) AS expiring_soon',
+                'COUNT(DISTINCT CASE WHEN activated_at IS NOT NULL AND start_date <= ? AND end_date >= ? THEN member_id END) AS active_members, '
+                .'COUNT(DISTINCT CASE WHEN activated_at IS NOT NULL AND start_date <= ? AND end_date BETWEEN ? AND ? THEN member_id END) AS expiring_soon',
                 [
                     $today->toDateString(),
                     $today->toDateString(),
@@ -63,6 +63,7 @@ class DashboardSnapshot
                         $membershipTable.'.member_id',
                     )
                     ->where('current_memberships.gym_id', $gym->getKey())
+                    ->whereNotNull('current_memberships.activated_at')
                     ->where('current_memberships.start_date', '<=', $today->toDateString())
                     ->where('current_memberships.end_date', '>=', $today->toDateString());
             })
@@ -199,7 +200,7 @@ class DashboardSnapshot
                             'member_number' => $session->member->member_number,
                             'name' => $session->member->name,
                         ],
-                        'pt_package_name' => $session->memberPtPackage->ptPackage->name,
+                        'pt_package_name' => $session->memberPtPackage->package_name,
                     ])
                     ->all(),
                 'session_members' => $this->trainerSessionMembers($trainer, $todayDate),
@@ -247,6 +248,7 @@ class DashboardSnapshot
                 'member_pt_packages.id',
                 'member_pt_packages.member_id',
                 'member_pt_packages.pt_package_id',
+                'member_pt_packages.package_name',
                 'member_pt_packages.total_sessions',
                 'member_pt_packages.used_sessions',
                 'member_pt_packages.expires_at',
@@ -278,7 +280,7 @@ class DashboardSnapshot
                         'member_number' => $memberPtPackage->member->member_number,
                         'name' => $memberPtPackage->member->name,
                     ],
-                    'pt_package_name' => $memberPtPackage->ptPackage->name,
+                    'pt_package_name' => $memberPtPackage->package_name,
                     'remaining_sessions' => max(
                         0,
                         $memberPtPackage->total_sessions - $memberPtPackage->used_sessions,

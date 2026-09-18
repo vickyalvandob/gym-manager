@@ -22,6 +22,7 @@ class GymFactory extends Factory
         $name = fake()->company().' Gym';
 
         return [
+            'subscription_id' => SubscriptionFactory::new(),
             'name' => $name,
             'slug' => Str::slug($name).'-'.Str::lower(Str::random(6)),
             'status' => GymStatus::Active,

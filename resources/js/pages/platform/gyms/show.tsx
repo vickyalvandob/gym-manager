@@ -139,8 +139,8 @@ export default function PlatformGymShow({
                     <section className="rounded-xl border p-5">
                         <h2 className="font-semibold">Subscription</h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Atur paket, trial, dan periode akses secara manual
-                            pada fase foundation.
+                            Atur paket dan periode akses secara manual pada fase
+                            foundation.
                         </p>
                         {plans.length === 0 ? (
                             <p className="mt-5 rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
@@ -197,7 +197,7 @@ export default function PlatformGymShow({
                                                 name="status"
                                                 defaultValue={
                                                     subscription?.status ??
-                                                    'trialing'
+                                                    'active'
                                                 }
                                                 className={controlClassName}
                                             >
@@ -217,14 +217,6 @@ export default function PlatformGymShow({
                                             />
                                         </div>
                                         <div className="grid gap-4 sm:grid-cols-2">
-                                            <DateTimeField
-                                                name="trial_ends_at"
-                                                label="Trial berakhir"
-                                                value={
-                                                    subscription?.trial_ends_at
-                                                }
-                                                error={errors.trial_ends_at}
-                                            />
                                             <DateTimeField
                                                 name="current_period_starts_at"
                                                 label="Periode dimulai"
@@ -350,7 +342,7 @@ function DateTimeField({
 
 function roleLabel(role: string): string {
     return (
-        { owner: 'Owner', admin: 'Front Desk', trainer: 'Trainer' }[role] ??
+        { owner: 'Owner', admin: 'Front Office', trainer: 'Trainer' }[role] ??
         role
     );
 }

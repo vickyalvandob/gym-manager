@@ -39,7 +39,10 @@ export function SaasPlanForm({
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
                             Harga ini adalah tagihan gym kepada platform, bukan
-                            harga membership member.
+                            harga membership member. Semua batas dihitung
+                            gabungan seluruh outlet. Staf mencakup Front Office
+                            dan Trainer; registrasi selalu dimulai dari Free
+                            Plan tanpa trial.
                         </p>
                         <div className="mt-5 grid gap-5 sm:grid-cols-2">
                             <div className="grid gap-2 sm:col-span-2">
@@ -92,19 +95,6 @@ export function SaasPlanForm({
                             </div>
                             <input type="hidden" name="currency" value="IDR" />
                             <div className="grid gap-2">
-                                <Label htmlFor="trial_days">Durasi trial</Label>
-                                <Input
-                                    id="trial_days"
-                                    name="trial_days"
-                                    type="number"
-                                    defaultValue={plan?.trial_days ?? 14}
-                                    min={0}
-                                    max={365}
-                                    required
-                                />
-                                <InputError message={errors.trial_days} />
-                            </div>
-                            <div className="grid gap-2">
                                 <Label htmlFor="sort_order">
                                     Urutan tampil
                                 </Label>
@@ -120,7 +110,7 @@ export function SaasPlanForm({
                                 <InputError message={errors.sort_order} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="max_gyms">Batas gym</Label>
+                                <Label htmlFor="max_gyms">Batas outlet</Label>
                                 <Input
                                     id="max_gyms"
                                     name="max_gyms"
@@ -157,6 +147,52 @@ export function SaasPlanForm({
                                 />
                                 <InputError message={errors.max_staff} />
                             </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="max_trainers">
+                                    Batas trainer
+                                </Label>
+                                <Input
+                                    id="max_trainers"
+                                    name="max_trainers"
+                                    type="number"
+                                    defaultValue={plan?.max_trainers ?? ''}
+                                    min={1}
+                                    placeholder="Kosong berarti tanpa batas"
+                                />
+                                <InputError message={errors.max_trainers} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="max_membership_plans">
+                                    Batas paket membership
+                                </Label>
+                                <Input
+                                    id="max_membership_plans"
+                                    name="max_membership_plans"
+                                    type="number"
+                                    defaultValue={
+                                        plan?.max_membership_plans ?? ''
+                                    }
+                                    min={1}
+                                    placeholder="Kosong berarti tanpa batas"
+                                />
+                                <InputError
+                                    message={errors.max_membership_plans}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="max_pt_packages">
+                                    Batas paket PT
+                                </Label>
+                                <Input
+                                    id="max_pt_packages"
+                                    name="max_pt_packages"
+                                    type="number"
+                                    defaultValue={plan?.max_pt_packages ?? ''}
+                                    min={1}
+                                    placeholder="Kosong berarti tanpa batas"
+                                />
+                                <InputError message={errors.max_pt_packages} />
+                            </div>
                             <div className="grid gap-2 sm:col-span-2">
                                 <Label htmlFor="description">Deskripsi</Label>
                                 <textarea
@@ -180,7 +216,7 @@ export function SaasPlanForm({
                                     />
                                     <div>
                                         <Label htmlFor="is_active_control">
-                                            Tersedia untuk pendaftaran baru
+                                            Paket aktif
                                         </Label>
                                         <p className="mt-1 text-xs text-muted-foreground">
                                             Subscription lama tetap tersimpan

@@ -2,19 +2,14 @@
 
 namespace App\Http\Responses;
 
-use App\Enums\GymRole;
-use App\Enums\GymStatus;
-use App\Enums\GymUserStatus;
-use App\Models\Member;
-use App\Models\User;
-use App\Support\MemberPortalAccess;
+use App\Support\WorkspaceDestination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 
 class LoginResponse implements LoginResponseContract
 {
-    public function __construct(private readonly MemberPortalAccess $memberPortalAccess) {}
+    public function __construct(private readonly WorkspaceDestination $workspaceDestination) {}
 
     public function toResponse($request): JsonResponse|RedirectResponse
     {
@@ -28,24 +23,13 @@ class LoginResponse implements LoginResponseContract
             return redirect()->intended(route('platform.dashboard'));
         }
 
-        $hasActiveGym = $user?->gyms()
-            ->where('gyms.status', GymStatus::Active->value)
-            ->wherePivot('status', GymUserStatus::Active->value)
-            ->exists() ?? false;
-        $ownsSuspendedGym = $user?->gyms()
-            ->where('gyms.status', GymStatus::Suspended->value)
-            ->wherePivot('status', GymUserStatus::Active->value)
-            ->wherePivot('role', GymRole::Owner->value)
-            ->exists() ?? false;
+        abort_unless($user !== null, 403);
+        $destination = $this->workspaceDestination->routeName(
+            $user, (int) $request->session()->get('current_gym_id', 0),
+        );
 
-        $hasMemberPortal = $user instanceof User
-            && $this->memberPortalAccess->firstProfile($user) instanceof Member;
-        $destination = match (true) {
-            ! $hasActiveGym && $hasMemberPortal => route('member-portal.index'),
-            ! $hasActiveGym && $ownsSuspendedGym => route('subscription.show'),
-            default => route('dashboard'),
-        };
+        $request->session()->forget('url.intended');
 
-        return redirect()->intended($destination);
+        return to_route($destination);
     }
 }

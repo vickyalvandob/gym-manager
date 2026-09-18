@@ -35,15 +35,15 @@ type Props = {
 export default function GymIndex({ gyms, subscription }: Props) {
     return (
         <>
-            <Head title="Gym Saya" />
+            <Head title="Outlet Saya" />
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
                 <div>
                     <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                         Workspace
                     </p>
-                    <h1 className="mt-1 text-2xl font-semibold">Gym Saya</h1>
+                    <h1 className="mt-1 text-2xl font-semibold">Outlet Saya</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Semua gym ini memakai satu subscription{' '}
+                        Semua outlet ini memakai satu subscription{' '}
                         {subscription.plan_name}.
                     </p>
                 </div>
@@ -51,7 +51,7 @@ export default function GymIndex({ gyms, subscription }: Props) {
                 <section className="grid gap-3 sm:grid-cols-3">
                     <UsageCard
                         icon={Building2}
-                        label="Gym"
+                        label="Outlet"
                         usage={subscription.usage.gyms}
                         limit={subscription.limits.gyms}
                     />
@@ -72,10 +72,10 @@ export default function GymIndex({ gyms, subscription }: Props) {
                 <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
                     <section className="rounded-xl border">
                         <div className="border-b p-5">
-                            <h2 className="font-semibold">Daftar gym</h2>
+                            <h2 className="font-semibold">Daftar outlet</h2>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                Pilih gym untuk berpindah workspace tanpa login
-                                ulang.
+                                Pilih outlet untuk berpindah workspace tanpa
+                                login ulang.
                             </p>
                         </div>
                         <div className="divide-y">
@@ -117,7 +117,7 @@ export default function GymIndex({ gyms, subscription }: Props) {
                                                 method="put"
                                                 as="button"
                                             >
-                                                Buka gym
+                                                Buka outlet
                                             </Link>
                                         </Button>
                                     )}
@@ -129,11 +129,11 @@ export default function GymIndex({ gyms, subscription }: Props) {
                     <section className="rounded-xl border p-5">
                         <div className="flex items-center gap-2">
                             <Plus className="size-5 text-muted-foreground" />
-                            <h2 className="font-semibold">Tambah gym</h2>
+                            <h2 className="font-semibold">Tambah outlet</h2>
                         </div>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Gym baru memakai paket dan kuota subscription yang
-                            sama.
+                            Outlet baru memakai paket dan kuota subscription
+                            yang sama.
                         </p>
                         {subscription.can_create_gym ? (
                             <Form {...store.form()} className="mt-5 grid gap-4">
@@ -141,7 +141,7 @@ export default function GymIndex({ gyms, subscription }: Props) {
                                     <>
                                         <div className="grid gap-2">
                                             <Label htmlFor="name">
-                                                Nama gym
+                                                Nama outlet
                                             </Label>
                                             <Input
                                                 id="name"
@@ -205,5 +205,5 @@ function UsageCard({
 }
 
 GymIndex.layout = {
-    breadcrumbs: [{ title: 'Gym Saya', href: index() }],
+    breadcrumbs: [{ title: 'Outlet Saya', href: index() }],
 };

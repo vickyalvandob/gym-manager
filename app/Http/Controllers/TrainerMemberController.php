@@ -29,6 +29,7 @@ class TrainerMemberController extends Controller
         $search = Str::squish((string) $request->validated('search', ''));
         $today = CarbonImmutable::now($this->gymContext->gym()->timezone)->startOfDay();
         $members = $trainer->members()
+            ->where('members.gym_id', $this->gymContext->gymId())
             ->select([
                 'members.id',
                 'members.member_number',
@@ -64,6 +65,7 @@ class TrainerMemberController extends Controller
         $trainer = $this->currentTrainer($request->user()?->getKey());
         $today = CarbonImmutable::now($this->gymContext->gym()->timezone)->startOfDay();
         $memberModel = $trainer->members()
+            ->where('members.gym_id', $this->gymContext->gymId())
             ->select([
                 'members.id',
                 'members.member_number',
@@ -104,6 +106,7 @@ class TrainerMemberController extends Controller
                     'member_memberships.end_date',
                 ])
                 ->where('member_memberships.gym_id', $this->gymContext->gymId())
+                ->whereNotNull('activated_at')
                 ->whereDate('start_date', '<=', $today->toDateString())
                 ->whereDate('end_date', '>=', $today->toDateString())
                 ->latest('start_date')
@@ -113,6 +116,7 @@ class TrainerMemberController extends Controller
                     'member_pt_packages.id',
                     'member_pt_packages.member_id',
                     'member_pt_packages.pt_package_id',
+                    'member_pt_packages.package_name',
                     'member_pt_packages.total_sessions',
                     'member_pt_packages.used_sessions',
                     'member_pt_packages.start_date',
@@ -178,7 +182,7 @@ class TrainerMemberController extends Controller
                 'status' => $session->status->value,
                 'status_label' => $session->status->label(),
                 'notes' => $session->notes,
-                'pt_package_name' => $session->memberPtPackage->ptPackage->name,
+                'pt_package_name' => $session->memberPtPackage->package_name,
             ])
             ->values()
             ->all();
@@ -196,7 +200,7 @@ class TrainerMemberController extends Controller
             ] : null,
             'pt_package' => $memberPtPackage instanceof MemberPtPackage ? [
                 'id' => $memberPtPackage->getKey(),
-                'name' => $memberPtPackage->ptPackage->name,
+                'name' => $memberPtPackage->package_name,
                 'total_sessions' => $memberPtPackage->total_sessions,
                 'used_sessions' => $memberPtPackage->used_sessions,
                 'scheduled_sessions' => $scheduledCount,

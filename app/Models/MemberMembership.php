@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string $price
  * @property Carbon $start_date
  * @property Carbon $end_date
+ * @property Carbon|null $activated_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -101,7 +102,7 @@ class MemberMembership extends Model
             return MemberMembershipStatus::Expired;
         }
 
-        return MemberMembershipStatus::Active;
+        return $this->activated_at === null ? MemberMembershipStatus::Pending : MemberMembershipStatus::Active;
     }
 
     /** @return array<string, string> */
@@ -113,6 +114,7 @@ class MemberMembership extends Model
             'price' => 'decimal:2',
             'start_date' => 'date',
             'end_date' => 'date',
+            'activated_at' => 'datetime',
         ];
     }
 }

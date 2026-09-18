@@ -22,6 +22,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $max_gyms
  * @property int|null $max_members
  * @property int|null $max_staff
+ * @property int|null $max_trainers
+ * @property int|null $max_membership_plans
+ * @property int|null $max_pt_packages
  * @property bool $is_active
  * @property int $sort_order
  * @property Carbon|null $created_at
@@ -38,6 +41,9 @@ use Illuminate\Support\Carbon;
     'max_gyms',
     'max_members',
     'max_staff',
+    'max_trainers',
+    'max_membership_plans',
+    'max_pt_packages',
     'is_active',
     'sort_order',
 ])]
@@ -50,7 +56,7 @@ class SaasPlan extends Model
     protected $attributes = [
         'currency' => 'IDR',
         'billing_interval' => SaasPlanInterval::Monthly->value,
-        'trial_days' => 14,
+        'trial_days' => 0,
         'is_active' => true,
         'sort_order' => 0,
     ];
@@ -77,6 +83,9 @@ class SaasPlan extends Model
             'max_gyms' => 'integer',
             'max_members' => 'integer',
             'max_staff' => 'integer',
+            'max_trainers' => 'integer',
+            'max_membership_plans' => 'integer',
+            'max_pt_packages' => 'integer',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];

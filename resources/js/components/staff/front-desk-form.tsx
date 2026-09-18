@@ -35,10 +35,10 @@ export function FrontDeskForm({
                 <div className="grid gap-5">
                     <section className="rounded-lg border p-4 sm:p-6">
                         <h2 className="text-base font-semibold">
-                            Akun Front Desk
+                            Akun Front Office
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Akun ini hanya mendapat akses Front Desk pada gym
+                            Akun ini hanya mendapat akses Front Office pada gym
                             yang sedang aktif.
                         </p>
                         <div className="mt-5 grid gap-5 sm:grid-cols-2">

@@ -6,17 +6,14 @@ import {
     UserX,
     XCircle,
 } from 'lucide-react';
-import CancelPtSessionController from '@/actions/App/Http/Controllers/CancelPtSessionController';
-import CompletePtSessionController from '@/actions/App/Http/Controllers/CompletePtSessionController';
-import MarkPtSessionNoShowController from '@/actions/App/Http/Controllers/MarkPtSessionNoShowController';
-import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
-import ReschedulePtSessionController from '@/actions/App/Http/Controllers/ReschedulePtSessionController';
 import InputError from '@/components/input-error';
 import { PtSessionStatusBadge } from '@/components/personal-training/pt-session-status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePtSessionRoutes } from '@/hooks/use-pt-session-routes';
 import { formatDate, formatDateTime } from '@/lib/formatters';
+import PtSessionController from '@/routes/pt-sessions';
 import type { PtSessionDetail } from '@/types';
 
 export default function ShowPtSession({
@@ -31,6 +28,7 @@ export default function ShowPtSession({
     canEdit: boolean;
 }) {
     const { auth } = usePage().props;
+    const sessionRoutes = usePtSessionRoutes();
     const local = new Date(session.scheduled_at);
     const date = new Intl.DateTimeFormat('en-CA', {
         timeZone: auth.currentGym?.timezone,
@@ -49,7 +47,7 @@ export default function ShowPtSession({
             <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-7 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                 <header className="flex items-start gap-3">
                     <Button variant="ghost" size="icon" asChild>
-                        <Link href={PtSessionController.index()}>
+                        <Link href={sessionRoutes.index()}>
                             <ArrowLeft />
                             <span className="sr-only">Kembali</span>
                         </Link>
@@ -125,7 +123,7 @@ export default function ShowPtSession({
                                     Ubah jadwal
                                 </h2>
                                 <Form
-                                    {...ReschedulePtSessionController.form(
+                                    {...sessionRoutes.reschedule.form(
                                         session.id,
                                     )}
                                     options={{ preserveScroll: true }}
@@ -231,7 +229,7 @@ export default function ShowPtSession({
                             <section className="grid gap-2">
                                 {canComplete && (
                                     <ActionForm
-                                        form={CompletePtSessionController.form(
+                                        form={sessionRoutes.complete.form(
                                             session.id,
                                         )}
                                         label="Tandai selesai"
@@ -240,7 +238,7 @@ export default function ShowPtSession({
                                 )}
                                 {canNoShow && (
                                     <ActionForm
-                                        form={MarkPtSessionNoShowController.form(
+                                        form={sessionRoutes.noShow.form(
                                             session.id,
                                         )}
                                         label="Tandai no-show"
@@ -250,7 +248,7 @@ export default function ShowPtSession({
                                 )}
                                 {canEdit && (
                                     <Form
-                                        {...CancelPtSessionController.form(
+                                        {...sessionRoutes.cancel.form(
                                             session.id,
                                         )}
                                         options={{ preserveScroll: true }}

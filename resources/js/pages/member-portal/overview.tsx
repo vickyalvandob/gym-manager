@@ -8,13 +8,13 @@ import {
     QrCode,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import MemberPortalController from '@/actions/App/Http/Controllers/MemberPortalController';
 import { PortalPageHeader } from '@/components/member-portal/portal-page-header';
 import { MemberMembershipStatusBadge } from '@/components/members/member-membership-status-badge';
 import { PaymentStatusBadge } from '@/components/payments/payment-status-badge';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatDateTime } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
+import MemberPortalController from '@/routes/my';
 import type { MemberPortalOverviewProps } from '@/types';
 
 export default function MemberPortalOverview({
@@ -77,7 +77,7 @@ export default function MemberPortalOverview({
                                 Cara menggunakan
                             </p>
                             <h2 className="mt-2 text-xl font-semibold">
-                                Tunjukkan QR ke Front Desk
+                                Tunjukkan QR ke Front Office
                             </h2>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
                                 Petugas akan memindai QR ini. Sistem tetap
@@ -174,7 +174,8 @@ export default function MemberPortalOverview({
                         </>
                     ) : (
                         <div className="mt-6 rounded-xl border border-dashed bg-muted/20 px-5 py-8 text-center text-sm text-muted-foreground">
-                            Hubungi Front Desk untuk menetapkan membership Anda.
+                            Hubungi Front Office untuk menetapkan membership
+                            Anda.
                         </div>
                     )}
                 </section>
@@ -190,23 +191,21 @@ export default function MemberPortalOverview({
                             : 'Belum ada'
                     }
                     detail="Lihat seluruh riwayat kunjungan"
-                    href={MemberPortalController.checkIns(member.id).url}
+                    href={MemberPortalController.checkIns().url}
                 />
                 <SummaryCard
                     icon={<CreditCard />}
                     label="Status pembayaran"
                     value={membership?.payment_status_label ?? 'Belum tersedia'}
                     detail="Buka invoice dan riwayat pembayaran"
-                    href={MemberPortalController.payments(member.id).url}
+                    href={MemberPortalController.payments().url}
                 />
                 <SummaryCard
                     icon={<Dumbbell />}
                     label="Sesi PT tersedia"
                     value={String(activePtPackage?.available_sessions ?? 0)}
                     detail={activePtPackage?.name ?? 'Belum ada paket aktif'}
-                    href={
-                        MemberPortalController.personalTraining(member.id).url
-                    }
+                    href={MemberPortalController.personalTraining().url}
                 />
             </section>
         </div>

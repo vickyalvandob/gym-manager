@@ -226,14 +226,6 @@ export default function PlatformUserShow({
                                         </div>
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <DateTimeField
-                                                name="trial_ends_at"
-                                                label="Trial berakhir"
-                                                value={
-                                                    subscription.trial_ends_at
-                                                }
-                                                error={errors.trial_ends_at}
-                                            />
-                                            <DateTimeField
                                                 name="current_period_starts_at"
                                                 label="Periode dimulai"
                                                 value={

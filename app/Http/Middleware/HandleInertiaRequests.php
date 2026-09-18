@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\GymUserStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\User;
 use App\Support\GymContext;
 use App\Support\MemberPortalAccess;
@@ -103,6 +104,8 @@ class HandleInertiaRequests extends Middleware
                 'status' => $subscription->effectiveStatus()->value,
                 'status_label' => $subscription->effectiveStatus()->label(),
                 'grants_access' => $subscription->grantsAccess(),
+                'grace_ends_at' => $subscription->status === SubscriptionStatus::PastDue
+                    ? $subscription->graceEndsAt()?->toIso8601String() : null,
                 'is_subscriber' => $subscription->subscriber_id === $user?->getKey(),
                 'has_pending_payment' => $subscription->payments()
                     ->where('status', SubscriptionPaymentStatus::Pending)

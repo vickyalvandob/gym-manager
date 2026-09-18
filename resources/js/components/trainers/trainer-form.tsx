@@ -225,7 +225,7 @@ export function TrainerForm({
                                     maxLength={2000}
                                     rows={3}
                                     className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
-                                    placeholder="Catatan untuk Owner atau Front Desk."
+                                    placeholder="Catatan untuk Owner atau Front Office."
                                 />
                                 <InputError message={errors.notes} />
                             </div>

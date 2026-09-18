@@ -33,7 +33,7 @@ class SubscriptionController extends Controller
                 ->limit(20),
         ]);
         $subscription = $gym->subscription;
-        $usage = $subscription === null ? ['gyms' => 0, 'members' => 0, 'staff' => 0] : $this->subscriptionQuota->usage($subscription);
+        $usage = $subscription === null ? ['gyms' => 0, 'members' => 0, 'staff' => 0, 'trainers' => 0, 'membership_plans' => 0, 'pt_packages' => 0] : $this->subscriptionQuota->usage($subscription);
         $activeTab = in_array($request->string('tab')->toString(), ['overview', 'plans', 'payment', 'history'], true)
             ? $request->string('tab')->toString()
             : 'overview';
@@ -70,11 +70,7 @@ class SubscriptionController extends Controller
                 'currency' => $subscription->plan->currency,
                 'billing_interval_label' => $subscription->plan->billing_interval->label(),
                 'usage' => $usage,
-                'limits' => [
-                    'gyms' => $subscription->plan->max_gyms,
-                    'members' => $subscription->plan->max_members,
-                    'staff' => $subscription->plan->max_staff,
-                ],
+                'limits' => $this->subscriptionQuota->limits($subscription->plan),
                 'trial_ends_at' => $subscription->trial_ends_at?->toIso8601String(),
                 'current_period_starts_at' => $subscription->current_period_starts_at?->toIso8601String(),
                 'current_period_ends_at' => $subscription->current_period_ends_at?->toIso8601String(),
@@ -108,8 +104,11 @@ class SubscriptionController extends Controller
                 'max_gyms' => $plan->max_gyms,
                 'max_members' => $plan->max_members,
                 'max_staff' => $plan->max_staff,
+                'max_trainers' => $plan->max_trainers,
+                'max_membership_plans' => $plan->max_membership_plans,
+                'max_pt_packages' => $plan->max_pt_packages,
                 'is_current' => $subscription?->saas_plan_id === $plan->getKey(),
-                'can_select' => $this->planCoversUsage($plan, $usage),
+                'can_select' => $this->subscriptionQuota->planCoversUsage($plan, $usage),
             ])->values(),
             'selectedPlan' => $selectedPlan === null ? null : [
                 'id' => $selectedPlan->getKey(),
@@ -117,13 +116,13 @@ class SubscriptionController extends Controller
                 'price' => $selectedPlan->price,
                 'currency' => $selectedPlan->currency,
                 'billing_interval_label' => $selectedPlan->billing_interval->label(),
-                'can_select' => $this->planCoversUsage($selectedPlan, $usage),
+                'can_select' => $this->subscriptionQuota->planCoversUsage($selectedPlan, $usage),
             ],
             'canSubmitPayment' => $subscription !== null
                 && $selectedPlan !== null
                 && $subscription->subscriber_id === $request->user()?->getKey()
                 && (float) $selectedPlan->price > 0
-                && $this->planCoversUsage($selectedPlan, $usage)
+                && $this->subscriptionQuota->planCoversUsage($selectedPlan, $usage)
                 && ! $hasPendingPayment,
             'billing' => [
                 'bank_name' => $billingSettings?->bank_name,
@@ -133,13 +132,5 @@ class SubscriptionController extends Controller
                 'is_configured' => $billingSettings?->isConfigured() ?? false,
             ],
         ]);
-    }
-
-    /** @param array{gyms: int, members: int, staff: int} $usage */
-    private function planCoversUsage(SaasPlan $plan, array $usage): bool
-    {
-        return ($plan->max_gyms === null || $usage['gyms'] <= $plan->max_gyms)
-            && ($plan->max_members === null || $usage['members'] <= $plan->max_members)
-            && ($plan->max_staff === null || $usage['staff'] <= $plan->max_staff);
     }
 }

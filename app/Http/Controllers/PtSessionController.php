@@ -26,7 +26,7 @@ class PtSessionController extends Controller
 
     public function index(IndexPtSessionRequest $request): Response
     {
-        $scope = (string) $request->validated('scope', 'today');
+        $scope = (string) $request->validated('scope', $request->route('scope', 'today'));
         $status = $request->validated('status');
         $date = $request->validated('date');
         $trainerId = $this->trainerFilter($request);
@@ -71,7 +71,7 @@ class PtSessionController extends Controller
             ->with([
                 'member:id,member_number,name,phone',
                 'trainer:id,trainer_code,name,specialization',
-                'memberPtPackage:id,pt_package_id,total_sessions,used_sessions,expires_at',
+                'memberPtPackage:id,package_name,pt_package_id,total_sessions,used_sessions,expires_at',
                 'memberPtPackage.ptPackage:id,name',
             ])
             ->when(
@@ -143,7 +143,10 @@ class PtSessionController extends Controller
             'message' => 'Sesi PT berhasil dijadwalkan.',
         ]);
 
-        return to_route('pt-sessions.show', $session->getKey());
+        return to_route(
+            $this->gymContext->role() === GymRole::Trainer ? 'trainer.pt-sessions.show' : 'pt-sessions.show',
+            $session->getKey(),
+        );
     }
 
     private function findSession(int $session): PtSession
@@ -152,7 +155,7 @@ class PtSessionController extends Controller
             ->with([
                 'member:id,member_number,name,phone',
                 'trainer:id,trainer_code,name,specialization',
-                'memberPtPackage:id,pt_package_id,total_sessions,used_sessions,start_date,expires_at,status',
+                'memberPtPackage:id,package_name,pt_package_id,total_sessions,used_sessions,start_date,expires_at,status',
                 'memberPtPackage.ptPackage:id,name',
             ])
             ->whereKey($session)
@@ -217,7 +220,7 @@ class PtSessionController extends Controller
             ],
             'pt_package' => [
                 'id' => $session->memberPtPackage->getKey(),
-                'name' => $session->memberPtPackage->ptPackage->name,
+                'name' => $session->memberPtPackage->package_name,
             ],
         ];
     }

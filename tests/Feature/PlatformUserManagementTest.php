@@ -23,7 +23,7 @@ test('platform admin can browse registered users and inspect subscriber ownershi
     $owner = User::factory()->create(['name' => 'Owner Subscriber']);
     $staff = User::factory()->create(['name' => 'Front Desk Gym']);
     $plan = SaasPlan::factory()->create(['name' => 'Growth']);
-    $gym = Gym::factory()->create(['name' => 'Gym Utama']);
+    $gym = Gym::factory()->create(['name' => 'Gym Utama', 'subscription_id' => null]);
     attachPlatformManagedUser($gym, $owner, GymRole::Owner);
     attachPlatformManagedUser($gym, $staff, GymRole::Admin);
     $subscription = Subscription::factory()

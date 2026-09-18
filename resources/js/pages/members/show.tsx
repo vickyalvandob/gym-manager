@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
-import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
 import { CheckInButton } from '@/components/check-ins/check-in-button';
 import { MemberAvatar } from '@/components/members/member-avatar';
 import { MemberMembershipDialog } from '@/components/members/member-membership-dialog';
@@ -34,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { index } from '@/routes/members';
+import PtSessionController from '@/routes/pt-sessions';
 import type {
     CheckInEligibility,
     MemberDetail,

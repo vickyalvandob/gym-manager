@@ -8,6 +8,7 @@ use App\Models\Member;
 use App\Models\User;
 use App\Support\MemberPortalAccess;
 use App\Support\MemberPortalData;
+use App\Support\MemberQrCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -29,7 +30,9 @@ class MemberPortalController extends Controller
         $member = $this->memberPortalAccess->firstProfile($user);
         abort_unless($member instanceof Member, 403, 'Akun Anda belum memiliki akses portal member aktif.');
 
-        return to_route('member-portal.show', $member);
+        $request->session()->put('member_profile_id', $member->getKey());
+
+        return to_route('my.show');
     }
 
     public function show(Request $request, Member $member): Response
@@ -53,6 +56,26 @@ class MemberPortalController extends Controller
                 'memberPortalCheckIns',
                 rescue: true,
             ),
+        ]);
+    }
+
+    public function qr(Request $request, Member $member, MemberQrCode $qrCode): Response
+    {
+        Gate::authorize('viewPortal', $member);
+
+        return Inertia::render('member-portal/qr', [
+            ...$this->commonProps($request, $member),
+            'qr_code_data_url' => $qrCode->dataUrl($member),
+        ]);
+    }
+
+    public function membership(Request $request, Member $member): Response
+    {
+        Gate::authorize('viewPortal', $member);
+
+        return Inertia::render('member-portal/membership', [
+            ...$this->commonProps($request, $member),
+            'memberships' => $this->memberPortalData->memberships($member),
         ]);
     }
 
@@ -96,6 +119,7 @@ class MemberPortalController extends Controller
         return Inertia::render('member-portal/settings', [
             ...$this->commonProps($request, $member),
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'section' => $request->routeIs('my.security') ? 'security' : ($request->routeIs('my.settings') ? 'profile' : 'all'),
         ]);
     }
 

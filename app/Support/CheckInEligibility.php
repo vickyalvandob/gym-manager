@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\MemberMembershipStatus;
 use App\Enums\MemberStatus;
 use App\Models\CheckIn;
 use App\Models\Member;
@@ -11,6 +12,8 @@ use Carbon\CarbonImmutable;
 class CheckInEligibility
 {
     public const DuplicateWindowMinutes = 5;
+
+    public function __construct(private readonly GymContext $gymContext) {}
 
     /**
      * @return array{
@@ -40,6 +43,10 @@ class CheckInEligibility
                 'Membership tidak aktif pada hari ini. Tetapkan atau perpanjang membership terlebih dahulu.',
                 $latestCheckIn,
             );
+        }
+
+        if ($activeMembership->statusOn($now->setTimezone($this->gymContext->gym()->timezone)) !== MemberMembershipStatus::Active) {
+            return $this->result(false, 'Membership belum dibayar atau masa berlakunya tidak aktif.', $latestCheckIn);
         }
 
         $nextAllowedAt = $latestCheckIn?->checked_in_at

@@ -79,7 +79,7 @@ class PaymentController extends Controller
             ->with([
                 'member:id,member_number,name,phone',
                 'memberMembership:id,plan_name,start_date,end_date',
-                'memberPtPackage:id,pt_package_id,trainer_id,total_sessions,start_date,expires_at',
+                'memberPtPackage:id,package_name,pt_package_id,trainer_id,total_sessions,start_date,expires_at',
                 'memberPtPackage.ptPackage:id,name',
                 'memberPtPackage.trainer:id,name',
                 'receivedBy:id,name',
@@ -170,7 +170,7 @@ class PaymentController extends Controller
             ],
             'personal_training' => $payment->memberPtPackage === null ? null : [
                 'id' => $payment->memberPtPackage->getKey(),
-                'package_name' => $payment->memberPtPackage->ptPackage->name,
+                'package_name' => $payment->memberPtPackage->package_name,
                 'trainer_name' => $payment->memberPtPackage->trainer->name,
                 'total_sessions' => $payment->memberPtPackage->total_sessions,
                 'start_date' => $payment->memberPtPackage->start_date->toDateString(),

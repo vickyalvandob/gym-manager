@@ -18,6 +18,8 @@ createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
+            case name.startsWith('errors/'):
+            case name.startsWith('onboarding/'):
                 return null;
             case name.startsWith('member-portal/'):
                 return MemberPortalLayout;

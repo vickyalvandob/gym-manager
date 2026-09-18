@@ -4,8 +4,10 @@ use App\Http\Middleware\EnsureOnboardingCompleted;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureWorkspaceRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ResolveMemberWorkspace;
 use App\Http\Middleware\SetCurrentGym;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'gym' => SetCurrentGym::class,
+            'workspace' => EnsureWorkspaceRole::class,
+            'member_workspace' => ResolveMemberWorkspace::class,
             'onboarded' => EnsureOnboardingCompleted::class,
             'platform_admin' => EnsurePlatformAdmin::class,
             'subscription_active' => EnsureSubscriptionActive::class,

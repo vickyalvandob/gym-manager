@@ -19,7 +19,7 @@ class OnboardingController extends Controller
     {
         abort_unless($this->gymContext->role() === GymRole::Owner, HttpResponse::HTTP_FORBIDDEN);
 
-        $gym = $this->gymContext->gym()->load('subscription.plan');
+        $gym = $this->gymContext->gym();
 
         if ($gym->onboarding_completed_at !== null) {
             return to_route('dashboard');
@@ -27,25 +27,17 @@ class OnboardingController extends Controller
 
         return Inertia::render('onboarding/edit', [
             'gym' => [
+                'id' => $gym->getKey(),
                 'name' => $gym->name,
                 'timezone' => $gym->timezone,
-                'currency' => $gym->currency,
                 'phone' => $gym->phone,
                 'email' => $gym->email,
                 'address' => $gym->address,
             ],
-            'subscription' => $gym->subscription === null ? null : [
-                'plan_name' => $gym->subscription->plan->name,
-                'status_label' => $gym->subscription->status->label(),
-                'trial_ends_at' => $gym->subscription->trial_ends_at?->toIso8601String(),
-            ],
             'timezoneOptions' => [
-                ['value' => 'Asia/Jakarta', 'label' => 'WIB - Jakarta'],
-                ['value' => 'Asia/Makassar', 'label' => 'WITA - Makassar'],
-                ['value' => 'Asia/Jayapura', 'label' => 'WIT - Jayapura'],
-            ],
-            'currencyOptions' => [
-                ['value' => 'IDR', 'label' => 'IDR - Rupiah'],
+                ['value' => 'Asia/Jakarta', 'label' => 'WIB (UTC+7)'],
+                ['value' => 'Asia/Makassar', 'label' => 'WITA (UTC+8)'],
+                ['value' => 'Asia/Jayapura', 'label' => 'WIT (UTC+9)'],
             ],
         ]);
     }

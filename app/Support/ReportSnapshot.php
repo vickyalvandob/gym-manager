@@ -205,8 +205,8 @@ class ReportSnapshot
         $metrics = $gym->memberMemberships()
             ->toBase()
             ->selectRaw(
-                'COUNT(DISTINCT CASE WHEN start_date <= ? AND end_date >= ? THEN member_id END) AS active_memberships, '
-                .'COUNT(DISTINCT CASE WHEN start_date <= ? AND end_date BETWEEN ? AND ? THEN member_id END) AS expiring_soon, '
+                'COUNT(DISTINCT CASE WHEN activated_at IS NOT NULL AND start_date <= ? AND end_date >= ? THEN member_id END) AS active_memberships, '
+                .'COUNT(DISTINCT CASE WHEN activated_at IS NOT NULL AND start_date <= ? AND end_date BETWEEN ? AND ? THEN member_id END) AS expiring_soon, '
                 .'COALESCE(SUM(CASE WHEN start_date BETWEEN ? AND ? THEN 1 ELSE 0 END), 0) AS started_in_period',
                 [
                     $asOfDate,
@@ -230,6 +230,7 @@ class ReportSnapshot
                         $membershipTable.'.member_id',
                     )
                     ->where('active_memberships.gym_id', $gym->getKey())
+                    ->whereNotNull('active_memberships.activated_at')
                     ->where('active_memberships.start_date', '<=', $asOfDate)
                     ->where('active_memberships.end_date', '>=', $asOfDate);
             })

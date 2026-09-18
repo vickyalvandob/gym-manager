@@ -35,6 +35,7 @@ class CreateTrainer
                     ->lockForUpdate()
                     ->firstOrFail();
                 $this->subscriptionQuota->ensureCanCreateStaff($subscription);
+                $this->subscriptionQuota->ensureCanCreateTrainer($subscription);
             }
 
             $lockedGym = Gym::query()

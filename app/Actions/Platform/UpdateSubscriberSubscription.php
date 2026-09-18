@@ -43,6 +43,8 @@ class UpdateSubscriberSubscription
             $subscription->fill([
                 ...$attributes,
                 'saas_plan_id' => $plan->getKey(),
+                'trial_ends_at' => null,
+                'current_period_ends_at' => $plan->slug === 'free' ? null : ($attributes['current_period_ends_at'] ?? null),
                 'suspended_at' => $status === SubscriptionStatus::Suspended ? now() : null,
                 'cancelled_at' => $status === SubscriptionStatus::Cancelled ? now() : null,
             ]);

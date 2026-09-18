@@ -18,7 +18,7 @@ class MemberPortalAccess
         $member->loadMissing(['gym.subscription']);
 
         return $member->gym->status === GymStatus::Active
-            && ($member->gym->subscription === null || $member->gym->subscription->grantsAccess());
+            && $member->gym->subscription?->grantsAccess() === true;
     }
 
     /** @return Collection<int, Member> */

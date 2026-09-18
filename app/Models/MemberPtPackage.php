@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int $member_id
  * @property int $trainer_id
  * @property int $pt_package_id
+ * @property string|null $package_name
  * @property int $total_sessions
  * @property int $used_sessions
  * @property Carbon $start_date
@@ -38,6 +39,7 @@ use Illuminate\Support\Carbon;
     'member_id',
     'trainer_id',
     'pt_package_id',
+    'package_name',
     'total_sessions',
     'used_sessions',
     'start_date',

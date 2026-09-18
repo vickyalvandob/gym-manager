@@ -28,7 +28,7 @@ class SaasPlanFactory extends Factory
             'price' => fake()->randomElement(['299000.00', '599000.00', '999000.00']),
             'currency' => 'IDR',
             'billing_interval' => SaasPlanInterval::Monthly,
-            'trial_days' => 14,
+            'trial_days' => 0,
             'max_gyms' => 1,
             'max_members' => 500,
             'max_staff' => 10,

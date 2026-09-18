@@ -1,6 +1,5 @@
 import { Form } from '@inertiajs/react';
 import { CalendarPlus } from 'lucide-react';
-import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePtSessionRoutes } from '@/hooks/use-pt-session-routes';
 
 export function PtScheduleDialog({
     memberPtPackageId,
@@ -33,6 +33,8 @@ export function PtScheduleDialog({
     triggerLabel?: string;
     triggerVariant?: 'default' | 'outline' | 'ghost';
 }) {
+    const sessionRoutes = usePtSessionRoutes();
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -55,7 +57,7 @@ export function PtScheduleDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <Form
-                    {...PtSessionController.store.form()}
+                    {...sessionRoutes.store.form()}
                     options={{ preserveScroll: true }}
                 >
                     {({ errors, processing }) => (

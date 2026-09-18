@@ -20,7 +20,6 @@ import type { ComponentType } from 'react';
 import CheckInController from '@/actions/App/Http/Controllers/CheckInController';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
-import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
 import { PaymentStatusBadge } from '@/components/payments/payment-status-badge';
 import { PtSessionStatusBadge } from '@/components/personal-training/pt-session-status-badge';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +33,7 @@ import {
     index as membersIndex,
 } from '@/routes/members';
 import { index as reportsIndex } from '@/routes/reports';
+import PtSessionController from '@/routes/trainer/pt-sessions';
 import {
     index as trainerMembersIndex,
     show as trainerMemberShow,

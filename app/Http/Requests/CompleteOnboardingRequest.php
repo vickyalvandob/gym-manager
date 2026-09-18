@@ -29,7 +29,6 @@ class CompleteOnboardingRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'timezone' => ['required', 'timezone:all'],
-            'currency' => ['required', 'string', 'size:3'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
@@ -41,10 +40,24 @@ class CompleteOnboardingRequest extends FormRequest
         $this->merge([
             'name' => $this->string('name')->squish()->toString(),
             'timezone' => $this->string('timezone')->trim()->toString(),
-            'currency' => $this->string('currency', 'IDR')->upper()->toString(),
             'phone' => $this->filled('phone') ? $this->string('phone')->trim()->toString() : null,
             'email' => $this->filled('email') ? $this->string('email')->lower()->trim()->toString() : null,
             'address' => $this->filled('address') ? $this->string('address')->trim()->toString() : null,
         ]);
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Masukkan nama gym Anda.',
+            'name.max' => 'Nama gym maksimal 120 karakter.',
+            'timezone.required' => 'Pilih zona waktu lokasi gym Anda.',
+            'timezone.timezone' => 'Pilih zona waktu yang valid.',
+            'phone.max' => 'Nomor telepon maksimal 30 karakter.',
+            'email.email' => 'Masukkan alamat email yang valid.',
+            'email.max' => 'Email gym maksimal 255 karakter.',
+            'address.max' => 'Alamat maksimal 1.000 karakter.',
+        ];
     }
 }

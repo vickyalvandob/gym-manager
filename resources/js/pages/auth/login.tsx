@@ -137,5 +137,5 @@ export default function Login({ status, canResetPassword }: Props) {
 Login.layout = {
     title: 'Selamat datang kembali',
     description:
-        'Satu halaman masuk untuk Owner, Front Desk, Trainer, dan Member.',
+        'Satu halaman masuk untuk Owner, Front Office, Trainer, dan Member.',
 };

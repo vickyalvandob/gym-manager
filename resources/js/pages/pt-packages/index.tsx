@@ -121,7 +121,7 @@ export default function PtPackagesIndex({
                         <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
                             {hasFilters
                                 ? 'Ubah kata pencarian atau status untuk melihat hasil lain.'
-                                : 'Tambahkan paket agar Front Desk dapat menjual sesi Personal Training.'}
+                                : 'Tambahkan paket agar Front Office dapat menjual sesi Personal Training.'}
                         </p>
                         {canCreate && !hasFilters && (
                             <Button className="mt-4" size="sm" asChild>

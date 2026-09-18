@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage, usePoll } from '@inertiajs/react';
+import { Form, Head, Link, router, usePage, usePoll } from '@inertiajs/react';
 import {
     CalendarClock,
     CheckCircle2,
@@ -15,10 +15,12 @@ import type { FormEvent, ReactNode } from 'react';
 import CheckInController from '@/actions/App/Http/Controllers/CheckInController';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
 import { CheckInButton } from '@/components/check-ins/check-in-button';
+import InputError from '@/components/input-error';
 import { MemberAvatar } from '@/components/members/member-avatar';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { formatDate, formatDateTime } from '@/lib/formatters';
 import type {
     CheckInIndexProps,
@@ -125,6 +127,37 @@ export default function CheckInsIndex({
                         Proteksi duplikat {duplicateWindowMinutes} menit
                     </p>
                 </header>
+
+                <Form
+                    {...CheckInController.scan.form()}
+                    resetOnSuccess
+                    options={{ preserveScroll: true }}
+                    className="rounded-lg border p-4"
+                >
+                    {({ errors, processing }) => (
+                        <div className="space-y-2">
+                            <Label htmlFor="member-qr">Scan QR member</Label>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <Input
+                                    id="member-qr"
+                                    name="qr"
+                                    placeholder="Pindai dengan scanner QR atau tempel kode QR"
+                                    autoComplete="off"
+                                    required
+                                    maxLength={300}
+                                />
+                                <Button type="submit" disabled={processing}>
+                                    {processing
+                                        ? 'Memvalidasi...'
+                                        : 'Validasi & Check-in'}
+                                </Button>
+                            </div>
+                            <InputError
+                                message={errors.qr ?? errors.check_in}
+                            />
+                        </div>
+                    )}
+                </Form>
 
                 <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
                     <section className="min-w-0">

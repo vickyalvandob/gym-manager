@@ -19,8 +19,16 @@ class CompleteGymOnboarding
     {
         return DB::transaction(function () use ($attributes): Gym {
             $gym = Gym::query()->lockForUpdate()->findOrFail($this->gymContext->gymId());
+
+            if ($gym->onboarding_completed_at !== null) {
+                return $gym;
+            }
+
             $gym->fill($attributes);
-            $gym->forceFill(['onboarding_completed_at' => now()]);
+            $gym->forceFill([
+                'currency' => 'IDR',
+                'onboarding_completed_at' => now(),
+            ]);
             $gym->save();
 
             $this->activityLogger->record('gym.onboarding_completed', $gym, [

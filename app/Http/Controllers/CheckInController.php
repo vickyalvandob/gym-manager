@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\CheckIns\RecordMemberCheckIn;
 use App\Http\Requests\IndexCheckInRequest;
+use App\Http\Requests\ScanCheckInRequest;
 use App\Http\Requests\StoreCheckInRequest;
 use App\Models\CheckIn;
 use App\Models\Member;
@@ -16,6 +17,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -111,6 +113,27 @@ class CheckInController extends Controller
         return back();
     }
 
+    public function scan(ScanCheckInRequest $request, RecordMemberCheckIn $recordMemberCheckIn): RedirectResponse
+    {
+        $parts = explode(':', trim((string) $request->validated('qr')));
+        $gym = $this->gymContext->gym();
+        $member = count($parts) === 4 && $parts[0] === 'GYMLO' && $parts[1] === $gym->slug
+            ? $gym->members()->where('member_number', $parts[2])->first()
+            : null;
+
+        if (! $member instanceof Member || ! is_string($member->portal_qr_token)
+            || ! hash_equals($member->portal_qr_token, $parts[3])) {
+            throw ValidationException::withMessages(['qr' => 'QR member tidak valid untuk gym ini.']);
+        }
+
+        $user = $request->user();
+        abort_unless($user instanceof User, 403);
+        $recordMemberCheckIn->handle($member, $user);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Check-in {$member->member_number} berhasil dicatat."]);
+
+        return to_route('check-ins.index');
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -139,6 +162,7 @@ class CheckInController extends Controller
                         'member_memberships.member_id',
                         'member_memberships.plan_name',
                         'member_memberships.start_date',
+                        'member_memberships.activated_at',
                         'member_memberships.end_date',
                     ])
                     ->where('member_memberships.gym_id', $this->gymContext->gymId())

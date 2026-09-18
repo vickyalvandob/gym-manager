@@ -102,7 +102,7 @@ test('trainer schedules only assigned PT clients and overlap is rejected', funct
 
     $this->actingAs($trainerUser)
         ->withSession(['current_gym_id' => $gym->getKey()])
-        ->post(route('pt-sessions.store'), [
+        ->post(route('trainer.pt-sessions.store'), [
             'member_pt_package_id' => $package->getKey(),
             'date' => '2026-08-28',
             'start_time' => '18:00',
@@ -114,7 +114,7 @@ test('trainer schedules only assigned PT clients and overlap is rejected', funct
     expect($session->scheduled_at->toIso8601String())->toBe('2026-08-28T11:00:00+00:00')
         ->and($package->fresh()->used_sessions)->toBe(0);
 
-    $this->post(route('pt-sessions.store'), [
+    $this->post(route('trainer.pt-sessions.store'), [
         'member_pt_package_id' => $package->getKey(),
         'date' => '2026-08-28',
         'start_time' => '18:30',
@@ -193,20 +193,20 @@ test('completion is idempotent cancellation is free and no show follows gym sett
 
     $this->actingAs($trainerUser)
         ->withSession(['current_gym_id' => $gym->getKey()])
-        ->patch(route('pt-sessions.complete', $completed))
+        ->patch(route('trainer.pt-sessions.complete', $completed))
         ->assertRedirect();
     expect($package->fresh()->used_sessions)->toBe(1);
 
-    $this->patch(route('pt-sessions.complete', $completed))->assertSessionHasErrors('session');
+    $this->patch(route('trainer.pt-sessions.complete', $completed))->assertSessionHasErrors('session');
     expect($package->fresh()->used_sessions)->toBe(1);
 
-    $this->patch(route('pt-sessions.cancel', $cancelled), [
+    $this->patch(route('trainer.pt-sessions.cancel', $cancelled), [
         'cancellation_reason' => 'Member berhalangan.',
     ])->assertRedirect();
     expect($package->fresh()->used_sessions)->toBe(1)
         ->and($cancelled->fresh()->status)->toBe(PtSessionStatus::Cancelled);
 
-    $this->patch(route('pt-sessions.no-show', $noShow))->assertRedirect();
+    $this->patch(route('trainer.pt-sessions.no-show', $noShow))->assertRedirect();
     expect($package->fresh()->used_sessions)->toBe(2)
         ->and($noShow->fresh()->quota_consumed)->toBeTrue();
 });
@@ -231,7 +231,7 @@ test('expired packages reserved quota and cross trainer access are enforced', fu
 
     $this->actingAs($trainerUser)
         ->withSession(['current_gym_id' => $gym->getKey()])
-        ->post(route('pt-sessions.store'), [
+        ->post(route('trainer.pt-sessions.store'), [
             'member_pt_package_id' => $expiredPackage->getKey(),
             'date' => '2026-08-28',
             'start_time' => '18:00',
@@ -251,7 +251,7 @@ test('expired packages reserved quota and cross trainer access are enforced', fu
         'trainer_id' => $trainer->getKey(),
     ]);
 
-    $this->post(route('pt-sessions.store'), [
+    $this->post(route('trainer.pt-sessions.store'), [
         'member_pt_package_id' => $activePackage->getKey(),
         'date' => '2026-08-29',
         'start_time' => '18:00',
@@ -260,7 +260,7 @@ test('expired packages reserved quota and cross trainer access are enforced', fu
 
     $this->actingAs($otherTrainerUser)
         ->withSession(['current_gym_id' => $gym->getKey()])
-        ->get(route('pt-sessions.show', $session))
+        ->get(route('trainer.pt-sessions.show', $session))
         ->assertForbidden();
 
     expect($otherTrainer->members()->count())->toBe(0)

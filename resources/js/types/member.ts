@@ -1,6 +1,7 @@
 export type MemberStatus = 'active' | 'inactive';
 export type MemberGender = 'male' | 'female';
-export type MemberMembershipStatus = 'upcoming' | 'active' | 'expired';
+export type MemberMembershipStatus =
+    'pending' | 'upcoming' | 'active' | 'expired';
 export type MembershipDurationUnit = 'day' | 'week' | 'month' | 'year';
 
 export type SelectOption = {

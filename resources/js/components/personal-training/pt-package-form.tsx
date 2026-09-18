@@ -152,7 +152,7 @@ export function PtPackageForm({
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
                             Opsional; tulis manfaat atau ketentuan yang perlu
-                            diketahui Front Desk.
+                            diketahui Front Office.
                         </p>
                         <div className="mt-5 grid gap-2">
                             <Label htmlFor="description">Deskripsi</Label>

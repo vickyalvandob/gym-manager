@@ -20,7 +20,7 @@ export default function EditStaff({
                         {staffMember.name}
                     </p>
                     <h1 className="mt-1 text-2xl font-semibold">
-                        Edit Front Desk
+                        Edit Front Office
                     </h1>
                 </header>
                 <FrontDeskForm
@@ -38,6 +38,6 @@ export default function EditStaff({
 EditStaff.layout = {
     breadcrumbs: [
         { title: 'Staf Gym', href: index() },
-        { title: 'Edit Front Desk', href: '#' },
+        { title: 'Edit Front Office', href: '#' },
     ],
 };

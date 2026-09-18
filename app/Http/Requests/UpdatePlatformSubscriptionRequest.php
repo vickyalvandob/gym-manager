@@ -31,8 +31,8 @@ class UpdatePlatformSubscriptionRequest extends FormRequest
                 'integer',
                 Rule::exists(SaasPlan::class, 'id')->where('is_active', true),
             ],
-            'status' => ['required', Rule::enum(SubscriptionStatus::class)],
-            'trial_ends_at' => ['nullable', 'date'],
+            'status' => ['required', Rule::enum(SubscriptionStatus::class), Rule::notIn([SubscriptionStatus::Trialing->value])],
+            'trial_ends_at' => ['prohibited'],
             'current_period_starts_at' => ['nullable', 'date'],
             'current_period_ends_at' => ['nullable', 'date', 'after:current_period_starts_at'],
         ];

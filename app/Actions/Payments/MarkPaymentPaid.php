@@ -44,6 +44,14 @@ class MarkPaymentPaid
                 'received_by_id' => $receivedBy->getKey(),
             ]);
 
+            if ($lockedPayment->member_membership_id !== null) {
+                $this->gymContext->gym()->memberMemberships()
+                    ->whereKey($lockedPayment->member_membership_id)
+                    ->where('member_id', $lockedPayment->member_id)
+                    ->whereNull('activated_at')
+                    ->update(['activated_at' => $lockedPayment->paid_at]);
+            }
+
             $this->activityLogger->record('payment.paid', $lockedPayment, [
                 'invoice_number' => $lockedPayment->invoice_number,
                 'member_id' => $lockedPayment->member_id,

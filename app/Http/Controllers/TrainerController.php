@@ -119,6 +119,7 @@ class TrainerController extends Controller
                     'member_memberships.member_id',
                     'member_memberships.plan_name',
                     'member_memberships.start_date',
+                    'member_memberships.activated_at',
                     'member_memberships.end_date',
                 ])
                 ->where('member_memberships.gym_id', $this->gymContext->gymId())

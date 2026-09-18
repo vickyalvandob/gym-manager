@@ -51,8 +51,7 @@ export function AppSidebar() {
     const { auth } = usePage().props;
     const isPlatformWorkspace =
         auth.isPlatformAdmin && auth.currentGym === null;
-    const hasSubscriptionAccess =
-        auth.subscription === null || auth.subscription.grants_access;
+    const hasSubscriptionAccess = auth.subscription?.grants_access === true;
     const subscriptionBlockedReason = auth.subscription?.has_pending_payment
         ? 'Pembayaran subscription sedang menunggu persetujuan.'
         : 'Subscription berakhir. Selesaikan pembayaran untuk membuka menu ini.';

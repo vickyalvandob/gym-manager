@@ -11,6 +11,9 @@ export type SaasPlan = {
     max_gyms: number | null;
     max_members: number | null;
     max_staff: number | null;
+    max_trainers: number | null;
+    max_membership_plans: number | null;
+    max_pt_packages: number | null;
     is_active: boolean;
     sort_order: number;
     subscriptions_count: number;

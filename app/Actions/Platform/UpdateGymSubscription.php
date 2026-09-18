@@ -3,12 +3,14 @@
 namespace App\Actions\Platform;
 
 use App\Enums\SubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Gym;
 use App\Models\SaasPlan;
 use App\Models\Subscription;
 use App\Support\PlatformActivityLogger;
 use App\Support\SubscriptionQuota;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class UpdateGymSubscription
 {
@@ -52,9 +54,18 @@ class UpdateGymSubscription
             } else {
                 $this->subscriptionQuota->ensurePlanCoversUsage($subscription, $plan);
             }
+            if ($subscription->exists && $subscription->payments()
+                ->where('status', SubscriptionPaymentStatus::Pending)->exists()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Review pembayaran pending untuk mengubah status dan periode subscription.',
+                ]);
+            }
+
             $subscription->fill([
                 ...$attributes,
                 'saas_plan_id' => $plan->getKey(),
+                'trial_ends_at' => null,
+                'current_period_ends_at' => $plan->slug === 'free' ? null : ($attributes['current_period_ends_at'] ?? null),
                 'suspended_at' => $status === SubscriptionStatus::Suspended ? now() : null,
                 'cancelled_at' => $status === SubscriptionStatus::Cancelled ? now() : null,
             ]);

@@ -21,14 +21,20 @@ class SwitchCurrentGymController extends Controller
 
         abort_unless($accessibleGym instanceof Gym, Response::HTTP_NOT_FOUND);
 
-        $request->session()->put('current_gym_id', $gym->getKey());
+        $role = GymRole::from((string) $accessibleGym->getRelation('pivot')->getAttribute('role'));
 
         if ($gym->status === GymStatus::Suspended) {
-            $role = GymRole::from((string) $accessibleGym->getRelation('pivot')->getAttribute('role'));
-
             abort_unless($role === GymRole::Owner, Response::HTTP_FORBIDDEN);
 
+            $request->session()->put('current_gym_id', $gym->getKey());
+
             return to_route('subscription.show');
+        }
+
+        $request->session()->put('current_gym_id', $gym->getKey());
+
+        if ($role === GymRole::Trainer) {
+            return to_route('trainer.dashboard');
         }
 
         return $gym->onboarding_completed_at === null

@@ -113,6 +113,7 @@ class PurchasePtPackage
                 'member_id' => $lockedMember->getKey(),
                 'trainer_id' => $lockedTrainer->getKey(),
                 'pt_package_id' => $lockedPtPackage->getKey(),
+                'package_name' => $lockedPtPackage->name,
                 'total_sessions' => $lockedPtPackage->session_count,
                 'used_sessions' => 0,
                 'start_date' => $startDate->toDateString(),

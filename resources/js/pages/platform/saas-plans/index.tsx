@@ -21,8 +21,7 @@ export default function SaasPlanIndex({ plans }: { plans: SaasPlan[] }) {
                             Paket SaaS
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Atur harga, trial, dan kapasitas untuk onboarding
-                            gym.
+                            Atur harga dan kapasitas untuk paket gym.
                         </p>
                     </div>
                     <Button asChild>

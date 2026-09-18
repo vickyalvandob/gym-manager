@@ -58,8 +58,8 @@ export default function StaffIndex({
                             Staf Gym
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Kelola Front Desk dan lihat akun Trainer khusus gym
-                            yang sedang dipilih.
+                            Kelola Front Office dan lihat akun Trainer khusus
+                            gym yang sedang dipilih.
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export default function StaffIndex({
                         </Button>
                         <Button size="sm" asChild>
                             <Link href={StaffController.create()}>
-                                <Plus /> Tambah Front Desk
+                                <Plus /> Tambah Front Office
                             </Link>
                         </Button>
                     </div>
@@ -116,7 +116,7 @@ export default function StaffIndex({
                                 aria-label="Filter role staf"
                             >
                                 <option value="">Semua role</option>
-                                <option value="admin">Front Desk</option>
+                                <option value="admin">Front Office</option>
                                 <option value="trainer">Trainer</option>
                             </select>
                             <select
@@ -160,7 +160,7 @@ export default function StaffIndex({
                         <p className="mt-1 max-w-md text-sm text-muted-foreground">
                             {hasFilters
                                 ? 'Ubah pencarian atau filter untuk melihat hasil lain.'
-                                : 'Tambahkan Front Desk untuk operasional harian, atau Trainer untuk layanan PT.'}
+                                : 'Tambahkan Front Office untuk operasional harian, atau Trainer untuk layanan PT.'}
                         </p>
                     </section>
                 ) : (

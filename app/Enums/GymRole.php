@@ -12,7 +12,7 @@ enum GymRole: string
     {
         return match ($this) {
             self::Owner => 'Owner',
-            self::Admin => 'Front Desk',
+            self::Admin => 'Front Office',
             self::Trainer => 'Trainer',
         };
     }

@@ -18,6 +18,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Actions/Members/** | .ai/rules/members.md |
 | app/Http/Middleware/** | .ai/rules/middleware.md |
 | app/{Models,Http,Actions,Policies,Support}/** | .ai/rules/models-http-actions-policies-support.md |
+| app/Actions/Onboarding/**,app/Http/{Controllers/OnboardingController.php,Requests/CompleteOnboardingRequest.php,Responses/RegisterResponse.php},resources/js/pages/onboarding/** | .ai/rules/onboarding.md |
 | resources/js/pages/dashboard.tsx | .ai/rules/pages.md |
 | resources/js/pages/payments/** | .ai/rules/payments.md |
 | database/seeders/** | .ai/rules/seeders.md |

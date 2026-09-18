@@ -42,7 +42,7 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('onboarding.edit'));
 
     $user = User::query()->where('email', 'test@example.com')->firstOrFail();
     $gym = $user->gyms()->firstOrFail();
@@ -78,7 +78,7 @@ test('registration ignores submitted paid plan and always starts on free', funct
         'email' => 'free@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
-    ])->assertRedirect(route('dashboard', absolute: false));
+    ])->assertRedirect(route('onboarding.edit'));
 
     $user = User::query()->where('email', 'free@example.com')->firstOrFail();
     $subscription = $user->subscription()->firstOrFail();
@@ -100,4 +100,42 @@ test('gym name is required and registration does not create partial data', funct
 
     $response->assertSessionHasErrors('gym_name');
     expect(User::query()->where('email', 'test@example.com')->exists())->toBeFalse();
+});
+
+test('registration goes directly to setup even when the session has an intended destination', function () {
+    $this->withSession(['url.intended' => route('members.index')])
+        ->post(route('register.store'), [
+            'name' => 'New Owner',
+            'gym_name' => 'Gym Onboarding',
+            'email' => 'onboarding@example.test',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+        ->assertRedirect(route('onboarding.edit'))
+        ->assertSessionMissing('url.intended');
+
+    $this->get(route('onboarding.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('onboarding/edit')
+            ->where('gym.name', 'Gym Onboarding'));
+
+    $this->put(route('onboarding.update'), [
+        'name' => 'Gym Onboarding',
+        'timezone' => 'Asia/Jakarta',
+    ])->assertRedirect(route('dashboard'));
+
+    $this->get(route('dashboard'))->assertOk();
+});
+
+test('json registration preserves the created response', function () {
+    $this->postJson(route('register.store'), [
+        'name' => 'API Owner',
+        'gym_name' => 'Gym JSON',
+        'email' => 'json@example.test',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertCreated();
+
+    $this->assertAuthenticated();
 });

@@ -209,7 +209,7 @@ test('trainer dashboard exposes only the linked trainers assigned members', func
 
     $this->actingAs($trainerUser)
         ->withSession(['current_gym_id' => $gym->getKey()])
-        ->get(route('dashboard'))
+        ->get(route('trainer.dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->missing('snapshot')
             ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
@@ -228,24 +228,21 @@ test('trainer dashboard exposes only the linked trainers assigned members', func
 
     $trainer->members()->detach($foreignMember);
 
-    $this->get(route('trainers.show', $trainer))
+    $this->get(route('trainer-members.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('assignedMembers.total', 1)
-            ->where('assignedMembers.data.0.name', 'Member Ditangani')
-            ->where('canAssign', false));
+            ->where('members.total', 1)
+            ->where('members.data.0.name', 'Member Ditangani'));
+
+    $this->get(route('trainers.show', $trainer))->assertForbidden();
 
     $this->get(route('trainers.index'))->assertForbidden();
     $this->get(route('trainers.show', $otherTrainer))->assertForbidden();
-    $this->get(route('trainers.show', $foreignTrainer))->assertNotFound();
+    $this->get(route('trainers.show', $foreignTrainer))->assertForbidden();
 
     $trainer->update(['status' => TrainerStatus::Inactive]);
     $this->get(route('trainers.show', $trainer))->assertForbidden();
-    $this->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
-                ->where('snapshot.trainer_workspace.trainer', null)
-                ->where('snapshot.trainer_workspace.assigned_members_count', 0)));
+    $this->get(route('trainer.dashboard'))->assertForbidden();
 
     expect($unassignedMember->name)->toBe('Member Bukan Assignment');
 });

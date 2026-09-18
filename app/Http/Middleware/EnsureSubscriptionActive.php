@@ -21,7 +21,7 @@ class EnsureSubscriptionActive
     {
         $subscription = $this->gymContext->gym()->subscription()->first();
 
-        if ($subscription === null || $subscription->grantsAccess()) {
+        if ($subscription?->grantsAccess() === true) {
             return $next($request);
         }
 

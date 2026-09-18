@@ -1,11 +1,11 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, CalendarClock, Phone } from 'lucide-react';
-import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
 import TrainerMemberController from '@/actions/App/Http/Controllers/TrainerMemberController';
 import { PtScheduleDialog } from '@/components/personal-training/pt-schedule-dialog';
 import { PtSessionStatusBadge } from '@/components/personal-training/pt-session-status-badge';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatDateTime } from '@/lib/formatters';
+import PtSessionController from '@/routes/trainer/pt-sessions';
 import type { TrainerWorkspaceMember } from '@/types';
 
 export default function ShowTrainerMember({

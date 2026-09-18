@@ -2,11 +2,12 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CalendarClock, Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import PtSessionController from '@/actions/App/Http/Controllers/PtSessionController';
 import { PtSessionStatusBadge } from '@/components/personal-training/pt-session-status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { usePtSessionRoutes } from '@/hooks/use-pt-session-routes';
 import { formatDateTime } from '@/lib/formatters';
+import PtSessionController from '@/routes/pt-sessions';
 import type { PaginatedPtSessions, SelectOption } from '@/types';
 
 type Filters = {
@@ -31,6 +32,7 @@ export default function PtSessionsIndex({
     isTrainer: boolean;
 }) {
     const { auth } = usePage().props;
+    const sessionRoutes = usePtSessionRoutes();
     const [trainerId, setTrainerId] = useState(
         filters.trainer_id?.toString() ?? '',
     );
@@ -40,7 +42,7 @@ export default function PtSessionsIndex({
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         router.get(
-            PtSessionController.index.url(),
+            sessionRoutes.index.url(),
             {
                 scope: filters.scope,
                 trainer_id: trainerId,
@@ -77,7 +79,7 @@ export default function PtSessionsIndex({
                             asChild
                         >
                             <Link
-                                href={PtSessionController.index({
+                                href={sessionRoutes.index({
                                     query: { scope: value },
                                 })}
                             >
@@ -169,7 +171,7 @@ export default function PtSessionsIndex({
                                         >
                                             <td className="px-4 py-3">
                                                 <Link
-                                                    href={PtSessionController.show(
+                                                    href={sessionRoutes.show(
                                                         session.id,
                                                     )}
                                                     className="font-medium hover:text-primary"
@@ -217,7 +219,7 @@ export default function PtSessionsIndex({
                             {sessions.data.map((session) => (
                                 <Link
                                     key={session.id}
-                                    href={PtSessionController.show(session.id)}
+                                    href={sessionRoutes.show(session.id)}
                                     className="rounded-lg border p-4"
                                 >
                                     <div className="flex items-start justify-between gap-3">

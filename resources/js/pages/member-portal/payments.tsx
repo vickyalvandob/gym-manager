@@ -60,8 +60,8 @@ export default function MemberPortalPayments({
                                     Belum ada invoice
                                 </p>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                    Invoice baru dari Front Desk akan tampil di
-                                    sini.
+                                    Invoice baru dari Front Office akan tampil
+                                    di sini.
                                 </p>
                             </div>
                         ) : (

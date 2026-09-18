@@ -33,6 +33,9 @@ type Plan = {
     max_gyms: number | null;
     max_members: number | null;
     max_staff: number | null;
+    max_trainers: number | null;
+    max_membership_plans: number | null;
+    max_pt_packages: number | null;
     is_current: boolean;
     can_select: boolean;
 };
@@ -64,11 +67,21 @@ type Props = {
         price: string;
         currency: string;
         billing_interval_label: string;
-        usage: { gyms: number; members: number; staff: number };
+        usage: {
+            gyms: number;
+            members: number;
+            staff: number;
+            trainers: number;
+            membership_plans: number;
+            pt_packages: number;
+        };
         limits: {
             gyms: number | null;
             members: number | null;
             staff: number | null;
+            trainers: number | null;
+            membership_plans: number | null;
+            pt_packages: number | null;
         };
         trial_ends_at: string | null;
         current_period_starts_at: string | null;
@@ -113,7 +126,7 @@ export default function SubscriptionShow(props: Props) {
                             Paket & pembayaran
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Satu subscription berlaku untuk seluruh gym milik
+                            Satu subscription berlaku untuk seluruh outlet milik
                             akun ini.
                         </p>
                     </div>
@@ -242,8 +255,12 @@ function Overview({
             </div>
             <dl className="grid gap-5 p-5 sm:grid-cols-3">
                 <Info
-                    label="Trial berakhir"
-                    value={formatDate(subscription.trial_ends_at)}
+                    label="Model paket"
+                    value={
+                        Number(subscription.price) === 0
+                            ? 'Free Plan tanpa trial'
+                            : 'Berlangganan'
+                    }
                 />
                 <Info
                     label="Periode dimulai"
@@ -251,13 +268,17 @@ function Overview({
                 />
                 <Info
                     label="Periode berakhir"
-                    value={formatDate(subscription.current_period_ends_at)}
+                    value={
+                        subscription.current_period_ends_at === null
+                            ? 'Tanpa batas waktu'
+                            : formatDate(subscription.current_period_ends_at)
+                    }
                 />
             </dl>
             <div className="grid gap-3 border-t p-5 sm:grid-cols-3">
                 <Capacity
                     icon={Building2}
-                    label="Gym"
+                    label="Outlet"
                     usage={subscription.usage.gyms}
                     limit={subscription.limits.gyms}
                 />
@@ -272,6 +293,24 @@ function Overview({
                     label="Staf"
                     usage={subscription.usage.staff}
                     limit={subscription.limits.staff}
+                />
+                <Capacity
+                    icon={UsersRound}
+                    label="Trainer"
+                    usage={subscription.usage.trainers}
+                    limit={subscription.limits.trainers}
+                />
+                <Capacity
+                    icon={UsersRound}
+                    label="Paket membership"
+                    usage={subscription.usage.membership_plans}
+                    limit={subscription.limits.membership_plans}
+                />
+                <Capacity
+                    icon={UsersRound}
+                    label="Paket PT"
+                    usage={subscription.usage.pt_packages}
+                    limit={subscription.limits.pt_packages}
                 />
             </div>
         </section>
@@ -323,12 +362,27 @@ function Plans({ plans }: { plans: Plan[] }) {
                                 {plan.description}
                             </p>
                             <ul className="mt-4 grid gap-2 text-sm">
-                                <Limit label="Gym" value={plan.max_gyms} />
+                                <Limit label="Outlet" value={plan.max_gyms} />
                                 <Limit
                                     label="Member"
                                     value={plan.max_members}
                                 />
-                                <Limit label="Staf" value={plan.max_staff} />
+                                <Limit
+                                    label="Staf (termasuk trainer)"
+                                    value={plan.max_staff}
+                                />
+                                <Limit
+                                    label="Trainer"
+                                    value={plan.max_trainers}
+                                />
+                                <Limit
+                                    label="Paket membership"
+                                    value={plan.max_membership_plans}
+                                />
+                                <Limit
+                                    label="Paket PT"
+                                    value={plan.max_pt_packages}
+                                />
                             </ul>
                             <div className="mt-5">
                                 {isFree ? (

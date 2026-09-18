@@ -100,7 +100,7 @@ test('assignment calculates an inclusive end date snapshots the plan and writes 
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('activeMembership.id', $membership->getKey())
-            ->where('activeMembership.status', 'active'));
+            ->where('activeMembership.status', 'pending'));
 
     $plan->update(['name' => 'Nama Paket Baru', 'price' => '300000.00']);
 

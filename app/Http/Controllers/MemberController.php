@@ -70,6 +70,7 @@ class MemberController extends Controller
                     'member_memberships.duration_unit',
                     'member_memberships.price',
                     'member_memberships.start_date',
+                    'member_memberships.activated_at',
                     'member_memberships.end_date',
                     'member_memberships.created_at',
                 ])
@@ -628,7 +629,7 @@ class MemberController extends Controller
 
         return [
             'id' => $memberPtPackage->getKey(),
-            'name' => $memberPtPackage->ptPackage->name,
+            'name' => $memberPtPackage->package_name,
             'trainer' => $this->trainerOptionData($memberPtPackage->trainer),
             'total_sessions' => $memberPtPackage->total_sessions,
             'used_sessions' => $memberPtPackage->used_sessions,
@@ -656,7 +657,7 @@ class MemberController extends Controller
             'status' => $session->status->value,
             'status_label' => $session->status->label(),
             'trainer' => $this->trainerOptionData($session->trainer),
-            'pt_package_name' => $session->memberPtPackage->ptPackage->name,
+            'pt_package_name' => $session->memberPtPackage->package_name,
         ];
     }
 

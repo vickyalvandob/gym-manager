@@ -1,5 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -18,21 +18,6 @@ export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title="Daftar" />
-
-            <div className="mb-6 flex items-start gap-3 border-l-2 border-primary bg-primary/5 px-4 py-3.5">
-                <CheckCircle2
-                    className="mt-0.5 size-4 shrink-0 text-primary"
-                    aria-hidden
-                />
-                <div>
-                    <p className="text-sm font-medium">
-                        Mulai langsung dengan Free
-                    </p>
-                    <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-                        Mulai dengan 1 gym, hingga 20 member dan 5 staff.
-                    </p>
-                </div>
-            </div>
 
             <Form
                 {...store.form()}
@@ -162,7 +147,11 @@ export default function Register({ passwordRules }: Props) {
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
-                                <span>Buat workspace gratis</span>
+                                <span>
+                                    {processing
+                                        ? 'Membuat akun...'
+                                        : 'Buat akun & lanjutkan'}
+                                </span>
                                 {!processing && (
                                     <ArrowRight
                                         className="size-4"
@@ -190,7 +179,7 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: 'Bangun workspace gym Anda',
+    title: 'Buat akun gym Anda',
     description:
-        'Satu langkah untuk membuat akun Owner dan gym pertama yang siap digunakan.',
+        'Daftar gratis, lalu lengkapi profil gym untuk mulai mengelola operasional.',
 };

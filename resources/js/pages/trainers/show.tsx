@@ -282,7 +282,7 @@ export default function ShowTrainer({
                             <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
                                 {canAssign
                                     ? 'Cari member aktif di atas, lalu tugaskan ke trainer ini.'
-                                    : 'Owner atau Front Desk belum menambahkan member untuk trainer ini.'}
+                                    : 'Owner atau Front Office belum menambahkan member untuk trainer ini.'}
                             </p>
                         </div>
                     ) : (

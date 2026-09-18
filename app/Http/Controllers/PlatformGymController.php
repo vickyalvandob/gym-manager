@@ -133,6 +133,6 @@ class PlatformGymController extends Controller
         return array_map(fn (SubscriptionStatus $status): array => [
             'value' => $status->value,
             'label' => $status->label(),
-        ], SubscriptionStatus::cases());
+        ], array_values(array_filter(SubscriptionStatus::cases(), fn (SubscriptionStatus $status): bool => $status !== SubscriptionStatus::Trialing)));
     }
 }

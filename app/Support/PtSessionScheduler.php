@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use App\Enums\MemberPtPackageStatus;
+use App\Enums\MemberStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\PtSessionStatus;
 use App\Enums\TrainerStatus;
 use App\Models\MemberPtPackage;
@@ -10,6 +12,7 @@ use App\Models\PtSession;
 use App\Models\Trainer;
 use App\Models\TrainerMember;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 
 class PtSessionScheduler
@@ -38,8 +41,15 @@ class PtSessionScheduler
             $this->fail('member_pt_package_id', 'Paket PT tidak sesuai dengan trainer.');
         }
 
-        if ($memberPtPackage->effectiveStatusOn($today) !== MemberPtPackageStatus::Active) {
+        if ($memberPtPackage->effectiveStatusOn($today) !== MemberPtPackageStatus::Active
+            || $memberPtPackage->payment_status !== PaymentStatus::Paid) {
             $this->fail('member_pt_package_id', 'Paket PT tidak aktif atau sudah kedaluwarsa.');
+        }
+
+        $member = $gym->members()->whereKey($memberPtPackage->member_id)->firstOrFail();
+
+        if ($member->status !== MemberStatus::Active) {
+            $this->fail('member_pt_package_id', 'Member nonaktif tidak dapat dijadwalkan.');
         }
 
         if ($scheduledAtLocal->lessThanOrEqualTo(CarbonImmutable::now($gym->timezone))) {
@@ -83,7 +93,9 @@ class PtSessionScheduler
         $endsAtUtc = $scheduledAtUtc->addMinutes($durationMinutes);
         $conflictingSessions = $gym->ptSessions()
             ->select(['pt_sessions.id', 'pt_sessions.scheduled_at', 'pt_sessions.duration_minutes'])
-            ->where('trainer_id', $trainer->getKey())
+            ->where(fn (Builder $query) => $query
+                ->where('trainer_id', $trainer->getKey())
+                ->orWhere('member_id', $memberPtPackage->member_id))
             ->where('status', PtSessionStatus::Scheduled->value)
             ->where('scheduled_at', '<', $endsAtUtc)
             ->when(
@@ -99,7 +111,7 @@ class PtSessionScheduler
         );
 
         if ($hasConflict) {
-            $this->fail('start_time', 'Anda sudah memiliki sesi lain pada waktu tersebut.');
+            $this->fail('start_time', 'Trainer atau member sudah memiliki sesi lain pada waktu tersebut.');
         }
     }
 
